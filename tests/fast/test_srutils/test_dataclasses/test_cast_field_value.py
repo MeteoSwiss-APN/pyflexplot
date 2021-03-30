@@ -1,7 +1,6 @@
 """Tests for function ``pyflexplot.utils.dataclasses.cast_field_value``."""
 # Standard library
-from dataclasses import dataclass
-from dataclasses import field
+import dataclasses as dc
 from datetime import datetime
 from datetime import timedelta
 from typing import Any
@@ -27,16 +26,16 @@ dt = datetime
 td = timedelta
 
 
-@dataclass
+@dc.dataclass
 class Cfg:
     param: str
     val: Any
     sol: Any = None
-    kw: Dict = field(default_factory=dict)
+    kw: Dict = dc.field(default_factory=dict)
 
 
 class TestScalar:
-    @dataclass
+    @dc.dataclass
     class Params:
         str_: str
         int_: int
@@ -106,7 +105,7 @@ class TestScalar:
 
 
 class TestOptionalScalar:
-    @dataclass
+    @dc.dataclass
     class Params:
         str_: Optional[str]
         int_: Optional[int]
@@ -163,7 +162,7 @@ class TestOptionalScalar:
 
 
 class TestTuple:
-    @dataclass
+    @dc.dataclass
     class Params:
         strs: Tuple[str, ...]
         ints: Tuple[int, ...]
@@ -241,7 +240,7 @@ class TestTuple:
 
 
 class OptionalTuple:
-    @dataclass
+    @dc.dataclass
     class Params:
         str_: Optional[Tuple[str]]
         strs: Optional[Tuple[str, ...]]
@@ -278,7 +277,7 @@ class OptionalTuple:
 
 
 class TestList:
-    @dataclass
+    @dc.dataclass
     class Params:
         strs: List[str]
         ints: List[int]
@@ -326,7 +325,7 @@ class TestList:
 
 
 class TestSequence:
-    @dataclass
+    @dc.dataclass
     class Params:
         blank: Sequence
         anys: Sequence[Any]
@@ -367,7 +366,7 @@ class TestSequence:
 
 
 class TestUnion:
-    @dataclass
+    @dc.dataclass
     class Params:
         str_int: Union[str, int]
         int_str: Union[int, str]
@@ -419,7 +418,7 @@ class TestUnion:
 
 
 class TestDatetime:
-    @dataclass
+    @dc.dataclass
     class Params:
         dt: datetime
         opt_dt: Optional[datetime]
@@ -465,7 +464,7 @@ class TestDatetime:
 
 
 class TestTimedelta:
-    @dataclass
+    @dc.dataclass
     class Params:
         td: timedelta
         opt_td: Optional[timedelta]

@@ -1,7 +1,7 @@
 """Matplotlib coordinate transformations."""
 # Standard library
+import dataclasses as dc
 import warnings
-from dataclasses import dataclass
 from typing import overload
 from typing import Tuple
 
@@ -14,7 +14,7 @@ from cartopy.crs import Projection
 from srutils.iter import isiterable
 
 
-@dataclass
+@dc.dataclass
 class CoordinateTransformer:
     """Transform points between different matplotlib coordinate types.
 
@@ -40,9 +40,13 @@ class CoordinateTransformer:
 
     trans_axes: Projection
     trans_data: Projection
-    proj_map: Projection = PlateCarree(central_longitude=0.0)
-    proj_data: Projection = PlateCarree(central_longitude=0.0)
-    proj_geo: Projection = PlateCarree(central_longitude=0.0)
+    proj_map: Projection = dc.field(
+        default_factory=lambda: PlateCarree(central_longitude=0.0)
+    )
+    proj_data: Projection = dc.field(
+        default_factory=lambda: PlateCarree(central_longitude=0.0)
+    )
+    proj_geo: Projection = dc.field(default_factory=PlateCarree(central_longitude=0.0))
     invalid_ok: bool = True
     invalid_warn: bool = True
 
@@ -94,6 +98,8 @@ class CoordinateTransformer:
         check_valid_coords((x_plt, y_plt), self.invalid_ok, self.invalid_warn)
 
         # Plot -> Geo
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
         xy_geo = self.proj_geo.transform_point(x_plt, y_plt, self.proj_map, trap=True)
         check_valid_coords(xy_geo, self.invalid_ok, self.invalid_warn)
 
@@ -143,8 +149,12 @@ class CoordinateTransformer:
         """Transform from data to geographic coordinates."""
         if isiterable(x) or isiterable(y):
             check_same_sized_iterables(x, y)
+            # pylint: disable=E1101  # no-member [pylint 2.7.4]
+            # (pylint 2.7.4 does not support dataclasses.field)
             x, y = self.proj_geo.transform_points(self.proj_data, x, y)[:, :2].T
             return x, y
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
         return self.proj_geo.transform_point(x, y, self.proj_data, trap=True)
 
     @overload
@@ -185,6 +195,8 @@ class CoordinateTransformer:
         check_valid_coords((x, y), self.invalid_ok, self.invalid_warn)
 
         # Geo -> Plot
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
         xy_plt = self.proj_map.transform_point(x, y, self.proj_geo, trap=True)
         # SR_TMP < Suppress NaN warning -- TODO investigate origin of NaNs
         # check_valid_coords(xy_plt, invalid_ok, invalid_warn)
@@ -221,8 +233,12 @@ class CoordinateTransformer:
         """Transform from geographic to data coordinates."""
         if isiterable(x) or isiterable(y):
             check_same_sized_iterables(x, y)
+            # pylint: disable=E1101  # no-member [pylint 2.7.4]
+            # (pylint 2.7.4 does not support dataclasses.field)
             x, y = self.proj_data.transform_points(self.proj_geo, x, y)[:, :2].T
             return x, y
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
         return self.proj_data.transform_point(x, y, self.proj_geo, trap=True)
 
     @overload
@@ -237,8 +253,12 @@ class CoordinateTransformer:
         """Transform from geographical to map coordinates."""
         if isiterable(x) or isiterable(y):
             check_same_sized_iterables(x, y)
+            # pylint: disable=E1101  # no-member [pylint 2.7.4]
+            # (pylint 2.7.4 does not support dataclasses.field)
             x, y = self.proj_map.transform_points(self.proj_geo, x, y)[:, :2].T
             return x, y
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
         return self.proj_map.transform_point(x, y, self.proj_geo, trap=True)
 
     @overload
@@ -283,8 +303,12 @@ class CoordinateTransformer:
         """Transform from map to geographical coordinates."""
         if isiterable(x) or isiterable(y):
             check_same_sized_iterables(x, y)
+            # pylint: disable=E1101  # no-member [pylint 2.7.4]
+            # (pylint 2.7.4 does not support dataclasses.field)
             x, y = self.proj_geo.transform_points(self.proj_map, x, y)[:, :2].T
             return x, y
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
         return self.proj_geo.transform_point(x, y, self.proj_map, trap=True)
 
 

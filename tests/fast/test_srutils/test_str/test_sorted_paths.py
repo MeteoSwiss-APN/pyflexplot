@@ -1,6 +1,6 @@
 """Test function ``srutils.str.sorted_paths``."""
 # Standard library
-from dataclasses import dataclass
+import dataclasses as dc
 from typing import List
 from typing import Optional
 
@@ -18,7 +18,7 @@ def test_nodup():
     assert sorted_paths(paths, key=len) == sorted(paths, key=len)
 
 
-@dataclass
+@dc.dataclass
 class _TestCase:
     description: str
     paths: List[str]  # in same order as expected after ``sorted_paths(...)``

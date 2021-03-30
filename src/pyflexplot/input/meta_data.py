@@ -1,10 +1,10 @@
 """Meta data."""
 # Standard library
+import dataclasses as dc
 import re
 import warnings
 from copy import copy
 from copy import deepcopy
-from dataclasses import dataclass
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
@@ -134,7 +134,7 @@ def _format_unit(s: str) -> str:
     return s
 
 
-@dataclass
+@dc.dataclass
 class MetaData:
     release: "ReleaseMetaData"
     simulation: "SimulationMetaData"
@@ -348,7 +348,7 @@ class _MetaDataBase:
         return dct
 
 
-@dataclass
+@dc.dataclass
 class VariableMetaData(_MetaDataBase):
     unit: str
     bottom_level: float
@@ -407,7 +407,7 @@ class VariableMetaData(_MetaDataBase):
 
 # pylint: disable=R0902  # too-many-instance-attributes
 # pylint: disable=R0914  # too-many-instance-locals (>15)
-@dataclass
+@dc.dataclass
 class SimulationMetaData(_MetaDataBase):
     start: datetime
     end: datetime
@@ -489,7 +489,7 @@ class SimulationMetaData(_MetaDataBase):
         )
 
 
-@dataclass
+@dc.dataclass
 # pylint: disable=R0902  # too-many-instance-attrbutes
 class ReleaseMetaData(_MetaDataBase):
     duration: timedelta
@@ -543,7 +543,7 @@ class ReleaseMetaData(_MetaDataBase):
         )
 
 
-@dataclass
+@dc.dataclass
 # pylint: disable=R0902  # too-many-instance-attributes
 class SpeciesMetaData(_MetaDataBase):
     name: Union[str, Tuple[str, ...]]
@@ -623,7 +623,7 @@ class SpeciesMetaData(_MetaDataBase):
             return name.split("_")[0]
 
 
-@dataclass
+@dc.dataclass
 class RawReleaseMetaData:
     age_id: int
     kind: str

@@ -1,6 +1,6 @@
 """Test for module ``pyflexplot.plotting.proj_bbox``."""
 # Standard library
-from dataclasses import dataclass
+import dataclasses as dc
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ from pyflexplot.plotting.proj_bbox import ProjectedBoundingBox
 from pyflexplot.plotting.proj_bbox import Projections
 
 
-@dataclass
+@dc.dataclass
 class Cfg:
     clon: float = 0.0
     curr_proj: str = "axes"

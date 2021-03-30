@@ -38,6 +38,8 @@ from srutils.format import sfmt
 from ..utils.exceptions import UnequalSetupParamValuesError
 from .dimensions import Dimensions
 from .dimensions import is_dimensions_param
+from .layout_setup import is_layout_setup_param
+from .layout_setup import LayoutSetup
 from .model_setup import is_model_setup_param
 from .model_setup import ModelSetup
 from .plot_panel_setup import is_plot_panel_setup_param
@@ -85,11 +87,13 @@ class PlotSetup:
     outfile: Union[str, Tuple[str, ...]]  # = "none"
     outfile_time_format: str = "%Y%m%d%H%M"
     plot_type: str = "auto"
-    layout: str = "auto"
     multipanel_param: Optional[str] = None
     scale_fact: float = 1.0
-    model: ModelSetup = ModelSetup()
-    panels: PlotPanelSetupGroup = PlotPanelSetupGroup([PlotPanelSetup()])
+    layout: LayoutSetup = dc.field(default_factory=LayoutSetup)
+    model: ModelSetup = dc.field(default_factory=ModelSetup)
+    panels: PlotPanelSetupGroup = dc.field(
+        default_factory=lambda: PlotPanelSetupGroup([PlotPanelSetup()])
+    )
 
     def __post_init__(self) -> None:
 
@@ -118,37 +122,30 @@ class PlotSetup:
                 f"; choices: {', '.join(multipanel_param_choices)}"
             )
 
-        # Check model
-        if not isinstance(self.model, ModelSetup):
-            raise ValueError(
-                "'model' has wrong type: expected ModelSetup, got "
-                + type(self.model).__name__
-            )
-
-        # Check panels
-        if not isinstance(self.panels, PlotPanelSetupGroup):
-            raise ValueError(
-                "'panels' has wrong type: expected PlotPanelSetupGroup, got "
-                + type(self.panels).__name__
-            )
-
-        # Check/set layout
-        layouts = [
-            "auto",
-            "vintage",
-            "post_vintage",
-            "post_vintage_ens",
+        # Check types of sub-setups
+        param_types = [
+            ("layout", LayoutSetup),
+            ("model", ModelSetup),
+            ("panels", PlotPanelSetupGroup),
         ]
-        if self.layout not in layouts:
-            raise ValueError(
-                f"invalid layout '{self.layout}'; choices: "
-                + ", ".join(map("'{}'".format, layouts))
-            )
-        elif self.layout == "auto":
+        for name, cls in param_types:
+            val = getattr(self, name)
+            if not isinstance(val, cls):
+                raise ValueError(
+                    f"'{name}' has wrong type: expected {cls.__name__}, got "
+                    + type(val).__name__
+                )
+
+        # Set simulation type-specific default layout
+        if self.layout.type == "auto":
+            # pylint: disable=E1101  # no-member [pylint 2.7.4]
+            # (pylint 2.7.4 does not support dataclasses.field)
             if self.model.simulation_type == "deterministic":
-                self.layout = "post_vintage"
+                self.layout.type = "post_vintage"
+            # pylint: disable=E1101  # no-member [pylint 2.7.4]
+            # (pylint 2.7.4 does not support dataclasses.field)
             elif self.model.simulation_type == "ensemble":
-                self.layout = "post_vintage_ens"
+                self.layout.type = "post_vintage_ens"
 
     def collect(self, param: str, *, unique: bool = False) -> Any:
         """Collect the value(s) of a parameter.
@@ -166,6 +163,8 @@ class PlotSetup:
                 param = param.replace("model.", "")
             value = getattr(self.model, param)
         elif is_plot_panel_setup_param(param) or is_dimensions_param(param):
+            # pylint: disable=E1101  # no-member [pylint 2.7.4]
+            # (pylint 2.7.4 does not support dataclasses.field)
             value = self.panels.collect(param, unique=unique)
         else:
             raise ValueError(f"invalid param '{param}'")
@@ -264,6 +263,8 @@ class PlotSetup:
 
         # PlotSetup.panels
         panels_dcts_lst: List[List[Dict[str, Any]]] = []
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
         for panels in self.panels.decompress(
             select_panels, skip_panels, internal=False
         ):
@@ -331,6 +332,8 @@ class PlotSetup:
                 dicts.
 
         """
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
         return {
             **dc.asdict(self),
             "model": dc.asdict(self.model) if rec else self.model,
@@ -482,6 +485,8 @@ class PlotSetup:
 
         """
         params = dict(params)
+        layout_params: Dict[str, Any] = dict(params.pop("layout", {}))
+        model_params: Dict[str, Any] = dict(params.pop("model", {}))
         panels_params: Union[Dict[str, Any], List[Dict[str, Any]]]
         if "panels" not in params:
             panels_params = []
@@ -491,12 +496,6 @@ class PlotSetup:
             else:
                 panels_params = list(map(dict, params["panels"]))
             del params["panels"]
-        model_params: Dict[str, Any]
-        if "model" not in params:
-            model_params = {}
-        else:
-            model_params = dict(params.get("model", {}))
-            del params["model"]
         for name, value in dict(params).items():
             value = cast_field_value(
                 cls,
@@ -508,13 +507,15 @@ class PlotSetup:
                 unpack_str=False,
             )
             params[name] = value
+        if layout_params:
+            params["layout"] = LayoutSetup.create(layout_params)
+        if model_params:
+            params["model"] = ModelSetup.create(model_params)
         if panels_params:
             multipanel_param = params.get("multipanel_param")
             params["panels"] = PlotPanelSetupGroup.create(
                 panels_params, multipanel_param=multipanel_param
             )
-        if model_params:
-            params["model"] = ModelSetup.create(model_params)
         return cls(**params)
 
     @classmethod
@@ -536,7 +537,11 @@ class PlotSetup:
             + list(Dimensions.get_params())
         )
         param_choices_fmtd = ", ".join(map(str, param_choices))
-        sub_cls_by_name = {"model": ModelSetup, "dimensions": Dimensions}
+        sub_cls_by_name = {
+            "layout": LayoutSetup,
+            "model": ModelSetup,
+            "dimensions": Dimensions,
+        }
         try:
             sub_cls = sub_cls_by_name[param]
         except KeyError:
@@ -562,6 +567,8 @@ class PlotSetup:
         try:
             if is_dimensions_param(param):
                 return Dimensions.cast(param, value)
+            elif is_layout_setup_param(param):
+                return LayoutSetup.cast(param, value)
             elif is_model_setup_param(param):
                 return ModelSetup.cast(param, value)
             elif is_plot_panel_setup_param(param):
@@ -612,8 +619,10 @@ class PlotSetup:
         params: Dict[str, Any] = {}
         value: Any
         for param, value in raw_params:
-            if param == "model":
-                param = "name"
+            if param == "layout_type":
+                param = "layout.type"
+            elif param == "model":
+                param = "model.name"
             elif value in ["None", "*"]:
                 value = None
             elif "," in value:

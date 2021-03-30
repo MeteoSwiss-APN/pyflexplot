@@ -250,9 +250,9 @@ plot_summary = {
             "outfile": "ref_cosmo2e_ens_cloud_arrival_time.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "plot_type": "auto",
-            "layout": "post_vintage_ens",
             "multipanel_param": None,
             "scale_fact": 1.0,
+            "layout": {"type": "post_vintage_ens"},
             "model": {
                 "name": "COSMO-2E",
                 "base_time": 201907271200,

@@ -4,7 +4,7 @@ These test the dry-run mode.
 
 """
 # Standard library
-from dataclasses import dataclass
+import dataclasses as dc
 from typing import Any
 from typing import Dict
 from typing import List
@@ -114,13 +114,13 @@ def _test_setups_core(
     )
 
 
-@dataclass
+@dc.dataclass
 class ConfSingleSetup:
     setup_dct: Dict[str, Any]
     sol: List[Dict[str, Any]]
 
 
-@dataclass
+@dc.dataclass
 class ConfMultipleSetups:
     setup_dct_lst: List[Dict[str, Any]]
     sol: List[Dict[str, Any]]

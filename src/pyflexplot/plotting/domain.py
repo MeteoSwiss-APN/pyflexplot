@@ -351,7 +351,7 @@ class ReleaseSiteDomainConfig(DomainConfig):
     """
 
     aspect: Optional[float] = None
-    field_proj: Projection = PlateCarree()
+    field_proj: Projection = dc.field(default_factory=PlateCarree)
     min_size_lat: float = 0.0
     min_size_lon: float = 0.0
     release_lat: Optional[float] = None

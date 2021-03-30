@@ -1,7 +1,6 @@
 """Tests for classes pyflexplot.utils.formatting.LevelRangeFormatter*``."""
 # Standard library
-from dataclasses import dataclass
-from dataclasses import field
+import dataclasses as dc
 from typing import Any
 from typing import Dict
 from typing import List
@@ -21,11 +20,11 @@ from pyflexplot.utils.formatting import LevelRangeFormatterUp
 from pyflexplot.utils.formatting import LevelRangeFormatterVar
 
 
-@dataclass
+@dc.dataclass
 class Config:
     cls: Type[LevelRangeFormatter]
     sol: List[str]
-    kwargs: Dict[str, Any] = field(default_factory=dict)
+    kwargs: Dict[str, Any] = dc.field(default_factory=dict)
 
 
 @pytest.mark.parametrize(

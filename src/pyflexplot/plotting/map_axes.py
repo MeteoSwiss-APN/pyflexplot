@@ -1,7 +1,7 @@
 """Map axes."""
 # Standard library
+import dataclasses as dc
 import warnings
-from dataclasses import dataclass
 from typing import Any
 from typing import Dict
 from typing import List
@@ -38,7 +38,7 @@ from .ref_dist_indicator import ReferenceDistanceIndicator
 # pylint: disable=E0213  # no-self-argument (validators)
 # pylint: disable=?R0902  # too-many-instance-attributes
 @summarizable
-@dataclass
+@dc.dataclass
 class MapAxesConfig:
     """Configuration of ``MapAxesPlot``.
 
@@ -256,6 +256,8 @@ class MapAxes:
         kwargs_default = {"xytext": (5, 1), "textcoords": "offset points"}
         kwargs = {**kwargs_default, **kwargs}
         # pylint: disable=W0212  # protected-access
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
         transform = self.trans.proj_geo._as_mpl_transform(self.ax)
         # -> see https://stackoverflow.com/a/25421922/4419816
         handle = self.ax.annotate(

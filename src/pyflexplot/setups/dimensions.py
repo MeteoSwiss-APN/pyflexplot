@@ -1,9 +1,7 @@
 # pylint: disable=C0302  # too-many-lines
 """Plot setup and setup files."""
 # Standard library
-import dataclasses
-from dataclasses import asdict
-from dataclasses import dataclass
+import dataclasses as dc
 from pprint import pformat
 from typing import Any
 from typing import Collection
@@ -39,7 +37,7 @@ def is_dimensions_param(param: str) -> bool:
 
 
 # SR_TODO Clean up docstring -- where should format key hints go?
-@dataclass
+@dc.dataclass
 class CoreDimensions:
     """Selected dimensions.
 
@@ -63,7 +61,7 @@ class CoreDimensions:
             raise ValueError(f"variable '{self.variable}' not among {choices}")
 
     def dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        return dc.asdict(self)
 
     @classmethod
     def create(cls, params: Dict[str, Any]) -> "CoreDimensions":
@@ -333,7 +331,7 @@ class Dimensions:
         return hash(self.tuple())
 
     def __eq__(self, other) -> bool:
-        if isinstance(other, dataclasses._MISSING_TYPE):
+        if isinstance(other, dc._MISSING_TYPE):
             return False
         try:
             other_dict = other.dict()

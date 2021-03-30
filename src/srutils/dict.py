@@ -1,11 +1,10 @@
 """Dictionary utilities."""
 # Standard library
+import dataclasses as dc
 import itertools
 from collections import namedtuple
 from copy import copy
 from copy import deepcopy
-from dataclasses import dataclass
-from dataclasses import field
 from pprint import pformat
 from typing import Any
 from typing import Callable
@@ -526,11 +525,11 @@ class NestedDictLinearizer:
 
         """
 
-        @dataclass
+        @dc.dataclass
         class _State:
             subdct: Dict[str, Any]
             curr_key: Optional[str] = None
-            active: Dict[str, Any] = field(default_factory=dict)
+            active: Dict[str, Any] = dc.field(default_factory=dict)
             head: Optional[Dict[str, Any]] = None
 
             def __post_init__(self):

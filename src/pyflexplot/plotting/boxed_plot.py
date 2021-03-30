@@ -1,8 +1,7 @@
 """Boxed plots."""
 # Standard library
-import dataclasses
+import dataclasses as dc
 import warnings
-from dataclasses import dataclass
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -31,7 +30,7 @@ from .text_box_axes import TextBoxAxes
 
 
 @summarizable
-@dataclass
+@dc.dataclass
 class FontSizes:
     title_large: FontSizeType = 14.0
     title_medium: FontSizeType = 12.0
@@ -47,35 +46,37 @@ class FontSizes:
 
 
 @summarizable
-@dataclass
+@dc.dataclass
 class FontConfig:
     name: str = "Liberation Sans"
-    sizes: FontSizes = FontSizes()
+    sizes: FontSizes = dc.field(default_factory=FontSizes)
 
 
 @summarizable
-@dataclass
+@dc.dataclass
 class ContourLevelsLegendConfig:
     range_align: str = "center"
     range_style: str = "base"
     range_widths: Tuple[int, int, int] = (5, 3, 5)
     rstrip_zeros: bool = True
-    labels: List[str] = dataclasses.field(default_factory=list)
+    labels: List[str] = dc.field(default_factory=list)
 
 
 @summarizable
-@dataclass
+@dc.dataclass
 class ContourLevelsConfig:
     extend: str = "max"
     include_lower: bool = True
-    legend: ContourLevelsLegendConfig = ContourLevelsLegendConfig()
+    legend: ContourLevelsLegendConfig = dc.field(
+        default_factory=ContourLevelsLegendConfig
+    )
     levels: Optional[np.ndarray] = None
     n: int = 0  # SR_TMP TODO eliminate
     scale: str = "log"
 
 
 @summarizable
-@dataclass
+@dc.dataclass
 class MarkersConfig:
     markers: Optional[Dict[str, Dict[str, Any]]] = None
     mark_field_max: bool = True
@@ -84,18 +85,18 @@ class MarkersConfig:
 
 # pylint: disable=R0902  # too-many-instance-attributes (>7)
 @summarizable
-@dataclass
+@dc.dataclass
 class BoxedPlotConfig:
     setup: PlotSetup  # SR_TODO consider removing this
     layout: BoxedPlotLayout
     # ---
-    font: FontConfig = FontConfig()
-    levels: ContourLevelsConfig = ContourLevelsConfig()
-    markers: MarkersConfig = MarkersConfig()
+    font: FontConfig = dc.field(default_factory=FontConfig)
+    levels: ContourLevelsConfig = dc.field(default_factory=ContourLevelsConfig)
+    markers: MarkersConfig = dc.field(default_factory=MarkersConfig)
     # ---
     colors: Optional[List[ColorType]] = None
     fig_size: Optional[Tuple[float, float]] = None
-    labels: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    labels: Dict[str, Any] = dc.field(default_factory=dict)
     lw_frame: float = 1.0
     model_info: str = "N/A"
 

@@ -528,7 +528,9 @@ def create_plot_config(
 
     # Layout
     fig_aspect = np.divide(*plot_config_dct["fig_size"])
-    plot_config_dct["layout"] = BoxedPlotLayout.create(setup.layout, aspect=fig_aspect)
+    plot_config_dct["layout"] = BoxedPlotLayout.create(
+        setup.layout.type, aspect=fig_aspect
+    )
 
     # Fonts
     font_config = FontConfig(sizes=FontSizes().scale(setup.scale_fact))

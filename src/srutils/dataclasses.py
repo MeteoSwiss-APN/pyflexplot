@@ -1,7 +1,6 @@
 """Dataclasses utilities."""
 # Standard library
-import dataclasses
-from dataclasses import is_dataclass
+import dataclasses as dc
 from datetime import datetime
 from datetime import timedelta
 from typing import Any
@@ -33,7 +32,7 @@ def asdict(obj: Any, *, shallow: bool = False) -> Dict[str, Any]:
     if shallow:
         return asdict_shallow(obj)
     try:
-        return dataclasses.asdict(obj)
+        return dc.asdict(obj)
     except TypeError as e:
         raise e
     except NotImplementedError as e:
@@ -56,7 +55,7 @@ def asdict_shallow(obj: Any) -> Dict[str, Any]:
 
 
 def get_dataclass_fields(obj: DataclassT) -> List[str]:
-    if not is_dataclass(obj):
+    if not dc.is_dataclass(obj):
         raise ValueError(f"expected dataclass, not {type(obj).__name__}: {obj}")
     # Use getattr to prevent mypy from complaining
     # pylint: disable=E1101  # no-member
@@ -70,19 +69,19 @@ def dataclass_merge(
     obj0 = objs[0]
     cls = type(obj0)
     objs1 = objs[1:]
-    if not is_dataclass(obj0):
+    if not dc.is_dataclass(obj0):
         raise ValueError(f"first obj is a {cls.__name__}, not a dataclass: {obj0}")
     for obj in objs1:
         if not isinstance(obj, cls):
             raise ValueError(f"classes differ: {cls.__name__} != {type(obj).__name__}")
     kwargs: Dict[str, Any] = {}
     for param in get_dataclass_fields(cls):
-        if is_dataclass(type(getattr(obj0, param))):
+        if dc.is_dataclass(type(getattr(obj0, param))):
             kwargs[param] = dataclass_merge(
                 [getattr(obj, param) for obj in objs], reduce_equal=reduce_equal
             )
         else:
-            values = tuple([getattr(obj, param) for obj in objs])
+            values = tuple(getattr(obj, param) for obj in objs)
             if reduce_equal and all(value == values[0] for value in values[1:]):
                 kwargs[param] = values[0]
             else:

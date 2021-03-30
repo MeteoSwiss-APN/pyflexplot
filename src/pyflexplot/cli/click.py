@@ -41,9 +41,10 @@ def click_prepare_setup_params(ctx, param, value):
     if not value:
         return None
     try:
-        return PlotSetup.prepare_params(value)
+        value = PlotSetup.prepare_params(value)
     except InvalidParameterNameError as e:
         click_error(ctx, f"Invalid setup parameter name: {e}")
+    return value
 
 
 # pylint: disable=W0613  # unused-argument (param)

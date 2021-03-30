@@ -1,6 +1,6 @@
 """Summarize objects as a dict for testing etc."""
 # Standard library
-from dataclasses import is_dataclass
+import dataclasses as dc
 from functools import partial
 from typing import Any
 from typing import Callable
@@ -97,7 +97,7 @@ def summarizable(
         if auto_collect and is_attrs_class(cls):
             # Collect attributes defined with ``attr.attrib``
             attrs = [attr.name for attr in cls.__attrs_attrs__]  # type: ignore
-        elif auto_collect and is_dataclass(cls):
+        elif auto_collect and dc.is_dataclass(cls):
             # Collect dataclass fields
             attrs = list(cls.__dataclass_fields__)  # type: ignore
         else:

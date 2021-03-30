@@ -1,7 +1,6 @@
 """Output."""
 # Standard library
 import re
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 from typing import cast
@@ -19,7 +18,6 @@ from .setups.plot_setup import PlotSetup
 from .utils.logging import log
 
 
-@dataclass
 class FilePathFormatter:
     """Format file paths."""
 

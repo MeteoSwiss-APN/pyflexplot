@@ -108,7 +108,7 @@ class PlotPanelSetup:
     combine_species: bool = False
 
     # Ensemble-related
-    ens_params: EnsembleParams = EnsembleParams()
+    ens_params: EnsembleParams = dc.field(default_factory=EnsembleParams)
 
     # Plot appearance
     lang: str = "en"
@@ -118,7 +118,7 @@ class PlotPanelSetup:
 
     # Dimensions
     dimensions_default: str = "all"
-    dimensions: Dimensions = Dimensions()
+    dimensions: Dimensions = dc.field(default_factory=Dimensions)
 
     # pylint: disable=R0912  # too-many-branches (>12)
     def __post_init__(self) -> None:
@@ -282,6 +282,7 @@ class PlotPanelSetup:
             raise ValueError(f"invalid param '{param}'")
         return value
 
+    # SR_TMP copy-pasted to LayoutSetup
     def derive(self, params: Dict[str, Any]) -> "PlotPanelSetup":
         return type(self).create(merge_dicts(self.dict(), params, overwrite_seqs=True))
 
@@ -293,6 +294,8 @@ class PlotPanelSetup:
                 as dicts.
 
         """
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
         return {
             **dc.asdict(self),
             "ens_params": self.ens_params.dict() if rec else self.ens_params,
@@ -336,22 +339,36 @@ class PlotPanelSetup:
                 self.domain_size_lon = 20.0
 
         # Init ens_params
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
         if self.ens_params.mem_min is None:
             if self.ens_variable in [
                 "cloud_arrival_time",
                 "cloud_departure_time",
             ]:
+                # pylint: disable=E0237  # assigning-non-slot [pylint 2.7.4]
+                # (pylint 2.7.4 does not support dataclasses.field)
                 self.ens_params.mem_min = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
         if self.ens_variable == "percentile":
+            # pylint: disable=E1101  # no-member [pylint 2.7.4]
+            # (pylint 2.7.4 does not support dataclasses.field)
             assert self.ens_params.pctl is not None
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
         if self.ens_params.thr is None:
             if self.ens_variable in [
                 "cloud_arrival_time",
                 "cloud_departure_time",
             ]:
+                # pylint: disable=E0237  # assigning-non-slot [pylint 2.7.4]
+                # (pylint 2.7.4 does not support dataclasses.field)
                 self.ens_params.thr = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
             elif self.ens_variable == "probability":
+                # pylint: disable=E0237  # assigning-non-slot [pylint 2.7.4]
+                # (pylint 2.7.4 does not support dataclasses.field)
                 self.ens_params.thr = ENS_PROBABILITY_DEFAULT_PARAM_THR
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
         assert self.ens_params.thr_type in ["lower", "upper"]
 
     def _tuple(self) -> Tuple[Tuple[str, Any], ...]:

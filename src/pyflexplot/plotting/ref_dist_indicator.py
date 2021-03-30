@@ -1,7 +1,6 @@
 """Reference distance indicator for map plot."""
 # Standard library
-from dataclasses import asdict
-from dataclasses import dataclass
+import dataclasses as dc
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -19,7 +18,7 @@ from ..utils.typing import PointConverterT
 
 
 @summarizable
-@dataclass
+@dc.dataclass
 class RefDistIndConfig:
     """Configuration of ``ReferenceDistanceIndicator``.
 
@@ -49,7 +48,7 @@ class RefDistIndConfig:
 
     def scale(self, factor: float) -> "RefDistIndConfig":
         kwargs: Dict[str, Any] = {
-            **asdict(self),
+            **dc.asdict(self),
             "font_size": self.font_size * factor,
             "line_width": self.line_width * factor,
         }

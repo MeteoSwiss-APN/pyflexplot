@@ -1,7 +1,7 @@
 """Test class ``words.word.TranslatedWord``."""
 # Standard library
+import dataclasses as dc
 import functools
-from dataclasses import dataclass
 from typing import Any
 
 # Third-party
@@ -157,7 +157,7 @@ class Test_Context_ManyMany_Diff:
         assert self.w["en"].ctx("f") == self.w["en"].ctx("*")
 
 
-@dataclass
+@dc.dataclass
 class AttrHolder:
     _val: Any = None
 

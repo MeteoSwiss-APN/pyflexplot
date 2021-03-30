@@ -1,6 +1,6 @@
 """Some testing utils."""
 # Standard library
-from dataclasses import dataclass
+import dataclasses as dc
 from pprint import pformat
 from typing import Any
 from typing import Collection
@@ -248,7 +248,7 @@ def get_dict_element(dict_, key, name="dict", exception_type=ValueError):
     raise exception_type(err, {"name": name, "key": key, "dict_": dict_})
 
 
-@dataclass(frozen=True)
+@dc.dataclass(frozen=True)
 class TestConfBase:
     def derive(self, **kwargs):
         # pylint: disable=E1101  # no-member (__dataclass_fields__)

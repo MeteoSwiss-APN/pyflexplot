@@ -1,6 +1,6 @@
 """Text boxes."""
 # Standard library
-from dataclasses import dataclass
+import dataclasses as dc
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -245,7 +245,7 @@ class TextBoxElementHLine(TextBoxElement):
 @summarizable(
     attrs_add=["name", "rect", "lw_frame", "dx_unit", "dy_unit", "elements"],
 )
-@dataclass
+@dc.dataclass
 # pylint: disable=R0902  # too-many-instance-attributes
 # pylint: disable=R0913  # too-many-arguments
 class TextBoxAxes:

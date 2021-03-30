@@ -4,8 +4,7 @@ These tests use deterministic data.
 
 """
 # Standard library
-from dataclasses import dataclass
-from dataclasses import field
+import dataclasses as dc
 from typing import Any
 from typing import Dict
 from typing import List
@@ -44,11 +43,11 @@ def get_var_name_ref(dimensions: Dimensions, var_names_ref: str):
     raise NotImplementedError(f"dimensions={dimensions}\nvar_names_ref={var_names_ref}")
 
 
-@dataclass
+@dc.dataclass
 class Config:
     var_names_ref: List[str]
     setup_dct: Dict[str, Any]
-    derived_setup_params: List[Dict[str, Any]] = field(default_factory=list)
+    derived_setup_params: List[Dict[str, Any]] = dc.field(default_factory=list)
     scale_fld_ref: Optional[float] = 1.0
 
     @property

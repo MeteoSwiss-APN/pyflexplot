@@ -248,9 +248,9 @@ plot_summary = {
             "outfile": "ref_cosmo1_deterministic_total_deposition.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "plot_type": "auto",
-            "layout": "post_vintage",
             "multipanel_param": None,
             "scale_fact": 1.0,
+            "layout": {"type": "post_vintage"},
             "model": {
                 "name": "COSMO-1",
                 "base_time": 201909301200,

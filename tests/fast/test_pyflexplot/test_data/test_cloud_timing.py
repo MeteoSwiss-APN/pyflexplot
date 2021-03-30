@@ -1,7 +1,7 @@
 # flake8: noqa  # complains about code in "fmt: off/on" blocks
 """Tests for class ``pyflexplot.data.Cloud``."""
 # Standard library
-from dataclasses import dataclass
+import dataclasses as dc
 
 # Third-party
 import numpy as np
@@ -19,7 +19,7 @@ def a(*args, **kwargs):
     return np.array(*args, **kwargs)
 
 
-@dataclass
+@dc.dataclass
 class Config:
     thr: float
     dt: float

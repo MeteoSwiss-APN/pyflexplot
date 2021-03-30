@@ -141,11 +141,12 @@ class DerivChoice(click.ParamType):
         if value in self.base_choices:
             return value
         try:
-            return self.derived_choices[value]
+            value = self.derived_choices[value]
         except KeyError:
             choices = self.base_choices + list(self.derived_choices)
             s_choices = ", ".join([f"'{s}'" for s in choices])
             self.fail(f"wrong choice '{value}': must be one of {s_choices}")
+        return value
 
     def _check_derived_choices(self):
         for name, derived_choice in self.derived_choices.items():

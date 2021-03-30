@@ -5,7 +5,7 @@ constant and equal in value to the respective ensemble member id.
 
 """
 # Standard library
-from dataclasses import dataclass
+import dataclasses as dc
 from typing import List
 
 # Third-party
@@ -20,7 +20,7 @@ from pyflexplot.setups.plot_setup import PlotSetupGroup
 from .shared import datadir_artificial as datadir  # noqa:F401
 
 
-@dataclass
+@dc.dataclass
 class Config:
     ens_mem_ids: List[int]
     ens_var: str

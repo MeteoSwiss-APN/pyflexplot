@@ -1,8 +1,6 @@
 """Chemical species and their attributes."""
 # Standard library
-import dataclasses
-from dataclasses import dataclass
-from dataclasses import Field
+import dataclasses as dc
 from typing import Any
 from typing import cast
 from typing import Dict
@@ -17,7 +15,7 @@ from typing import Union
 import numpy as np
 
 
-@dataclass
+@dc.dataclass
 class SpeciesAttribute:
     """Attribute of a chemical species."""
 
@@ -43,7 +41,7 @@ class SpeciesAttribute:
         return cls(value, unit)
 
 
-@dataclass
+@dc.dataclass
 # pylint: disable=R0902  # too-many-instance-attributes
 class Species:
     """Chemical species."""
@@ -51,24 +49,18 @@ class Species:
     id_cosmo: int = -99
     id_ifs: int = -99
     name: str = "N/A"
-    weight: SpeciesAttribute = dataclasses.field(
-        default=SpeciesAttribute(-99.9, "g mol-1")
-    )
-    half_life: SpeciesAttribute = dataclasses.field(
-        default=SpeciesAttribute(-99.9, "a")
-    )
-    deposition_velocity: SpeciesAttribute = dataclasses.field(
+    weight: SpeciesAttribute = dc.field(default=SpeciesAttribute(-99.9, "g mol-1"))
+    half_life: SpeciesAttribute = dc.field(default=SpeciesAttribute(-99.9, "a"))
+    deposition_velocity: SpeciesAttribute = dc.field(
         default=SpeciesAttribute(-99.9, "m s-1")
     )
-    sedimentation_velocity: SpeciesAttribute = dataclasses.field(
+    sedimentation_velocity: SpeciesAttribute = dc.field(
         default=SpeciesAttribute(-99.9, "m s-1")
     )
-    washout_coefficient: SpeciesAttribute = dataclasses.field(
+    washout_coefficient: SpeciesAttribute = dc.field(
         default=SpeciesAttribute(-99.9, "s-1")
     )
-    washout_exponent: SpeciesAttribute = dataclasses.field(
-        default=SpeciesAttribute(-99.9)
-    )
+    washout_exponent: SpeciesAttribute = dc.field(default=SpeciesAttribute(-99.9))
 
     @classmethod
     def create(cls, **params: Any) -> "Species":
@@ -76,7 +68,7 @@ class Species:
         fields = cls.__dataclass_fields__  # type: ignore  # pylint: disable=E1101
         for param, value in params.items():
             try:
-                field: Field = fields[param]
+                field: dc.Field = fields[param]
             except KeyError as e:
                 raise ValueError(param) from e
             if issubclass(field.type, SpeciesAttribute):
@@ -353,7 +345,7 @@ def get_species(*, name: Union[Tuple[str, ...], List[str]]) -> Tuple[Species, ..
 def get_species(*, name=None):
     """Identify one or more ``Species`` objects by an attribute."""
     if isinstance(name, (Tuple, List)):
-        return tuple([get_species(name=name_i) for name_i in name])
+        return tuple(get_species(name=name_i) for name_i in name)
     global SPECIES  # pylint: disable=W0603  # global-statement
     attr, value = "name", cast(str, name)
     species: Species

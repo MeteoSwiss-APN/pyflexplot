@@ -1,8 +1,8 @@
 """Formatting utilities."""
 # Standard library
+import dataclasses as dc
 import re
 import warnings
-from dataclasses import dataclass
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -224,7 +224,7 @@ def escape_format_keys(s: str) -> str:
     return s.replace("{", "{{").replace("}", "}}")
 
 
-@dataclass
+@dc.dataclass
 class Component:
     """Auxiliary class to pass results between formatter methods."""
 
@@ -241,7 +241,7 @@ class Component:
         return cls(s, ntex)
 
 
-@dataclass
+@dc.dataclass
 class Components:
     """Auxiliary class to pass results between formatter methods."""
 
@@ -332,15 +332,15 @@ class LevelRangeFormatter:
         s_c = cs.center.s
         s_r = cs.right.s
 
-        dc = "^"
+        d_c = "^"
         if self.align == "left":
-            dl, dr = "<", "<"
+            d_l, d_r = "<", "<"
         elif self.align == "right":
-            dl, dr = ">", ">"
+            d_l, d_r = ">", ">"
         elif self.align == "center":
-            dl, dr = "<", ">"
+            d_l, d_r = "<", ">"
         elif self.align == "edges":
-            dl, dr = "<", "<"
+            d_l, d_r = "<", "<"
         else:
             raise Exception(f"invalid value: self.align='{self.align}'")
 
@@ -359,9 +359,9 @@ class LevelRangeFormatter:
 
         wl, wc, wr = self.widths
 
-        s_l = f"{{:{dl}{wl + cs.left.ntex}}}".format(s_l)
-        s_c = f"{{:{dc}{wc + cs.center.ntex}}}".format(s_c)
-        s_r = f"{{:{dr}{wr + cs.right.ntex}}}".format(s_r)
+        s_l = f"{{:{d_l}{wl + cs.left.ntex}}}".format(s_l)
+        s_c = f"{{:{d_c}{wc + cs.center.ntex}}}".format(s_c)
+        s_r = f"{{:{d_r}{wr + cs.right.ntex}}}".format(s_r)
 
         return f"{s_l}{s_c}{s_r}"
 

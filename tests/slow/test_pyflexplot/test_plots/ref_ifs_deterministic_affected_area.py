@@ -249,9 +249,9 @@ plot_summary = {
             "outfile": "ref_ifs_deterministic_affected_area.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "plot_type": "auto",
-            "layout": "post_vintage",
             "multipanel_param": None,
             "scale_fact": 1.0,
+            "layout": {"type": "post_vintage"},
             "model": {
                 "name": "IFS-HRES",
                 "base_time": 202003170000,

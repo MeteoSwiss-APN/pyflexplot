@@ -1,4 +1,4 @@
-"""Model setup."""
+"""Layout setup."""
 # Standard library
 import dataclasses as dc
 from typing import Any
@@ -6,26 +6,41 @@ from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Mapping
-from typing import Optional
 from typing import Tuple
 from typing import Union
 
 # First-party
 from srutils.dataclasses import cast_field_value
+from srutils.dict import merge_dicts
 
 
 # SR_TMP <<< TODO cleaner solution
-def is_model_setup_param(param: str) -> bool:
-    return param.replace("model.", "") in ModelSetup.get_params()
+def is_layout_setup_param(param: str) -> bool:
+    return param.replace("layout.", "") in LayoutSetup.get_params()
 
 
-# SR_TMP TODO pull common base class out of ModelSetup, LayoutSetup .
+# SR_TMP TODO pull common base class out of LayoutSetup, ModelSetup etc.
 @dc.dataclass
-class ModelSetup:
-    name: str = "N/A"
-    base_time: Optional[int] = None
-    ens_member_id: Optional[Tuple[int, ...]] = None
-    simulation_type: str = "N/A"
+class LayoutSetup:
+    # plot_type: str = "auto"
+    type: str = "auto"
+
+    def __post_init__(self) -> None:
+        layouts = [
+            "auto",
+            "vintage",
+            "post_vintage",
+            "post_vintage_ens",
+        ]
+        if self.type not in layouts:
+            raise ValueError(
+                f"invalid type '{self.type}'; choices: "
+                + ", ".join(map("'{}'".format, layouts))
+            )
+
+    # SR_TMP copy-pasted from PlotPanelSetup
+    def derive(self, params: Dict[str, Any]) -> "LayoutSetup":
+        return type(self).create(merge_dicts(self.dict(), params, overwrite_seqs=True))
 
     def dict(self) -> Dict[str, Any]:
         return dc.asdict(self)
@@ -34,13 +49,8 @@ class ModelSetup:
         return tuple(self.dict().items())
 
     @classmethod
-    def create(cls, params: Mapping[str, Any]) -> "ModelSetup":
+    def create(cls, params: Mapping[str, Any]) -> "LayoutSetup":
         params = cls.cast_many(params)
-        if "simulation_type" not in params:
-            if params.get("ens_member_id"):
-                params["simulation_type"] = "ensemble"
-            else:
-                params["simulation_type"] = "deterministic"
         return cls(**params)
 
     # SR_TMP Identical to CoreDimensions.cast etc.
@@ -56,7 +66,7 @@ class ModelSetup:
             unpack_str=False,
         )
 
-    # SR_TMP Identical to LayoutSetup.cast_many etc.
+    # SR_TMP Identical to ModelSetup.cast_many etc.
     @classmethod
     def cast_many(
         cls, params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]]

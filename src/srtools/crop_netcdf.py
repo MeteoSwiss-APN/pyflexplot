@@ -1,9 +1,8 @@
 """Crop fields in a NetCDF file."""
 # Standard library
-import dataclasses
+import dataclasses as dc
 import functools
 import sys
-from dataclasses import dataclass
 from typing import Optional
 
 # Third-party
@@ -13,7 +12,7 @@ import netCDF4 as nc4
 __version__ = "0.1.0"
 
 
-@dataclass
+@dc.dataclass
 class Setup:
     lat_name: str
     lon_name: str
@@ -22,7 +21,7 @@ class Setup:
     set_const: Optional[float]
 
     def dict(self):
-        return dataclasses.asdict(self)
+        return dc.asdict(self)
 
 
 # Show default values of options by default

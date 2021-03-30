@@ -1,7 +1,7 @@
 """Bounding box."""
 # Standard library
+import dataclasses as dc
 from copy import copy
-from dataclasses import dataclass
 from typing import Iterator
 from typing import Tuple
 
@@ -19,7 +19,7 @@ from .coord_trans import CoordinateTransformer
 
 
 @summarizable
-@dataclass
+@dc.dataclass
 class Projections:
     """Projections of a ``MapAxes``."""
 

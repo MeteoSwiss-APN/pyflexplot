@@ -1,6 +1,6 @@
 """Tests for module ``pyflexplot.plotting.coord_trans``."""
 # Standard library
-from dataclasses import dataclass
+import dataclasses as dc
 from typing import Tuple
 
 # Third-party
@@ -13,7 +13,7 @@ from cartopy.crs import PlateCarree
 from pyflexplot.plotting.coord_trans import CoordinateTransformer
 
 
-@dataclass
+@dc.dataclass
 class Cfg:
     xy_in: Tuple[float, float]
     xy_out: Tuple[float, float]
