@@ -336,6 +336,7 @@ class InputFileEnsemble:
 
                     if not self.config.dry_run:
                         # Read fields for all members at all time steps
+                        assert isinstance(timeless_panel_setup, PlotPanelSetup)  # mypy
                         fld_time_i = self._read_member_fields_over_time(
                             fi, timeless_panel_setup
                         )

@@ -1,4 +1,10 @@
-"""Base class for setup classes."""
+"""Base class for setup classes.
+
+Note that this is design is not clean in the sense that the interfaces of the
+subclasses of BaseSetup differ in their attributes, which requires the
+occasional isinstance assert for the subclass type to satisfy mypy.
+
+"""
 # Standard library
 import dataclasses as dc
 from typing import Any
@@ -12,6 +18,7 @@ from typing import Union
 # First-party
 from srutils.dataclasses import cast_field_value
 from srutils.dict import merge_dicts
+from srutils.format import nested_repr
 
 
 class BaseSetup:
@@ -21,14 +28,25 @@ class BaseSetup:
         self.__dataclass_fields__: Dict[str, Any] = {}
         raise NotImplementedError(f"{type(self).__name__}.__init__")
 
+    def copy(self) -> "BaseSetup":
+        return self.create(self.dict())
+
     def derive(self, params: Dict[str, Any]) -> "BaseSetup":
         return type(self).create(merge_dicts(self.dict(), params, overwrite_seqs=True))
 
-    def dict(self) -> Dict[str, Any]:
+    def dict(self, rec: bool = False) -> Dict[str, Any]:
+        if rec:
+            raise NotImplementedError("rec=T")
         return dc.asdict(self)
 
     def tuple(self) -> Tuple[Tuple[str, Any], ...]:
         return tuple(self.dict().items())
+
+    def __hash__(self) -> int:
+        return hash(self.tuple())
+
+    def __repr__(self) -> str:  # type: ignore
+        return nested_repr(self)
 
     @classmethod
     def cast(cls, param: str, value: Any) -> Any:

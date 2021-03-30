@@ -29,7 +29,6 @@ from srutils.dict import decompress_multival_dict
 from srutils.dict import merge_dicts
 from srutils.exceptions import InvalidParameterValueError
 from srutils.exceptions import UnexpandableValueError
-from srutils.format import nested_repr
 from srutils.format import sfmt
 from srutils.str import join_multilines
 
@@ -68,7 +67,7 @@ class EnsembleParams(BaseSetup):
 
 # pylint: disable=R0902  # too-many-instance-attributes (>7)
 @dc.dataclass
-class PlotPanelSetup:
+class PlotPanelSetup(BaseSetup):
     """Setup of an individual panel of a plot.
 
     See docstring of ``PlotSetup.create`` for a description of the parameters.
@@ -259,10 +258,6 @@ class PlotPanelSetup:
             raise ValueError(f"invalid param '{param}'")
         return value
 
-    # SR_TMP copy-pasted to LayoutSetup
-    def derive(self, params: Dict[str, Any]) -> "PlotPanelSetup":
-        return type(self).create(merge_dicts(self.dict(), params, overwrite_seqs=True))
-
     def dict(self, rec: bool = True) -> Dict[str, Any]:
         """Return the parameter names and values as a dict.
 
@@ -274,13 +269,10 @@ class PlotPanelSetup:
         # pylint: disable=E1101  # no-member [pylint 2.7.4]
         # (pylint 2.7.4 does not support dataclasses.field)
         return {
-            **dc.asdict(self),
+            **super().dict(),
             "ens_params": self.ens_params.dict() if rec else self.ens_params,
             "dimensions": self.dimensions.dict() if rec else self.dimensions,
         }
-
-    def copy(self) -> "PlotPanelSetup":
-        return self.create(self.dict())
 
     def tuple(self) -> Tuple[Tuple[str, Any], ...]:
         dct = self.dict(rec=False)
@@ -348,32 +340,14 @@ class PlotPanelSetup:
         # (pylint 2.7.4 does not support dataclasses.field)
         assert self.ens_params.thr_type in ["lower", "upper"]
 
-    def _tuple(self) -> Tuple[Tuple[str, Any], ...]:
-        dct = self.dict()
-        dims = dct.pop("dimensions")
-        return tuple(list(dct.items()) + [("dimensions", tuple(dims.items()))])
-
-    def __hash__(self) -> int:
-        return hash(self._tuple())
-
-    def __repr__(self) -> str:  # type: ignore
-        return nested_repr(self)
-
     @classmethod
-    def cast(cls, param: str, value: Any) -> Any:
-        return cast_field_value(
-            cls,
-            param,
-            value,
-            auto_wrap=True,
-            bool_mode="intuitive",
-            timedelta_unit="hours",
-            unpack_str=False,
-        )
-
-    @classmethod
-    def get_params(cls) -> List[str]:
-        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
+    def as_setup(
+        cls, obj: Union[Mapping[str, Any], "PlotPanelSetup"]
+    ) -> "PlotPanelSetup":
+        if isinstance(obj, cls):
+            return obj
+        assert isinstance(obj, Mapping)  # mypy
+        return cls(**obj)
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "PlotPanelSetup":
@@ -388,15 +362,6 @@ class PlotPanelSetup:
         )
         params["ens_params"] = EnsembleParams.create(params.pop("ens_params", {}))
         return cls(**params)
-
-    @classmethod
-    def as_setup(
-        cls, obj: Union[Mapping[str, Any], "PlotPanelSetup"]
-    ) -> "PlotPanelSetup":
-        if isinstance(obj, cls):
-            return obj
-        assert isinstance(obj, Mapping)  # mypy
-        return cls(**obj)
 
 
 class PlotPanelSetupGroup:
