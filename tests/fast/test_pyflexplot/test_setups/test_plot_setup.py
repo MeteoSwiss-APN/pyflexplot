@@ -65,11 +65,9 @@ class Test_Create:
 
     def test_multipanel(self):
         params = {
-            "plot_type": "multipanel",
+            "layout": {"plot_type": "multipanel"},
             "multipanel_param": "ens_variable",
-            "panels": {
-                "ens_variable": ["minimum", "maximum", "mean", "median"],
-            },
+            "panels": {"ens_variable": ["minimum", "maximum", "mean", "median"]},
         }
         params = merge_dicts(self.base_params, params, overwrite_seqs=True)
         setup = PlotSetup.create(params)
@@ -108,7 +106,7 @@ class Test_Derive:
 
     def test_multipanel(self):
         params = {
-            "plot_type": "multipanel",
+            "layout": {"plot_type": "multipanel"},
             "multipanel_param": "ens_variable",
             "panels": {"ens_variable": ["minimum", "maximum", "mean", "median"]},
         }
@@ -319,12 +317,10 @@ class Test_Decompress:
         """Decompress, but skip multipanel param."""
 
         params = {
+            "layout": {"plot_type": "multipanel"},
             "model": {"ens_member_id": [1, 2, 3]},
-            "plot_type": "multipanel",
             "multipanel_param": "ens_variable",
-            "panels": {
-                "ens_variable": ["minimum", "maximum", "mean", "median"],
-            },
+            "panels": {"ens_variable": ["minimum", "maximum", "mean", "median"]},
         }
 
         @property

@@ -516,7 +516,10 @@ def create_plot_config(
 ) -> BoxedPlotConfig:
     plot_variable = setup.panels.collect_equal("plot_variable")
     # SR_TMP <
-    if setup.plot_type == "multipanel" and setup.multipanel_param == "ens_variable":
+    if (
+        setup.layout.plot_type == "multipanel"
+        and setup.multipanel_param == "ens_variable"
+    ):
         ens_variable = "+".join(setup.panels.collect("ens_variable"))
     else:
         ens_variable = setup.panels.collect_equal("ens_variable")
@@ -580,7 +583,7 @@ def create_plot_config(
         ):
             levels_config_dct["extend"] = "max"
     # SR_TMP < TODO proper multipanel support
-    if setup.plot_type == "multipanel":
+    if setup.layout.plot_type == "multipanel":
         if setup.multipanel_param == "ens_variable":
             print(
                 "warning: create_plot_config: selecting ens_variable of first of"
@@ -723,7 +726,10 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     ens_params = setup.panels.collect_equal("ens_params")
     plot_variable = setup.panels.collect_equal("plot_variable")
     # SR_TMP <
-    if setup.plot_type == "multipanel" and setup.multipanel_param == "ens_variable":
+    if (
+        setup.layout.plot_type == "multipanel"
+        and setup.multipanel_param == "ens_variable"
+    ):
         ens_variable = "+".join(setup.panels.collect("ens_variable"))
     else:
         ens_variable = setup.panels.collect_equal("ens_variable")
@@ -919,8 +925,6 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     return labels
 
 
-# pylint: disable=R0912  # too-many-branches
-# pylint: disable=R0915  # too-many-statements
 def format_names_etc(
     setup: PlotSetup, words: TranslatedWords, mdata: MetaData
 ) -> Dict[str, str]:
@@ -928,7 +932,10 @@ def format_names_etc(
     plot_variable = setup.panels.collect_equal("plot_variable")
     integrate = setup.panels.collect_equal("integrate")
     # SR_TMP <
-    if setup.plot_type == "multipanel" and setup.multipanel_param == "ens_variable":
+    if (
+        setup.layout.plot_type == "multipanel"
+        and setup.multipanel_param == "ens_variable"
+    ):
         ens_variable = "+".join(setup.panels.collect("ens_variable"))
     else:
         ens_variable = setup.panels.collect_equal("ens_variable")
@@ -1037,7 +1044,7 @@ def format_names_etc(
             # SR_TMP <
             # ens_var_name = words[ens_variable].c
             if (
-                setup.plot_type == "multipanel"
+                setup.layout.plot_type == "multipanel"
                 and setup.multipanel_param == "ens_variable"
             ):
                 ens_var_name = "\n+ ".join(

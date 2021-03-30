@@ -100,7 +100,10 @@ class FilePathFormatter:
 
         # Prepare Prepare ens variable
         ens_variable: str
-        if setup.plot_type == "multipanel" and setup.multipanel_param == "ens_variable":
+        if (
+            setup.layout.plot_type == "multipanel"
+            and setup.multipanel_param == "ens_variable"
+        ):
             ens_variable = "_".join(
                 [
                     prepare_ens_variable(ens_variable_i)
@@ -133,7 +136,7 @@ class FilePathFormatter:
             "model": setup.model.name,
             "nageclass": setup.panels.collect_equal("dimensions").nageclass,
             "noutrel": setup.panels.collect_equal("dimensions").noutrel,
-            "plot_type": setup.plot_type,
+            "plot_type": setup.layout.plot_type,
             "release_site": release_site,
             "release_start": release_start_fmtd,
             "species_id": setup.panels.collect_equal("dimensions").species_id,

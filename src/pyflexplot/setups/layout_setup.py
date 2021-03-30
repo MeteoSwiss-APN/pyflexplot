@@ -22,10 +22,16 @@ def is_layout_setup_param(param: str) -> bool:
 # SR_TMP TODO pull common base class out of LayoutSetup, ModelSetup etc.
 @dc.dataclass
 class LayoutSetup:
-    # plot_type: str = "auto"
+    plot_type: str = "auto"
     type: str = "auto"
 
     def __post_init__(self) -> None:
+
+        # Check plot_type
+        choices = ["auto", "multipanel"]
+        assert self.plot_type in choices, self.plot_type
+
+        # Check type
         layouts = [
             "auto",
             "vintage",

@@ -57,13 +57,15 @@ def is_plot_setup_param(param: str) -> bool:
 def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
     if is_plot_setup_param(param):
         return getattr(setup, param)
+    elif is_layout_setup_param(param):
+        return getattr(setup.layout, param.replace("layout.", ""))
+    elif is_model_setup_param(param):
+        return getattr(setup.model, param.replace("model.", ""))
     elif is_plot_panel_setup_param(param):
         # SR_TMP <
         # return getattr(setup.panels, param)
         return setup.panels.collect_equal(param)
         # SR_TMP >
-    elif is_model_setup_param(param):
-        return getattr(setup.model, param.replace("model.", ""))
     elif is_dimensions_param(param):
         return setup.panels.collect_equal(param.replace("dimensions.", ""))
     raise ValueError("invalid input setup parameter", param)
@@ -86,7 +88,6 @@ class PlotSetup:
     infile: str  # = "none"
     outfile: Union[str, Tuple[str, ...]]  # = "none"
     outfile_time_format: str = "%Y%m%d%H%M"
-    plot_type: str = "auto"
     multipanel_param: Optional[str] = None
     scale_fact: float = 1.0
     layout: LayoutSetup = dc.field(default_factory=LayoutSetup)
@@ -96,10 +97,6 @@ class PlotSetup:
     )
 
     def __post_init__(self) -> None:
-
-        # Check plot_type
-        choices = ["auto", "multipanel"]
-        assert self.plot_type in choices, self.plot_type
 
         # Check multipanel_param
         multipanel_param_choices = ["ens_variable"]
@@ -158,10 +155,10 @@ class PlotSetup:
         """
         if is_plot_setup_param(param):
             value = getattr(self, param)
+        elif is_layout_setup_param(param):
+            value = getattr(self.layout, param.replace("layout.", ""))
         elif is_model_setup_param(param):
-            if param.startswith("model."):
-                param = param.replace("model.", "")
-            value = getattr(self.model, param)
+            value = getattr(self.model, param.replace("model.", ""))
         elif is_plot_panel_setup_param(param) or is_dimensions_param(param):
             # pylint: disable=E1101  # no-member [pylint 2.7.4]
             # (pylint 2.7.4 does not support dataclasses.field)
@@ -229,7 +226,9 @@ class PlotSetup:
                     " 'model.ens_member_id' or pass internal=False"
                 )
 
-        if self.plot_type == "multipanel":
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
+        if self.layout.plot_type == "multipanel":
             skip = list(skip or []) + [self.multipanel_param]
 
         def group_params(
@@ -237,14 +236,15 @@ class PlotSetup:
         ) -> Union[Tuple[None, None, None], Tuple[List[str], List[str], List[str]]]:
             if params is None:
                 return None, None, None
+            layout: List[str] = []
             model: List[str] = []
             panels: List[str] = []
             other: List[str] = []
             for param in params:
-                if is_model_setup_param(param):
-                    if param.startswith("model."):
-                        param = param.replace("model.", "")
-                    model.append(param)
+                if is_layout_setup_param(param):
+                    layout.append(param.replace("layout.", ""))
+                elif is_model_setup_param(param):
+                    model.append(param.replace("model.", ""))
                 elif is_plot_panel_setup_param(param) or is_dimensions_param(param):
                     if param.startswith("dimensions."):
                         param = param.replace("dimensions.", "")
@@ -1052,7 +1052,7 @@ class PlotSetupGroup:
             else:
                 # SR_TMP < TODO move logic of prepare_setup_dcts down
                 dcts: Sequence[Mapping[str, Any]]
-                if obj.get("plot_type") == "multipanel":
+                if obj.get("layout", {}).get("plot_type") == "multipanel":
                     dcts = [obj]
                 else:
                     dcts = prepare_setup_dcts(obj)
@@ -1109,13 +1109,19 @@ def prepare_raw_params(
         ens_params: Dict[str, Any] = {}
         for param, value in raw_params_i.items():
             if param == "model":
-                param = "name"
-            if is_plot_panel_setup_param(param):
-                panels[param] = value
+                param = "model.name"
+            elif param == "layout_type":
+                param = "layout.type"
+            if is_layout_setup_param(param):
+                if "layout" not in params:
+                    params["layout"] = {}
+                params["layout"][param.replace("layout.", "")] = value
             elif is_model_setup_param(param):
                 if "model" not in params:
                     params["model"] = {}
-                params["model"][param] = value
+                params["model"][param.replace("model.", "")] = value
+            elif is_plot_panel_setup_param(param):
+                panels[param] = value
             elif is_dimensions_param(param):
                 if "dimensions" not in panels:
                     panels["dimensions"] = {}

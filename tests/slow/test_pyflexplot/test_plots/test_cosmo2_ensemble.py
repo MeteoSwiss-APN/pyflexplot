@@ -221,6 +221,10 @@ class Test_MultipanelEnsStats_Concentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
+        "layout": {
+            "plot_type": "multipanel",
+            "multipanel_param": "ens_variable",
+        },
         "model": {
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
@@ -229,8 +233,6 @@ class Test_MultipanelEnsStats_Concentration(_TestBase):
             {
                 "plot_variable": "concentration",
                 "ens_variable": ["minimum", "maximum", "median", "mean"],
-                "plot_type": "multipanel",
-                "multipanel_param": "ens_variable",
                 "integrate": True,
                 "combine_species": True,
                 "lang": "de",

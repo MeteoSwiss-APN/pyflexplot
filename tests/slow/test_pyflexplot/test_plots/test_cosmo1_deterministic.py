@@ -45,7 +45,9 @@ class Test_IntegratedConcentration(_TestBase):
     setup_dct = {
         "infile": INFILE_1,
         "outfile": f"{reference}.png",
-        "plot_type": "auto",
+        "layout": {
+            "plot_type": "auto",
+        },
         "model": {
             "name": "COSMO-1",
         },
@@ -70,7 +72,9 @@ class Test_TotalDeposition(_TestBase):
     setup_dct = {
         "infile": INFILE_1,
         "outfile": f"{reference}.png",
-        "plot_type": "auto",
+        "layout": {
+            "plot_type": "auto",
+        },
         "model": {
             "name": "COSMO-1",
         },
@@ -118,7 +122,9 @@ class Test_TotalDeposition_MissingField(_TestBase):
     setup_dct = {
         "infile": INFILE_2,
         "outfile": f"{reference}.png",
-        "plot_type": "auto",
+        "layout": {
+            "plot_type": "auto",
+        },
         "model": {
             "name": "COSMO-1",
         },

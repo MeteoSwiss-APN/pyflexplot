@@ -933,8 +933,8 @@ class Test_Multipanel:
             ens_variable = ["minimum", "maximum", "mean", "median"]
             """
         sol = {
+            "layout": {"plot_type": "multipanel"},
             "model": {"ens_member_id": (1, 2, 3)},
-            "plot_type": "multipanel",
             "multipanel_param": "ens_variable",
             "panels": [
                 {"ens_variable": "minimum"},

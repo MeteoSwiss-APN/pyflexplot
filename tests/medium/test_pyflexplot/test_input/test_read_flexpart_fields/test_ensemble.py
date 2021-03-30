@@ -100,6 +100,7 @@ class TestReadFieldEnsemble_Single:
         if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
             setup_dct["panels"]["ens_variable"] = ens_var
         else:
+            raise NotImplementedError()  # SR_DBG
             setup_dct["panels"]["plot_type"] = f"ensemble_{ens_var}"
         # SR_TMP >
         plot_setups = PlotSetupGroup([PlotSetup.create(setup_dct)])
@@ -220,6 +221,7 @@ class TestReadFieldEnsemble_Multiple:
             if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
                 setup_params_i["panels"]["ens_variable"] = ens_var
             else:
+                raise NotImplementedError()  # SR_DBG
                 setup_params_i["panels"]["plot_type"] = f"ensemble_{ens_var}"
             # SR_TMP >
             setup_dcts.append(setup_params_i)

@@ -26,9 +26,9 @@ MANDATORY_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
 OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
     "multipanel_param": None,
     "outfile_time_format": "%Y%m%d%H%M",
-    "plot_type": "auto",
     "scale_fact": 1.0,
     "layout": {
+        "plot_type": "auto",
         "type": "post_vintage",
     },
     "model": {
