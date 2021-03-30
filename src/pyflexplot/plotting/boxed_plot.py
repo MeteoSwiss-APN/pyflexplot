@@ -56,8 +56,9 @@ class FontConfig:
 @summarizable
 @dataclass
 class ContourLevelsLegendConfig:
-    ranges_align: str = "center"
+    range_align: str = "center"
     range_style: str = "base"
+    range_widths: Tuple[int, int, int] = (5, 3, 5)
     rstrip_zeros: bool = True
     labels: List[str] = dataclasses.field(default_factory=list)
 

@@ -321,8 +321,9 @@ plot_summary = {
             "include_lower": False,
             "legend": {
                 "type": "ContourLevelsLegendConfig",
-                "ranges_align": "center",
+                "range_align": "center",
                 "range_style": "base",
+                "range_widths": [5, 3, 5],
                 "rstrip_zeros": True,
                 "labels": [
                     "1E-14 $\\tt -$ 1E-13",

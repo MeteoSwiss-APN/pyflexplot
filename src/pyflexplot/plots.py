@@ -552,7 +552,7 @@ def create_plot_config(
         levels_config_dct["scale"] = "lin"
         levels_config_dct["levels"] = np.arange(5, 95.1, 15)
         legend_config_dct["range_style"] = "up"
-        legend_config_dct["ranges_align"] = "right"
+        legend_config_dct["range_align"] = "right"
         legend_config_dct["rstrip_zeros"] = True
     elif plot_variable in [
         "cloud_arrival_time",
@@ -562,9 +562,10 @@ def create_plot_config(
         "cloud_departure_time",
     ]:
         levels_config_dct["scale"] = "lin"
-        legend_config_dct["range_style"] = "int"
-        legend_config_dct["ranges_align"] = "left"
-        legend_config_dct["rstrip_zeros"] = False
+        legend_config_dct["range_style"] = "base"
+        legend_config_dct["range_align"] = "right"
+        legend_config_dct["range_widths"] = (4, 3, 4)
+        legend_config_dct["rstrip_zeros"] = True
         # SR_TMP < Adapt to simulation duration (not always 33 h)!
         levels_config_dct["levels"] = [0, 3, 6, 9, 12, 18, 24, 33]
         # SR_TMP >
@@ -605,7 +606,8 @@ def create_plot_config(
         style=legend_config_dct.get("range_style", "base"),
         extend=levels_config_dct.get("extend", "max"),
         rstrip_zeros=legend_config_dct.get("rstrip_zeros", True),
-        align=legend_config_dct.get("ranges_align", "center"),
+        align=legend_config_dct.get("range_align", "center"),
+        widths=legend_config_dct.get("range_widths"),
         include="lower" if levels_config_dct.get("include_lower", True) else "upper",
     )
     levels_config_dct["legend"] = ContourLevelsLegendConfig(**legend_config_dct)

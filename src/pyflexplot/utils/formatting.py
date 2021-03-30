@@ -256,7 +256,7 @@ class Components:
         center: Union[str, Tuple[str, int]],
         right: Union[str, Tuple[str, int]],
     ) -> "Components":
-        return Components(
+        return cls(
             left=Component.create(left),
             center=Component.create(center),
             right=Component.create(right),

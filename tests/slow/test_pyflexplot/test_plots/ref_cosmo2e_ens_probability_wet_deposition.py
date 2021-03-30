@@ -320,8 +320,9 @@ plot_summary = {
             "include_lower": False,
             "legend": {
                 "type": "ContourLevelsLegendConfig",
-                "ranges_align": "right",
+                "range_align": "right",
                 "range_style": "up",
+                "range_widths": [5, 3, 5],
                 "rstrip_zeros": True,
                 "labels": [
                     "$\\tt >$   5.0",
