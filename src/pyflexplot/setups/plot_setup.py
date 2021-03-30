@@ -73,7 +73,7 @@ def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
 
 
 # SR_TODO Clean up docstring -- where should format key hints go?
-@dc.dataclass
+@dc.dataclass(frozen=True)
 class PlotSetup(BaseSetup):
     """Setup of a whole plot.
 
@@ -127,17 +127,6 @@ class PlotSetup(BaseSetup):
                     f"'{name}' has wrong type: expected {cls.__name__}, got "
                     + type(val).__name__
                 )
-
-        # Set simulation type-specific default layout
-        if self.layout.type == "auto":
-            # pylint: disable=E1101  # no-member [pylint 2.7.4]
-            # (pylint 2.7.4 does not support dataclasses.field)
-            if self.model.simulation_type == "deterministic":
-                self.layout.type = "post_vintage"
-            # pylint: disable=E1101  # no-member [pylint 2.7.4]
-            # (pylint 2.7.4 does not support dataclasses.field)
-            elif self.model.simulation_type == "ensemble":
-                self.layout.type = "post_vintage_ens"
 
     def collect(self, param: str, *, unique: bool = False) -> Any:
         """Collect the value(s) of a parameter.
@@ -385,23 +374,13 @@ class PlotSetup(BaseSetup):
             ]
         )
 
+    # SR_TODO Find a way to inherit BaseSetup.__hash__ (prevented by @dataclass)
     def __hash__(self) -> int:
         return hash(self.tuple())
 
+    # SR_TODO Find a way to inherit BaseSetup.__eq__ (prevented by @dataclass)
     def __eq__(self, other: Any) -> bool:
-        if isinstance(other, dc._MISSING_TYPE):
-            return False
-        try:
-            other_dict = other.dict()
-        except AttributeError:
-            try:
-                other_dict = dict(other)  # type: ignore
-            except TypeError:
-                try:
-                    other_dict = dc.asdict(other)
-                except TypeError:
-                    return False
-        return self.dict() == other_dict
+        return super().__eq__(other)
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "PlotSetup":
@@ -516,15 +495,20 @@ class PlotSetup(BaseSetup):
         files_params: Dict[str, Any] = dict(params.pop("files", {}))
         layout_params: Dict[str, Any] = dict(params.pop("layout", {}))
         model_params: Dict[str, Any] = dict(params.pop("model", {}))
+        raw_panels_params: Any = params.pop("panels", {})
         panels_params: Union[Dict[str, Any], List[Dict[str, Any]]]
-        if "panels" not in params:
-            panels_params = []
+        if isinstance(raw_panels_params, Mapping):
+            panels_params = dict(raw_panels_params)
+        elif isinstance(raw_panels_params, Sequence) and all(
+            isinstance(val, Mapping) for val in raw_panels_params
+        ):
+            panels_params = list(map(dict, raw_panels_params))
         else:
-            if isinstance(params["panels"], Mapping):
-                panels_params = dict(params["panels"])
-            else:
-                panels_params = list(map(dict, params["panels"]))
-            del params["panels"]
+            raw_type = type(raw_panels_params).__name__
+            raise ValueError(
+                f"params 'panels' has invalid type '{raw_type}'; expecting "
+                "mapping or sequence thereof"
+            )
         for name, value in dict(params).items():
             value = cast_field_value(
                 cls,
@@ -536,17 +520,18 @@ class PlotSetup(BaseSetup):
                 unpack_str=False,
             )
             params[name] = value
-        if files_params:
-            params["files"] = FilesSetup.create(files_params)
-        if layout_params:
-            params["layout"] = LayoutSetup.create(layout_params)
-        if model_params:
-            params["model"] = ModelSetup.create(model_params)
-        if panels_params:
-            multipanel_param = layout_params.get("multipanel_param")
-            params["panels"] = PlotPanelSetupGroup.create(
-                panels_params, multipanel_param=multipanel_param
-            )
+        files_setup = FilesSetup.create(files_params)
+        model_setup = ModelSetup.create(model_params)
+        layout_setup = LayoutSetup.create(
+            layout_params, simulation_type=model_setup.simulation_type
+        )
+        panels = PlotPanelSetupGroup.create(
+            panels_params, multipanel_param=layout_setup.multipanel_param
+        )
+        params["files"] = files_setup
+        params["model"] = model_setup
+        params["layout"] = layout_setup
+        params["panels"] = panels
         return cls(**params)
 
     @classmethod

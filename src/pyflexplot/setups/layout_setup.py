@@ -1,6 +1,8 @@
 """Layout setup."""
 # Standard library
 import dataclasses as dc
+from typing import Any
+from typing import Mapping
 from typing import Optional
 
 # Local
@@ -46,3 +48,21 @@ class LayoutSetup(BaseSetup):
                 f"invalid type '{self.type}'; choices: "
                 + ", ".join(map("'{}'".format, layouts))
             )
+
+    # pylint: disable=W0221  # arguments-differ (simulation_type)
+    @classmethod
+    def create(
+        cls,
+        params: Mapping[str, Any],
+        *,
+        simulation_type: str = "deterministic",
+    ) -> "LayoutSetup":
+        params = cls.cast_many(params)
+        if params.get("type", "auto") == "auto":
+            if simulation_type == "deterministic":
+                params["type"] = "post_vintage"
+            elif simulation_type == "ensemble":
+                params["type"] = "post_vintage_ens"
+            else:
+                raise ValueError(f"invalid simulation_type '{simulation_type}'")
+        return cls(**params)
