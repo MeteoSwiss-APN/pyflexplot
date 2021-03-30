@@ -246,9 +246,12 @@ plot_summary = {
             "infile": "flexpart_ifs_20200317000000.nc",
             "outfile": "ref_ifs_deterministic_concentration.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "multipanel_param": None,
             "scale_fact": 1.0,
-            "layout": {"plot_type": "auto", "type": "post_vintage"},
+            "layout": {
+                "plot_type": "auto",
+                "multipanel_param": None,
+                "type": "post_vintage",
+            },
             "model": {
                 "name": "IFS-HRES",
                 "base_time": 202003170000,

@@ -102,7 +102,7 @@ class FilePathFormatter:
         ens_variable: str
         if (
             setup.layout.plot_type == "multipanel"
-            and setup.multipanel_param == "ens_variable"
+            and setup.layout.multipanel_param == "ens_variable"
         ):
             ens_variable = "_".join(
                 [

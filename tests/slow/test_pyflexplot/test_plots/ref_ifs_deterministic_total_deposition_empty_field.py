@@ -248,9 +248,12 @@ plot_summary = {
             "infile": "flexpart_ifs-hres_1018_20200921000000.nc",
             "outfile": "ref_ifs_deterministic_total_deposition_empty_field.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "multipanel_param": None,
             "scale_fact": 1.0,
-            "layout": {"plot_type": "auto", "type": "post_vintage"},
+            "layout": {
+                "plot_type": "auto",
+                "multipanel_param": None,
+                "type": "post_vintage",
+            },
             "model": {
                 "name": "IFS-HRES",
                 "base_time": 202009210000,

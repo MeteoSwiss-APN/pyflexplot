@@ -6,6 +6,7 @@ from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Mapping
+from typing import Optional
 from typing import Tuple
 from typing import Union
 
@@ -23,6 +24,7 @@ def is_layout_setup_param(param: str) -> bool:
 @dc.dataclass
 class LayoutSetup:
     plot_type: str = "auto"
+    multipanel_param: Optional[str] = None
     type: str = "auto"
 
     def __post_init__(self) -> None:
@@ -30,6 +32,15 @@ class LayoutSetup:
         # Check plot_type
         choices = ["auto", "multipanel"]
         assert self.plot_type in choices, self.plot_type
+
+        # Check multipanel_param
+        if self.multipanel_param is not None:
+            multipanel_param_choices = ["ens_variable"]
+            if self.multipanel_param not in multipanel_param_choices:
+                raise NotImplementedError(
+                    f"unknown multipanel_param '{self.multipanel_param}'"
+                    f"; choices: {', '.join(multipanel_param_choices)}"
+                )
 
         # Check type
         layouts = [

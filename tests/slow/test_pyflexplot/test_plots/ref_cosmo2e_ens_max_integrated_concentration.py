@@ -247,9 +247,12 @@ plot_summary = {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "outfile": "ref_cosmo2e_ens_max_integrated_concentration.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "multipanel_param": None,
             "scale_fact": 1.0,
-            "layout": {"plot_type": "auto", "type": "post_vintage_ens"},
+            "layout": {
+                "plot_type": "auto",
+                "multipanel_param": None,
+                "type": "post_vintage_ens",
+            },
             "model": {
                 "name": "COSMO-2E",
                 "base_time": 201907271200,

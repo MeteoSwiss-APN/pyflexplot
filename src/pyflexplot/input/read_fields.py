@@ -198,8 +198,8 @@ def group_setups_by_plot_type(setups: PlotSetupGroup) -> PlotSetupGroup:
     ), sub_setups in setups.group(
         [
             "model.ens_member_id",
-            "plot_type",
-            "multipanel_param",
+            "layout.plot_type",
+            "layout.multipanel_param",
             "plot_variable",
             "combine_levels",
             "combine_species",

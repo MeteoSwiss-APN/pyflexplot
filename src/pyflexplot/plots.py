@@ -518,7 +518,7 @@ def create_plot_config(
     # SR_TMP <
     if (
         setup.layout.plot_type == "multipanel"
-        and setup.multipanel_param == "ens_variable"
+        and setup.layout.multipanel_param == "ens_variable"
     ):
         ens_variable = "+".join(setup.panels.collect("ens_variable"))
     else:
@@ -584,7 +584,7 @@ def create_plot_config(
             levels_config_dct["extend"] = "max"
     # SR_TMP < TODO proper multipanel support
     if setup.layout.plot_type == "multipanel":
-        if setup.multipanel_param == "ens_variable":
+        if setup.layout.multipanel_param == "ens_variable":
             print(
                 "warning: create_plot_config: selecting ens_variable of first of"
                 " multiple panels"
@@ -597,7 +597,9 @@ def create_plot_config(
                 levels_config_dct=levels_config_dct,
             )
         else:
-            raise NotImplementedError(f"multipanel_param='{setup.multipanel_param}'")
+            raise NotImplementedError(
+                f"multipanel_param='{setup.layout.multipanel_param}'"
+            )
     else:
         levels_config_dct["levels"] = levels_from_time_stats(
             simulation_type=setup.model.simulation_type,
@@ -728,7 +730,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     # SR_TMP <
     if (
         setup.layout.plot_type == "multipanel"
-        and setup.multipanel_param == "ens_variable"
+        and setup.layout.multipanel_param == "ens_variable"
     ):
         ens_variable = "+".join(setup.panels.collect("ens_variable"))
     else:
@@ -934,7 +936,7 @@ def format_names_etc(
     # SR_TMP <
     if (
         setup.layout.plot_type == "multipanel"
-        and setup.multipanel_param == "ens_variable"
+        and setup.layout.multipanel_param == "ens_variable"
     ):
         ens_variable = "+".join(setup.panels.collect("ens_variable"))
     else:
@@ -1045,7 +1047,7 @@ def format_names_etc(
             # ens_var_name = words[ens_variable].c
             if (
                 setup.layout.plot_type == "multipanel"
-                and setup.multipanel_param == "ens_variable"
+                and setup.layout.multipanel_param == "ens_variable"
             ):
                 ens_var_name = "\n+ ".join(
                     [

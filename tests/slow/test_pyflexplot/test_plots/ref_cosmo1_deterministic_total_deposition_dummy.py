@@ -249,9 +249,12 @@ plot_summary = {
             "infile": "flexpart_cosmo-1e-ctrl_2020102105.nc",
             "outfile": "ref_cosmo1_deterministic_total_deposition_dummy.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "multipanel_param": None,
             "scale_fact": 1.0,
-            "layout": {"plot_type": "auto", "type": "post_vintage"},
+            "layout": {
+                "plot_type": "auto",
+                "multipanel_param": None,
+                "type": "post_vintage",
+            },
             "model": {
                 "name": "COSMO-1",
                 "base_time": 202010210500,

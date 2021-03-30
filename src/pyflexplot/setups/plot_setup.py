@@ -88,7 +88,6 @@ class PlotSetup:
     infile: str  # = "none"
     outfile: Union[str, Tuple[str, ...]]  # = "none"
     outfile_time_format: str = "%Y%m%d%H%M"
-    multipanel_param: Optional[str] = None
     scale_fact: float = 1.0
     layout: LayoutSetup = dc.field(default_factory=LayoutSetup)
     model: ModelSetup = dc.field(default_factory=ModelSetup)
@@ -98,25 +97,23 @@ class PlotSetup:
 
     def __post_init__(self) -> None:
 
-        # Check multipanel_param
-        multipanel_param_choices = ["ens_variable"]
+        # Check number of panels
         n_panel_choices = [4]
         n_panels = len(self.panels)
-        if self.multipanel_param is None:
+        # pylint: disable=E1101  # no-member [pylint 2.7.4]
+        # (pylint 2.7.4 does not support dataclasses.field)
+        if self.layout.multipanel_param is None:
             if n_panels != 1:
                 raise ValueError(
                     f"number of panels ({n_panels}) must be 1  for single-panel plots"
                     "(multipanel_param is None)"
                 )
         elif n_panels not in n_panel_choices:
+            # pylint: disable=E1101  # no-member [pylint 2.7.4]
+            # (pylint 2.7.4 does not support dataclasses.field)
             raise ValueError(
                 f"wrong number of panels ({n_panels}); supported: {n_panel_choices}"
-                f" (multipanel_param '{self.multipanel_param}')"
-            )
-        elif self.multipanel_param not in multipanel_param_choices:
-            raise NotImplementedError(
-                f"unknown multipanel_param '{self.multipanel_param}'"
-                f"; choices: {', '.join(multipanel_param_choices)}"
+                f" (multipanel_param '{self.layout.multipanel_param}')"
             )
 
         # Check types of sub-setups
@@ -229,7 +226,7 @@ class PlotSetup:
         # pylint: disable=E1101  # no-member [pylint 2.7.4]
         # (pylint 2.7.4 does not support dataclasses.field)
         if self.layout.plot_type == "multipanel":
-            skip = list(skip or []) + [self.multipanel_param]
+            skip = list(skip or []) + [self.layout.multipanel_param]
 
         def group_params(
             params: Optional[Collection[str]],
@@ -512,7 +509,7 @@ class PlotSetup:
         if model_params:
             params["model"] = ModelSetup.create(model_params)
         if panels_params:
-            multipanel_param = params.get("multipanel_param")
+            multipanel_param = layout_params.get("multipanel_param")
             params["panels"] = PlotPanelSetupGroup.create(
                 panels_params, multipanel_param=multipanel_param
             )
