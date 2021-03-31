@@ -35,7 +35,7 @@ from ..input.read_fields import read_fields
 from ..plots import create_plot
 from ..plots import format_out_file_paths
 from ..setups.plot_setup import PlotSetupGroup
-from ..setups.plot_setup import prepare_raw_params
+from ..setups.setup_file import prepare_raw_params
 from ..setups.setup_file import SetupFile
 from ..utils.logging import log
 

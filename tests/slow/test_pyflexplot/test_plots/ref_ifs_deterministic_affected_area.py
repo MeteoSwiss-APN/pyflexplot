@@ -248,7 +248,7 @@ plot_summary = {
             "files": {
                 "input": "flexpart_ifs_20200317000000.nc",
                 "output": "ref_ifs_deterministic_affected_area.png",
-                "outfile_time_format": "%Y%m%d%H%M",
+                "output_time_format": "%Y%m%d%H%M",
             },
             "layout": {
                 "plot_type": "auto",

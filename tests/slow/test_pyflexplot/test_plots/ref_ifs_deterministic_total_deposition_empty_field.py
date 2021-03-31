@@ -248,7 +248,7 @@ plot_summary = {
             "files": {
                 "input": "flexpart_ifs-hres_1018_20200921000000.nc",
                 "output": "ref_ifs_deterministic_total_deposition_empty_field.png",
-                "outfile_time_format": "%Y%m%d%H%M",
+                "output_time_format": "%Y%m%d%H%M",
             },
             "layout": {
                 "plot_type": "auto",

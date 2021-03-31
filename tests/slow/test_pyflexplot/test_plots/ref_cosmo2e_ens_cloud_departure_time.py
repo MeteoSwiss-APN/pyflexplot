@@ -249,7 +249,7 @@ plot_summary = {
             "files": {
                 "input": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
                 "output": "ref_cosmo2e_ens_cloud_departure_time.png",
-                "outfile_time_format": "%Y%m%d%H%M",
+                "output_time_format": "%Y%m%d%H%M",
             },
             "layout": {
                 "plot_type": "auto",

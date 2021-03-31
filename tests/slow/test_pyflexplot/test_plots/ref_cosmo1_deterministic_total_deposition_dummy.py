@@ -249,7 +249,7 @@ plot_summary = {
             "files": {
                 "input": "flexpart_cosmo-1e-ctrl_2020102105.nc",
                 "output": "ref_cosmo1_deterministic_total_deposition_dummy.png",
-                "outfile_time_format": "%Y%m%d%H%M",
+                "output_time_format": "%Y%m%d%H%M",
             },
             "layout": {
                 "plot_type": "auto",

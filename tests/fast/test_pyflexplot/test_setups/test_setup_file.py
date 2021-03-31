@@ -906,6 +906,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
             [base]
             infile = "foo.nc"
             outfile = "bar.png"
+            outfile_time_format = "%Y%m%d%H"
             model = "COSMO-baz"
             plot_variable = "tot_deposition"
             """
@@ -913,6 +914,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
             merge_dicts(
                 BASE,
                 {
+                    "files": {"output_time_format": "%Y%m%d%H"},
                     "panels": [
                         {
                             "plot_variable": "tot_deposition",

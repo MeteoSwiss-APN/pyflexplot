@@ -247,7 +247,7 @@ plot_summary = {
             "files": {
                 "input": "flexpart_cosmo-1_2019093012.nc",
                 "output": "ref_cosmo1_deterministic_integrated_concentration.png",
-                "outfile_time_format": "%Y%m%d%H%M",
+                "output_time_format": "%Y%m%d%H%M",
             },
             "layout": {
                 "plot_type": "auto",

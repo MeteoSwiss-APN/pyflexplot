@@ -13,7 +13,7 @@ import pytest
 # First-party
 from pyflexplot.setups.plot_setup import PlotSetup
 from pyflexplot.setups.plot_setup import PlotSetupGroup
-from pyflexplot.setups.plot_setup import prepare_raw_params
+from pyflexplot.setups.setup_file import prepare_raw_params
 from srutils.dict import merge_dicts
 from srutils.testing import assert_is_sub_element
 
