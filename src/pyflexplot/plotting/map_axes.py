@@ -119,6 +119,7 @@ class MapAxes:
         *,
         config: MapAxesConfig,
         field: Field,
+        domain: Domain,
         fig: Figure,
         rect: RectType,
     ) -> None:
@@ -129,17 +130,18 @@ class MapAxes:
 
             rect: Position of map plot panel in figure coordinates.
 
-            field: Field.
+            field: Field object.
+
+            domain: Domain object.
 
             config: Map axes setup.
 
         """
         self.config: MapAxesConfig = config
         self.field: Field = field
+        self.domain: Domain = domain
         self.fig: Figure = fig
         self.rect: RectType = rect
-
-        self.domain: Domain = self.field.get_domain(self.config.aspect)
 
         self.element_handles: List[Tuple[str, Any]] = []
         self.elements: List[Dict[str, Any]] = []

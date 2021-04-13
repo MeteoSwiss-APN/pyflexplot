@@ -15,6 +15,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 
+# First-party
+from pyflexplot.plotting.domain import Domain
+
 # Local
 from ..input.field import Field
 from ..plot_layouts import BoxedPlotLayout
@@ -133,12 +136,19 @@ class BoxedPlot:
     def clean(self) -> None:
         plt.close(self.fig)
 
+    # pylint: disable=R0913  # too-many-arguments (>5)
     def add_map_plot(
-        self, name: str, field: Field, map_config: MapAxesConfig, rect: RectType
+        self,
+        name: str,
+        field: Field,
+        domain: Domain,
+        map_config: MapAxesConfig,
+        rect: RectType,
     ) -> MapAxes:
         ax = MapAxes(
             config=map_config,
             field=field,
+            domain=domain,
             fig=self.fig,
             rect=rect,
         )

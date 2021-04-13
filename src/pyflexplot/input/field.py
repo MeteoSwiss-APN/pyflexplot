@@ -17,9 +17,6 @@ import numpy as np
 from srutils.str import join_multilines
 
 # Local
-from ..plotting.domain import CloudDomain
-from ..plotting.domain import Domain
-from ..plotting.domain import ReleaseSiteDomain
 from ..plotting.proj_bbox import Projections
 from ..setups.model_setup import ModelSetup
 from ..setups.plot_panel_setup import PlotPanelSetup
@@ -154,82 +151,6 @@ class Field:
             self.lon[imax], self.lat[jmax], self.projs.data
         )
         return (p_lat, p_lon)
-
-    # pylint: disable=R0912  # too-many-branches (>12)
-    def get_domain(self, aspect: float) -> Domain:
-        """Initialize Domain object (projection and extent)."""
-        lat = self.lat
-        lon = self.lon
-        model_name = self.model_setup.name
-        domain_type = self.panel_setup.domain
-        domain_size_lat = self.panel_setup.domain_size_lat
-        domain_size_lon = self.panel_setup.domain_size_lon
-        assert self.mdata is not None  # mypy
-        release_lat = self.mdata.release.lat
-        release_lon = self.mdata.release.lon
-        field_proj = self.projs.data
-        mask_nz = self.time_props.mask_nz
-        domain: Optional[Domain] = None
-        if domain_type == "full":
-            if model_name.startswith("COSMO"):
-                domain = Domain(lat, lon, config={"zoom_fact": 1.01})
-            else:
-                domain = Domain(lat, lon)
-        elif domain_type == "release_site":
-            domain = ReleaseSiteDomain(
-                lat,
-                lon,
-                config={
-                    "aspect": aspect,
-                    "field_proj": field_proj,
-                    "min_size_lat": domain_size_lat,
-                    "min_size_lon": domain_size_lon,
-                    "release_lat": release_lat,
-                    "release_lon": release_lon,
-                },
-            )
-        elif domain_type == "alps":
-            if model_name == "IFS-HRES-EU":
-                domain = Domain(
-                    lat, lon, config={"zoom_fact": 3.4, "rel_offset": (-0.165, -0.11)}
-                )
-        elif domain_type == "cloud":
-            domain = CloudDomain(
-                lat,
-                lon,
-                mask=mask_nz,
-                config={
-                    "zoom_fact": 0.9,
-                    "aspect": aspect,
-                    "min_size_lat": domain_size_lat,
-                    "min_size_lon": domain_size_lon,
-                    "periodic_lon": (model_name == "IFS-HRES"),
-                    "release_lat": release_lat,
-                    "release_lon": release_lon,
-                },
-            )
-        elif domain_type == "ch":
-            if model_name in ["COSMO-1", "COSMO-1E"]:
-                domain = Domain(
-                    lat, lon, config={"zoom_fact": 3.6, "rel_offset": (-0.02, 0.045)}
-                )
-            elif model_name in ["COSMO-2", "COSMO-E"]:
-                domain = Domain(
-                    lat, lon, config={"zoom_fact": 3.23, "rel_offset": (0.037, 0.1065)}
-                )
-            elif model_name == "COSMO-2E":
-                domain = Domain(
-                    lat, lon, config={"zoom_fact": 3.23, "rel_offset": (0.037, 0.1065)}
-                )
-            elif model_name == "IFS-HRES-EU":
-                domain = Domain(
-                    lat, lon, config={"zoom_fact": 11.0, "rel_offset": (-0.18, -0.11)}
-                )
-        if domain is None:
-            raise NotImplementedError(
-                f"domain for model '{model_name}' and domain type '{domain_type}'"
-            )
-        return domain
 
     def __repr__(self):
         lines = [

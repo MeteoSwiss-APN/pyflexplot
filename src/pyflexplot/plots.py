@@ -34,6 +34,9 @@ import numpy as np
 from matplotlib.colors import Colormap
 
 # First-party
+from pyflexplot.plotting.domain import CloudDomain
+from pyflexplot.plotting.domain import Domain
+from pyflexplot.plotting.domain import ReleaseSiteDomain
 from srutils.datetime import init_datetime
 from srutils.format import format_numbers_range
 from srutils.geo import Degrees
@@ -152,7 +155,8 @@ def create_plot(
         field = next(iter(field_group))
         map_config = next(iter(map_configs))
         rect = plot.config.layout.get_rect("center")
-        plot.add_map_plot("map", field, map_config, rect)
+        domain = get_domain(field, map_config.aspect)
+        plot.add_map_plot("map", field, domain, map_config, rect)
     elif len(field_group) != 4:
         raise NotImplementedError(f"{len(field_group)} number of panels")
     else:
@@ -175,7 +179,8 @@ def create_plot(
             zip(field_group, map_configs, sub_rects)
         ):
             name = f"map{idx}"
-            plot.add_map_plot(name, field, map_config, sub_rect)
+            domain = get_domain(field, map_config.aspect)
+            plot.add_map_plot(name, field, domain, map_config, sub_rect)
     # SR_TMP >
 
     plot_add_text_boxes(plot, field_group, plot.config.layout, show_version)
@@ -190,6 +195,83 @@ def create_plot(
         log(dbg=f"created plot {file_path}")
     plot.clean()
     return plot
+
+
+# pylint: disable=R0912  # too-many-branches (>12)
+def get_domain(field: Field, aspect: float) -> Domain:
+    """Initialize Domain object (projection and extent)."""
+    lat = field.lat
+    lon = field.lon
+    model_name = field.model_setup.name
+    domain_type = field.panel_setup.domain
+    domain_size_lat = field.panel_setup.domain_size_lat
+    domain_size_lon = field.panel_setup.domain_size_lon
+    assert field.mdata is not None  # mypy
+    release_lat = field.mdata.release.lat
+    release_lon = field.mdata.release.lon
+    field_proj = field.projs.data
+    mask_nz = field.time_props.mask_nz
+    domain: Optional[Domain] = None
+    if domain_type == "full":
+        if model_name.startswith("COSMO"):
+            domain = Domain(lat, lon, config={"zoom_fact": 1.01})
+        else:
+            domain = Domain(lat, lon)
+    elif domain_type == "release_site":
+        domain = ReleaseSiteDomain(
+            lat,
+            lon,
+            config={
+                "aspect": aspect,
+                "field_proj": field_proj,
+                "min_size_lat": domain_size_lat,
+                "min_size_lon": domain_size_lon,
+                "release_lat": release_lat,
+                "release_lon": release_lon,
+            },
+        )
+    elif domain_type == "alps":
+        if model_name == "IFS-HRES-EU":
+            domain = Domain(
+                lat, lon, config={"zoom_fact": 3.4, "rel_offset": (-0.165, -0.11)}
+            )
+    elif domain_type == "cloud":
+        domain = CloudDomain(
+            lat,
+            lon,
+            mask=mask_nz,
+            config={
+                "zoom_fact": 0.9,
+                "aspect": aspect,
+                "min_size_lat": domain_size_lat,
+                "min_size_lon": domain_size_lon,
+                "periodic_lon": (model_name == "IFS-HRES"),
+                "release_lat": release_lat,
+                "release_lon": release_lon,
+            },
+        )
+    elif domain_type == "ch":
+        if model_name in ["COSMO-1", "COSMO-1E"]:
+            domain = Domain(
+                lat, lon, config={"zoom_fact": 3.6, "rel_offset": (-0.02, 0.045)}
+            )
+        elif model_name in ["COSMO-2", "COSMO-E"]:
+            domain = Domain(
+                lat, lon, config={"zoom_fact": 3.23, "rel_offset": (0.037, 0.1065)}
+            )
+        elif model_name == "COSMO-2E":
+            domain = Domain(
+                lat, lon, config={"zoom_fact": 3.23, "rel_offset": (0.037, 0.1065)}
+            )
+        elif model_name == "IFS-HRES-EU":
+            domain = Domain(
+                lat, lon, config={"zoom_fact": 11.0, "rel_offset": (-0.18, -0.11)}
+            )
+    if domain is None:
+        raise NotImplementedError(
+            f"domain for model '{model_name}' and domain type '{domain_type}'"
+        )
+    return domain
 
 
 # SR_TMP <<< TODO Clean up nested functions! Eventually introduce class(es) of some kind
