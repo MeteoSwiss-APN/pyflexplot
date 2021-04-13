@@ -49,7 +49,7 @@ class Test_COSMO1(_TestBase):
 
 
 class Test_COSMO2(_TestBase):
-    datafilename = "flexpart_cosmo-2e_2019072712_000.nc"
+    datafilename = "flexpart_cosmo-e_2019072712_000.nc"
 
     def test_species_ids(self, datadir):
         assert self.read_species_ids(datadir) == (1, 2)

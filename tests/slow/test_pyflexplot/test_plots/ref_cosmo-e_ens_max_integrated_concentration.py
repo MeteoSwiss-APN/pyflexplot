@@ -190,7 +190,7 @@ field_summary = {
         },
     },
     "model_setup": {
-        "name": "COSMO-2E",
+        "name": "COSMO-E",
         "base_time": 201907271200,
         "ens_member_id": [0, 1, 5, 10, 15, 20],
         "simulation_type": "ensemble",
@@ -245,8 +245,8 @@ plot_summary = {
         "type": "BoxedPlotConfig",
         "setup": {
             "files": {
-                "input": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
-                "output": "ref_cosmo2e_ens_max_integrated_concentration.png",
+                "input": "flexpart_cosmo-e_2019072712_{ens_member:03d}.nc",
+                "output": "ref_cosmo-e_ens_max_integrated_concentration.png",
                 "output_time_format": "%Y%m%d%H%M",
             },
             "layout": {
@@ -256,7 +256,7 @@ plot_summary = {
                 "type": "post_vintage_ens",
             },
             "model": {
-                "name": "COSMO-2E",
+                "name": "COSMO-E",
                 "base_time": 201907271200,
                 "ens_member_id": [0, 1, 5, 10, 15, 20],
                 "simulation_type": "ensemble",
@@ -399,7 +399,7 @@ plot_summary = {
                 "unit": "Bq h m$^{-3}$",
             },
             "bottom": {
-                "model_info": "FLEXPART basierend auf COSMO-2E Ensemble (6 Members: 00,01,05,10,15,20), 2019-07-27 12:00 UTC",
+                "model_info": "FLEXPART basierend auf COSMO-E Ensemble (6 Members: 00,01,05,10,15,20), 2019-07-27 12:00 UTC",
                 "copyright": "©MeteoSchweiz",
             },
             "release_info": {
@@ -687,7 +687,7 @@ plot_summary = {
                     },
                 },
                 "model_setup": {
-                    "name": "COSMO-2E",
+                    "name": "COSMO-E",
                     "base_time": 201907271200,
                     "ens_member_id": [0, 1, 5, 10, 15, 20],
                     "simulation_type": "ensemble",
@@ -5353,7 +5353,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "FLEXPART basierend auf COSMO-2E Ensemble (6 Members: 00,01,05,10,15,20), 2019-07-27 12:00 UTC",
+                    "s": "FLEXPART basierend auf COSMO-E Ensemble (6 Members: 00,01,05,10,15,20), 2019-07-27 12:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

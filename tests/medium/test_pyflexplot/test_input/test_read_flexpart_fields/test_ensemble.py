@@ -52,7 +52,7 @@ class TestReadFieldEnsemble_Single:
             "output": "dummy.png",
         },
         "model": {
-            "name": "COSMO-2E",
+            "name": "COSMO-E",
         },
         "panels": {
             "integrate": False,
@@ -68,7 +68,7 @@ class TestReadFieldEnsemble_Single:
     ens_member_ids = (0, 1, 5, 10, 15, 20)
 
     def datafile_fmt(self, datadir):  # noqa:F811
-        return f"{datadir}/flexpart_cosmo-2e_2019072712_{{ens_member:03d}}.nc"
+        return f"{datadir}/flexpart_cosmo-e_2019072712_{{ens_member:03d}}.nc"
 
     def datafile(self, ens_member_id, *, datadir=None, datafile_fmt=None):  # noqa:F811
         if datafile_fmt is None:
@@ -168,7 +168,7 @@ class TestReadFieldEnsemble_Multiple:
             "output": "dummy.png",
         },
         "model": {
-            "name": "COSMO-2E",
+            "name": "COSMO-E",
         },
         "panels": {
             "integrate": True,
@@ -187,7 +187,7 @@ class TestReadFieldEnsemble_Multiple:
     ens_prob_thr_tot_deposition = None  # SR_TMP
 
     def datafile_fmt(self, datadir):  # noqa:F811
-        return f"{datadir}/flexpart_cosmo-2e_2019072712_{{ens_member:03d}}.nc"
+        return f"{datadir}/flexpart_cosmo-e_2019072712_{{ens_member:03d}}.nc"
 
     def datafile(self, ens_member_id, *, datafile_fmt=None, datadir=None):  # noqa:F811
         if datafile_fmt is None:

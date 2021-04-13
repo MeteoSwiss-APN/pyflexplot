@@ -15,8 +15,8 @@ class TestFieldTimeProperties:
         [[[N, 0, N, 1, 1], [0, 2, 4, N, N]], [[0, N, N, 3, 9], [0, 4, N, 16, N]]],
         np.float32,
     )
-    mask = np.array([[1, 1, 0, 1, 1], [1, 1, 1, 1, 0]], np.bool)
-    mask_nz = np.array([[0, 0, 0, 1, 1], [0, 1, 1, 1, 0]], np.bool)
+    mask = np.array([[1, 1, 0, 1, 1], [1, 1, 1, 1, 0]], np.bool_)
+    mask_nz = np.array([[0, 0, 0, 1, 1], [0, 1, 1, 1, 0]], np.bool_)
     stats = {
         "min": 0,
         "max": 16,

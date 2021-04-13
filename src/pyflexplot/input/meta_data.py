@@ -816,7 +816,7 @@ class TimeStepMetaDataCollector:
 
 def derive_variable_name(model: str, variable: str, species_id: int) -> str:
     """Derive the NetCDF variable name given some attributes."""
-    cosmo_models = ["COSMO-2", "COSMO-1", "COSMO-2E", "COSMO-1E"]
+    cosmo_models = ["COSMO-2", "COSMO-1", "COSMO-E", "COSMO-2E", "COSMO-1E"]
     ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
     if variable == "concentration":
         if model in cosmo_models:

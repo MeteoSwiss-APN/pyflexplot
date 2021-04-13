@@ -42,7 +42,7 @@ class Config:
     ],
 )
 def test_one_setup_one_field(datadir, config):  # noqa:F811
-    datafile_fmt = f"{datadir}/flexpart_cosmo-2e_const_{{ens_member:03d}}.nc"
+    datafile_fmt = f"{datadir}/flexpart_cosmo-e_const_{{ens_member:03d}}.nc"
 
     setup_dct = {
         "files": {
@@ -50,7 +50,7 @@ def test_one_setup_one_field(datadir, config):  # noqa:F811
             "output": "bar.png",
         },
         "model": {
-            "name": "COSMO-2E",
+            "name": "COSMO-E",
             "ens_member_id": config.ens_mem_ids,
         },
         "panels": [

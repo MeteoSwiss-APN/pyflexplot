@@ -564,7 +564,13 @@ class InputFileEnsemble:
 
     def _dim_names(self) -> Dict[str, str]:
         """Model-specific dimension names."""
-        if self.model_setup.name in ["COSMO-2", "COSMO-1", "COSMO-2E", "COSMO-1E"]:
+        if self.model_setup.name in [
+            "COSMO-2",
+            "COSMO-1",
+            "COSMO-E",
+            "COSMO-2E",
+            "COSMO-1E",
+        ]:
             return {
                 "lat": "rlat",
                 "lon": "rlon",

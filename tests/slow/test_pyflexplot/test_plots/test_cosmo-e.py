@@ -8,7 +8,7 @@ from .shared import _TestCreatePlot  # noqa:F401
 from .shared import _TestCreateReference  # noqa:F401
 from .shared import datadir  # noqa  # required by _TestBase.test
 
-INFILE_NAME = "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc"
+INFILE_NAME = "flexpart_cosmo-e_2019072712_{ens_member:03d}.nc"
 ENS_MEMBER_IDS = [0, 1, 5, 10, 15, 20]
 
 
@@ -21,14 +21,14 @@ ENS_MEMBER_IDS = [0, 1, 5, 10, 15, 20]
 
 
 class Test_EnsMedian_Concentration(_TestBase):
-    reference = "ref_cosmo2e_ens_mean_concentration"
+    reference = "ref_cosmo-e_ens_mean_concentration"
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
             "output": f"{reference}.png",
         },
         "model": {
-            "name": "COSMO-2E",
+            "name": "COSMO-E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
         "panels": [
@@ -50,14 +50,14 @@ class Test_EnsMedian_Concentration(_TestBase):
 
 
 class Test_EnsMax_IntegratedConcentration(_TestBase):
-    reference = "ref_cosmo2e_ens_max_integrated_concentration"
+    reference = "ref_cosmo-e_ens_max_integrated_concentration"
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
             "output": f"{reference}.png",
         },
         "model": {
-            "name": "COSMO-2E",
+            "name": "COSMO-E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
         "panels": [
@@ -78,14 +78,14 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
 
 
 class Test_EnsMean_TotalDeposition(_TestBase):
-    reference = "ref_cosmo2e_ens_mean_total_deposition"
+    reference = "ref_cosmo-e_ens_mean_total_deposition"
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
             "output": f"{reference}.png",
         },
         "model": {
-            "name": "COSMO-2E",
+            "name": "COSMO-E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
         "panels": [
@@ -106,14 +106,14 @@ class Test_EnsMean_TotalDeposition(_TestBase):
 
 
 class Test_EnsProbability_WetDeposition(_TestBase):
-    reference = "ref_cosmo2e_ens_probability_wet_deposition"
+    reference = "ref_cosmo-e_ens_probability_wet_deposition"
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
             "output": f"{reference}.png",
         },
         "model": {
-            "name": "COSMO-2E",
+            "name": "COSMO-E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
         "panels": [
@@ -134,14 +134,14 @@ class Test_EnsProbability_WetDeposition(_TestBase):
 
 @pytest.mark.skip("TODO implement plots like ens min affected area")
 class Test_EnsMin_AffectedArea(_TestBase):
-    reference = "ref_cosmo2e_ens_min_affected_area"
+    reference = "ref_cosmo-e_ens_min_affected_area"
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
             "output": f"{reference}.png",
         },
         "model": {
-            "name": "COSMO-2E",
+            "name": "COSMO-E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
         "panels": [
@@ -163,14 +163,14 @@ class Test_EnsMin_AffectedArea(_TestBase):
 
 
 class Test_CloudArrivalTime(_TestBase):
-    reference = "ref_cosmo2e_ens_cloud_arrival_time"
+    reference = "ref_cosmo-e_ens_cloud_arrival_time"
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
             "output": f"{reference}.png",
         },
         "model": {
-            "name": "COSMO-2E",
+            "name": "COSMO-E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
         "panels": [
@@ -195,14 +195,14 @@ class Test_CloudArrivalTime(_TestBase):
 
 
 class Test_CloudDepartureTime(_TestBase):
-    reference = "ref_cosmo2e_ens_cloud_departure_time"
+    reference = "ref_cosmo-e_ens_cloud_departure_time"
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
             "output": f"{reference}.png",
         },
         "model": {
-            "name": "COSMO-2E",
+            "name": "COSMO-E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
         "panels": [
@@ -231,7 +231,7 @@ class Test_CloudDepartureTime(_TestBase):
 @pytest.mark.skip("WIP")
 # class Test_MultipanelEnsStats_Concentration(_TestCreatePlot):
 class Test_MultipanelEnsStats_Concentration(_TestBase):
-    reference = "ref_cosmo2e_multipanel_ens_stats_integr_concentration"
+    reference = "ref_cosmo-e_multipanel_ens_stats_integr_concentration"
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
@@ -242,7 +242,7 @@ class Test_MultipanelEnsStats_Concentration(_TestBase):
             "multipanel_param": "ens_variable",
         },
         "model": {
-            "name": "COSMO-2E",
+            "name": "COSMO-E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
         "panels": [

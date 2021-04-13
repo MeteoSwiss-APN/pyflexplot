@@ -155,6 +155,7 @@ class Field:
         )
         return (p_lat, p_lon)
 
+    # pylint: disable=R0912  # too-many-branches (>12)
     def get_domain(self, aspect: float) -> Domain:
         """Initialize Domain object (projection and extent)."""
         lat = self.lat
@@ -208,11 +209,15 @@ class Field:
                 },
             )
         elif domain_type == "ch":
-            if model_name.startswith("COSMO-1"):
+            if model_name in ["COSMO-1", "COSMO-1E"]:
                 domain = Domain(
                     lat, lon, config={"zoom_fact": 3.6, "rel_offset": (-0.02, 0.045)}
                 )
-            elif model_name.startswith("COSMO-2"):
+            elif model_name in ["COSMO-2", "COSMO-E"]:
+                domain = Domain(
+                    lat, lon, config={"zoom_fact": 3.23, "rel_offset": (0.037, 0.1065)}
+                )
+            elif model_name == "COSMO-2E":
                 domain = Domain(
                     lat, lon, config={"zoom_fact": 3.23, "rel_offset": (0.037, 0.1065)}
                 )

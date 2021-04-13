@@ -1136,7 +1136,7 @@ def format_model_info(model_setup: ModelSetup, words: TranslatedWords) -> str:
     if simulation_type == "deterministic":
         if model_name in ["COSMO-1", "COSMO-2", "IFS-HRES", "IFS-HRES-EU"]:
             model_info = model_name
-        elif model_name in ["COSMO-1E", "COSMO-2E"]:
+        elif model_name in ["COSMO-E", "COSMO-1E", "COSMO-2E"]:
             model_info = f"{model_name} {words['control_run']}"
         else:
             raise NotImplementedError(f"model '{model_name}'")

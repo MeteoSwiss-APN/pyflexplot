@@ -18,7 +18,7 @@ INFILE_2 = "flexpart_ifs-hres_1018_20200921000000.nc"
 
 
 class Test_Concentration(_TestBase):
-    reference = "ref_ifs_deterministic_concentration"
+    reference = "ref_ifs_concentration"
     setup_dct = {
         "files": {
             "input": INFILE_1,
@@ -44,7 +44,7 @@ class Test_Concentration(_TestBase):
 
 
 class Test_IntegratedConcentration(_TestBase):
-    reference = "ref_ifs_deterministic_integrated_concentration"
+    reference = "ref_ifs_integrated_concentration"
     setup_dct = {
         "files": {
             "input": INFILE_1,
@@ -73,7 +73,7 @@ class Test_IntegratedConcentration(_TestBase):
 
 
 class Test_TotalDeposition(_TestBase):
-    reference = "ref_ifs_deterministic_total_deposition"
+    reference = "ref_ifs_total_deposition"
     setup_dct = {
         "files": {
             "input": INFILE_1,
@@ -101,7 +101,7 @@ class Test_TotalDeposition(_TestBase):
 
 
 class Test_TotalDeposition_EmptyField(_TestBase):
-    reference = "ref_ifs_deterministic_total_deposition_empty_field"
+    reference = "ref_ifs_total_deposition_empty_field"
     setup_dct = {
         "files": {
             "input": INFILE_2,
@@ -129,7 +129,7 @@ class Test_TotalDeposition_EmptyField(_TestBase):
 
 
 class Test_AffectedArea(_TestBase):
-    reference = "ref_ifs_deterministic_affected_area"
+    reference = "ref_ifs_affected_area"
     setup_dct = {
         "files": {
             "input": INFILE_1,
@@ -155,7 +155,7 @@ class Test_AffectedArea(_TestBase):
 
 
 class Test_CloudDepartureTime(_TestBase):
-    reference = "ref_ifs_deterministic_cloud_departure_time"
+    reference = "ref_ifs_cloud_departure_time"
     setup_dct = {
         "files": {
             "input": INFILE_1,

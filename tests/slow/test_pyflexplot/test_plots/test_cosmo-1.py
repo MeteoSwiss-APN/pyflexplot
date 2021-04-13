@@ -17,7 +17,7 @@ INFILE_2 = "flexpart_cosmo-1e-ctrl_2020102105.nc"
 
 
 class Test_Concentration(_TestBase):
-    reference = "ref_cosmo1_deterministic_concentration"
+    reference = "ref_cosmo-1_concentration"
     setup_dct = {
         "files": {
             "input": INFILE_1,
@@ -43,7 +43,7 @@ class Test_Concentration(_TestBase):
 
 
 class Test_IntegratedConcentration(_TestBase):
-    reference = "ref_cosmo1_deterministic_integrated_concentration"
+    reference = "ref_cosmo-1_integrated_concentration"
     setup_dct = {
         "files": {
             "input": INFILE_1,
@@ -72,7 +72,7 @@ class Test_IntegratedConcentration(_TestBase):
 
 
 class Test_TotalDeposition(_TestBase):
-    reference = "ref_cosmo1_deterministic_total_deposition"
+    reference = "ref_cosmo-1_total_deposition"
     setup_dct = {
         "files": {
             "input": INFILE_1,
@@ -100,7 +100,7 @@ class Test_TotalDeposition(_TestBase):
 
 
 class Test_AffectedArea(_TestBase):
-    reference = "ref_cosmo1_deterministic_affected_area"
+    reference = "ref_cosmo-1_affected_area"
     setup_dct = {
         "files": {
             "input": INFILE_1,
@@ -126,7 +126,7 @@ class Test_AffectedArea(_TestBase):
 
 
 class Test_TotalDeposition_MissingField(_TestBase):
-    reference = "ref_cosmo1_deterministic_total_deposition_dummy"
+    reference = "ref_cosmo-1_total_deposition_dummy"
     setup_dct = {
         "files": {
             "input": INFILE_2,
@@ -154,7 +154,7 @@ class Test_TotalDeposition_MissingField(_TestBase):
 
 
 class Test_CloudArrivalTime(_TestBase):
-    reference = "ref_cosmo1_deterministic_cloud_arrival_time"
+    reference = "ref_cosmo-1_cloud_arrival_time"
     setup_dct = {
         "files": {
             "input": INFILE_1,
