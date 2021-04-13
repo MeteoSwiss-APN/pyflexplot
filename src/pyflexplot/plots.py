@@ -251,15 +251,11 @@ def get_domain(field: Field, aspect: float) -> Domain:
             },
         )
     elif domain_type == "ch":
-        if model_name in ["COSMO-1", "COSMO-1E"]:
+        if model_name in ["COSMO-1", "COSMO-1E", "COSMO-2E"]:
             domain = Domain(
                 lat, lon, config={"zoom_fact": 3.6, "rel_offset": (-0.02, 0.045)}
             )
         elif model_name in ["COSMO-2", "COSMO-E"]:
-            domain = Domain(
-                lat, lon, config={"zoom_fact": 3.23, "rel_offset": (0.037, 0.1065)}
-            )
-        elif model_name == "COSMO-2E":
             domain = Domain(
                 lat, lon, config={"zoom_fact": 3.23, "rel_offset": (0.037, 0.1065)}
             )
