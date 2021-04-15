@@ -36,7 +36,6 @@ from ..input.read_fields import read_fields
 from ..plots import create_plot
 from ..plots import format_out_file_paths
 from ..setups.plot_setup import PlotSetupGroup
-from ..setups.setup_file import prepare_raw_params
 from ..setups.setup_file import SetupFile
 from ..utils.logging import log
 
@@ -260,7 +259,7 @@ def read_setup_groups(
         if path not in setup_file_paths:
             setup_file_paths.append(path)
     if not setup_file_paths:
-        return [PlotSetupGroup.create(prepare_raw_params(input_setup_params))]
+        return [PlotSetupGroup.create(SetupFile.prepare_raw_params(input_setup_params))]
     return SetupFile.read_many(setup_file_paths, override=input_setup_params)
 
 

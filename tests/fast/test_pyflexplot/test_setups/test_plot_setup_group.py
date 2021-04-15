@@ -13,7 +13,7 @@ import pytest
 # First-party
 from pyflexplot.setups.plot_setup import PlotSetup
 from pyflexplot.setups.plot_setup import PlotSetupGroup
-from pyflexplot.setups.setup_file import prepare_raw_params
+from pyflexplot.setups.setup_file import SetupFile
 from srutils.dict import merge_dicts
 from srutils.testing import assert_is_sub_element
 
@@ -57,7 +57,7 @@ class Test_FromRawParams:
             "species_id": [1, 2],
             "combine_species": False,
         }
-        params_lst = prepare_raw_params(raw_params)
+        params_lst = SetupFile.prepare_raw_params(raw_params)
         assert len(params_lst) == 1
         setups = PlotSetupGroup.create(params_lst)
         res = setups.dicts()
