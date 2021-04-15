@@ -15,6 +15,7 @@ from typing import List
 from typing import Mapping
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 
 # Third-party
@@ -51,7 +52,7 @@ def main(
     cache: bool,
     dest_dir: Optional[str],
     dry_run: bool,
-    input_setup_params: Mapping[str, Any],
+    input_setup_params: Tuple[Tuple[str, Any], ...],
     merge_pdfs: bool,
     merge_pdfs_dry: bool,
     num_procs: int,
@@ -78,7 +79,11 @@ def main(
 
     preset_setup_file_paths = ctx.obj.get("preset_setup_file_paths", [])
     setup_groups = prepare_setups(
-        setup_file_paths, preset_setup_file_paths, input_setup_params, suffixes, only
+        setup_file_paths,
+        preset_setup_file_paths,
+        dict(input_setup_params),
+        suffixes,
+        only,
     )
 
     pool = multiprocessing.Pool(processes=num_procs)
