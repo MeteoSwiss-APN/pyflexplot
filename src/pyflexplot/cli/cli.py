@@ -174,6 +174,7 @@ click.option = functools.partial(click.option, show_default=True)  # type: ignor
     metavar="PARAM VALUE",
     nargs=2,
     multiple=True,
+    default=((),),
     callback=wrap_callback(click_prepare_setup_params),
 )
 @click.option(
