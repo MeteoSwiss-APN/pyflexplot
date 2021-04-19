@@ -2,7 +2,7 @@
 
 [_base]
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
-infile = "data/cosmo-1e/grid_conc_TBD_{ens_member:03}.nc"  # no test case
+infile = "data/cosmo-1e/2021030503/{ens_member:03}/grid_conc_20210305030000.nc_GOE"
 ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 model = "COSMO-1E"
 lang = "de"
