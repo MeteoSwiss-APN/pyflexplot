@@ -8,7 +8,7 @@ model = "COSMO-1E"
 lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = true
-outfile = "cosmo-1e_{ens_variable}_{plot_variable}_{domain}_{lang}_ts-{time_idx:02}.png"
+outfile = "{ens_variable}_{plot_variable}_{release_site}_{domain}_{lang}_{time_step}.png"
 
 [_base._concentration]
 plot_variable = "concentration"
@@ -18,7 +18,7 @@ time = "*"
 
 [_base._concentration._integr]
 integrate = true
-time = 0
+time = -1
 
 [_base._tot_deposition]
 plot_variable = "tot_deposition"
