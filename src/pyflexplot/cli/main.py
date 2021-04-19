@@ -51,7 +51,7 @@ def main(
     cache: bool,
     dest_dir: Optional[str],
     dry_run: bool,
-    input_setup_params: Tuple[Tuple[str, Any], ...],
+    input_setup_params: Optional[Tuple[Tuple[str, Any], ...]],
     merge_pdfs: bool,
     merge_pdfs_dry: bool,
     num_procs: int,
@@ -80,7 +80,7 @@ def main(
     setup_groups = prepare_setups(
         setup_file_paths,
         preset_setup_file_paths,
-        dict(input_setup_params),
+        dict(input_setup_params or {}),
         suffixes,
         only,
     )
