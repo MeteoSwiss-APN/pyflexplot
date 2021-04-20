@@ -160,18 +160,19 @@ def read_fields(
 
 def prepare_paths(path: str, ens_member_ids: Optional[Sequence[int]]) -> List[str]:
     """Prepare paths: one for deterministic, multiple for ensemble run."""
-    if re.search(r"{ens_member(:[0-9]+d?)?}", path):
+    key = "ens_member"
+    if re.search(f"{{{key}}}" + r"(:[0-9]+d?)?}", path):
         if not ens_member_ids:
             raise ValueError(
                 "input file path contains ensemble member format key, but no "
                 f"ensemble member ids have been passed: {path}"
             )
         assert ens_member_ids is not None  # mypy
-        paths = [path.format(ens_member=id_) for id_ in ens_member_ids]
+        paths = [path.format(**{key: id_}) for id_ in ens_member_ids]
     elif not ens_member_ids:
         paths = [path]
     else:
-        raise ValueError(f"input file path missing format key: {path}")
+        raise ValueError(f"format key '{key}' missing in input file path {path}")
     if ens_member_ids and len(ens_member_ids) != len(paths):
         raise ValueError(
             f"must pass same number of ens_member_ids ({len(ens_member_ids)}"
