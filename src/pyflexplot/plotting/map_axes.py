@@ -183,8 +183,9 @@ class MapAxes:
             proj_data=field.projs.data,
         )
 
-        self.ref_dist_box: Optional[ReferenceDistanceIndicator]
-        self._init_ref_dist_box()
+        self.ref_dist_box: Optional[
+            ReferenceDistanceIndicator
+        ] = self._init_ref_dist_box()
 
         self._ax_add_grid()
         self._ax_add_geography()
@@ -295,22 +296,23 @@ class MapAxes:
         d0, dz = 1, 1
         self.zorder = {name: d0 + idx * dz for idx, name in enumerate(zorders_const)}
 
-    def _init_ref_dist_box(self) -> None:
+    def _init_ref_dist_box(self) -> Optional[ReferenceDistanceIndicator]:
         """Initialize the reference distance indicator (if activated)."""
         if not self.config.ref_dist_on:
-            self.ref_dist_box = None
+            return None
+        assert isinstance(self.config.ref_dist_config, RefDistIndConfig)  # mypy
+        try:
+            ref_dist_box = ReferenceDistanceIndicator(
+                config=self.config.ref_dist_config,
+                axes_to_geo=self.trans.axes_to_geo,
+            )
+        except TooWideRefDistIndicatorError as e:
+            msg = f"error adding reference distance indicator (too wide {e})"
+            log(wrn=msg)
+            return None
         else:
-            assert isinstance(self.config.ref_dist_config, RefDistIndConfig)  # mypy
-            try:
-                self.ref_dist_box = ReferenceDistanceIndicator(
-                    config=self.config.ref_dist_config,
-                    axes_to_geo=self.trans.axes_to_geo,
-                )
-            except TooWideRefDistIndicatorError as e:
-                msg = f"error adding reference distance indicator (too wide {e})"
-                log(wrn=msg)
-            else:
-                self.ref_dist_box.add_to(self.ax, zorder=self.zorder["grid"])
+            ref_dist_box.add_to(self.ax, zorder=self.zorder["grid"])
+        return ref_dist_box
 
     def _ax_add_grid(self) -> None:
         """Show grid lines on map."""
