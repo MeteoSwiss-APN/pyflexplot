@@ -187,8 +187,7 @@ field_summary = {
         "dimensions": {
             "level": 0,
             "nageclass": 0,
-            "noutrel": None,
-            "numpoint": 0,
+            "release": 0,
             "species_id": 1,
             "time": 5,
             "variable": "concentration",
@@ -281,8 +280,7 @@ plot_summary = {
                     "dimensions": {
                         "level": 0,
                         "nageclass": 0,
-                        "noutrel": None,
-                        "numpoint": 0,
+                        "release": 0,
                         "species_id": 1,
                         "time": 5,
                         "variable": "concentration",
@@ -688,8 +686,7 @@ plot_summary = {
                     "dimensions": {
                         "level": 0,
                         "nageclass": 0,
-                        "noutrel": None,
-                        "numpoint": 0,
+                        "release": 0,
                         "species_id": 1,
                         "time": 5,
                         "variable": "concentration",

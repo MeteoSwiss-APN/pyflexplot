@@ -457,14 +457,14 @@ class InputFileEnsemble:
         self, raw_dimensions: Mapping[str, Mapping[str, Any]]
     ) -> Tuple[int, int, int, int]:
         """Get the shape of an array of fields across members and time steps."""
-        dim_names = self._dim_names()
+        renamed_dims = self._renamed_dims()
         if self.config.dry_run:
             nlat = 1
             nlon = 1
         else:
-            nlat = raw_dimensions[dim_names["lat"]]["size"]
-            nlon = raw_dimensions[dim_names["lon"]]["size"]
-        nts = raw_dimensions[dim_names["time"]]["size"]
+            nlat = raw_dimensions[renamed_dims.get("lat", "lat")]["size"]
+            nlon = raw_dimensions[renamed_dims.get("lon", "lon")]["size"]
+        nts = raw_dimensions[renamed_dims.get("time", "time")]["size"]
         n_mem = len(self.paths)
         self.lat = np.full((nlat,), np.nan)
         self.lon = np.full((nlon,), np.nan)
@@ -472,14 +472,14 @@ class InputFileEnsemble:
 
     def _read_grid(self, fi: nc4.Dataset) -> None:
         """Read and prepare grid variables."""
-        dim_names = self._dim_names()
+        renamed_dims = self._renamed_dims()
         if self.config.dry_run:
             lat = np.zeros(1, np.float32)
             lon = np.zeros(1, np.float32)
         else:
-            lat = fi.variables[dim_names["lat"]][:]
-            lon = fi.variables[dim_names["lon"]][:]
-        time = fi.variables[dim_names["time"]][:]
+            lat = fi.variables[renamed_dims.get("lat", "lat")][:]
+            lon = fi.variables[renamed_dims.get("lon", "lon")][:]
+        time = fi.variables[renamed_dims.get("time", "time")][:]
         time = self._prepare_time(fi, time)
         self.lat = lat
         self.lon = lon
@@ -491,8 +491,8 @@ class InputFileEnsemble:
             ts0 = time[0] - dts
             time = np.r_[ts0, time]
         # Convert seconds to hours
-        dim_names = self._dim_names()
-        time_unit = fi.variables[dim_names["time"]].units
+        renamed_dims = self._renamed_dims()
+        time_unit = fi.variables[renamed_dims.get("time", "time")].units
         if time_unit.startswith("seconds since"):
             time = time / 3600.0
         else:
@@ -563,7 +563,7 @@ class InputFileEnsemble:
             raise NotImplementedError("ens_variable", ens_variable)
         return fld_time
 
-    def _dim_names(self) -> Dict[str, str]:
+    def _renamed_dims(self) -> Dict[str, str]:
         """Model-specific dimension names."""
         if self.model_setup.name in [
             "COSMO-2",
@@ -575,21 +575,12 @@ class InputFileEnsemble:
             return {
                 "lat": "rlat",
                 "lon": "rlon",
-                "time": "time",
-                "level": "level",
-                "nageclass": "nageclass",
-                "noutrel": "noutrel",
-                "numpoint": "numpoint",
             }
         elif self.model_setup.name in ["IFS-HRES", "IFS-HRES-EU"]:
             return {
                 "lat": "latitude",
                 "lon": "longitude",
-                "time": "time",
                 "level": "height",
-                "nageclass": "nageclass",
-                "noutrel": "noutrel",
-                "numpoint": "pointspec",
             }
         raise NotImplementedError(
             f"dimension names for model '{self.model_setup.name}'"
@@ -601,17 +592,30 @@ class InputFileEnsemble:
     ) -> np.ndarray:
         """Read a 2D field at all time steps from disk."""
         # Indices of field along NetCDF dimensions
-        dim_names = self._dim_names()
+        renamed_dims = self._renamed_dims()
         dim_idcs_by_name = {
-            dim_names["lat"]: slice(None),
-            dim_names["lon"]: slice(None),
+            renamed_dims.get("lat", "lat"): slice(None),
+            renamed_dims.get("lon", "lon"): slice(None),
         }
-        for dim_name in ["nageclass", "noutrel", "numpoint", "time", "level"]:
-            if dim_name in ["lat", "lon", "time"]:
+        for dim_name in ["nageclass", "release", "time", "level"]:
+            if dim_name == "release":
+                # SR_TMP < TODO cleaner colution
+                idcs = getattr(dimensions, dim_name)
+                for var in fi.variables.values():
+                    if var.name.startswith("spec"):
+                        dim_name = var.dimensions[1]
+                        break
+                else:
+                    raise Exception(
+                        f"no variable 'spec*' found among {list(fi.variables)} in"
+                        f" {fi.filepath()}"
+                    )
+                # SR_TMP >
+            elif dim_name == "time":
                 idcs = slice(None)
             else:
                 idcs = getattr(dimensions, dim_name)
-            dim_idcs_by_name[dim_names[dim_name]] = idcs
+            dim_idcs_by_name[renamed_dims.get(dim_name, dim_name)] = idcs
 
         # Select variable in file
         assert dimensions.species_id is not None  # mypy
@@ -632,9 +636,9 @@ class InputFileEnsemble:
             if not self.config.missing_ok:
                 raise Exception(f"missing variable '{var_name}'") from e
             shape = (
-                fi.dimensions[dim_names["time"]].size,
-                fi.dimensions[dim_names["lat"]].size,
-                fi.dimensions[dim_names["lon"]].size,
+                fi.dimensions[renamed_dims.get("time", "time")].size,
+                fi.dimensions[renamed_dims.get("lat", "lat")].size,
+                fi.dimensions[renamed_dims.get("lon", "lon")].size,
             )
             return np.zeros(shape, np.float32)
 

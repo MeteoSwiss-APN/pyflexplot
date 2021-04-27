@@ -83,8 +83,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                         "dimensions": {
                             "level": 1,
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 2,
                             "time": 3,
                         },
@@ -108,8 +107,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                         "integrate": False,
                         "dimensions": {
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 2,
                             "time": 3,
                             "variable": "dry_deposition",
@@ -135,8 +133,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                         "integrate": False,
                         "dimensions": {
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 2,
                             "time": 3,
                             "variable": "wet_deposition",
@@ -162,8 +159,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                         "integrate": False,
                         "dimensions": {
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 2,
                             "time": 3,
                             "variable": ["dry_deposition", "wet_deposition"],
@@ -190,8 +186,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                         "dimensions": {
                             "level": 1,
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 1,
                             "time": 3,
                         },
@@ -215,8 +210,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                         "integrate": False,
                         "dimensions": {
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 1,
                             "time": 3,
                             "variable": ["dry_deposition", "wet_deposition"],
@@ -243,8 +237,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                         "integrate": False,
                         "dimensions": {
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": [1, 2],
                             "time": 3,
                             "variable": ["dry_deposition", "wet_deposition"],
@@ -271,8 +264,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                         "dimensions": {
                             "level": 1,
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 1,
                             "time": 10,
                         },
@@ -297,8 +289,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                         "dimensions": {
                             "level": 0,
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 1,
                             "time": 10,
                         },
@@ -377,8 +368,7 @@ def test_single(datadir, config):  # noqa:F811
                         "dimensions": {
                             "level": [0, 2],
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 2,
                             "time": [0, 3],
                         },
@@ -405,8 +395,7 @@ def test_single(datadir, config):  # noqa:F811
                         "dimensions": {
                             "level": [0, 2],
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 2,
                             "time": [0, 3],
                         },
@@ -431,8 +420,7 @@ def test_single(datadir, config):  # noqa:F811
                         "integrate": True,
                         "dimensions": {
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 2,
                             "time": [0, 3, 9],
                             "variable": "dry_deposition",
@@ -457,8 +445,7 @@ def test_single(datadir, config):  # noqa:F811
                         "integrate": True,
                         "dimensions": {
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 2,
                             "time": [0, 3, 9],
                             "variable": "wet_deposition",
@@ -483,8 +470,7 @@ def test_single(datadir, config):  # noqa:F811
                         "integrate": True,
                         "dimensions": {
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 1,
                             "time": [0, 3, 9],
                             "variable": ["dry_deposition", "wet_deposition"],
@@ -510,8 +496,7 @@ def test_single(datadir, config):  # noqa:F811
                         "dimensions": {
                             "level": 0,
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 1,
                             "time": [0, 3, 9],
                         },
@@ -537,8 +522,7 @@ def test_single(datadir, config):  # noqa:F811
                         "integrate": True,
                         "dimensions": {
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 1,
                             "time": [0, 3, 9],
                             "variable": ["wet_deposition", "dry_deposition"],
@@ -628,8 +612,7 @@ def test_multiple(datadir, config):  # noqa:F811
                         "dimensions": {
                             "level": 1,
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 2,
                             "time": None,
                         },
@@ -653,8 +636,7 @@ def test_multiple(datadir, config):  # noqa:F811
                         "integrate": False,
                         "dimensions": {
                             "nageclass": 0,
-                            "noutrel": 0,
-                            "numpoint": 0,
+                            "release": 0,
                             "species_id": 2,
                             "time": None,
                             "variable": ["dry_deposition", "wet_deposition"],
@@ -704,8 +686,7 @@ def test_missing_deposition_cosmo(datadir):  # noqa:F811
                 "integrate": True,
                 "dimensions": {
                     "nageclass": 0,
-                    "noutrel": 0,
-                    "numpoint": 0,
+                    "release": 0,
                     "species_id": 1,
                     "time": 10,
                     "variable": ("dry_deposition", "wet_deposition"),
@@ -744,8 +725,7 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
                 "integrate": True,
                 "dimensions": {
                     "nageclass": 0,
-                    "noutrel": 0,
-                    "numpoint": 0,
+                    "release": 0,
                     "species_id": 1,
                     "time": 10,
                     "variable": ("dry_deposition", "wet_deposition"),
@@ -785,8 +765,7 @@ def test_affected_area(datadir):  # noqa:F811
                 "dimensions": {
                     "level": 0,
                     "nageclass": 0,
-                    "noutrel": 0,
-                    "numpoint": 0,
+                    "release": 0,
                     "species_id": 1,
                     "time": -1,
                     "variable": ("concentration", "dry_deposition", "wet_deposition"),

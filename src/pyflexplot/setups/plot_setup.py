@@ -464,10 +464,8 @@ class PlotSetup(BaseSetup):
             nageclass: Index of age class (zero-based). Use the format key
                 '{nageclass}' to embed it in ``outfile``.
 
-            noutrel: Index of noutrel (zero-based). Use the format key
-                '{noutrel}' to embed it in ``outfile``.
-
-            numpoint: Index of release point (zero-based).
+            release: Index of release (zero-based). Use the format key
+                '{release}' to embed it in ``outfile``.
 
             outfile: Output file path(s). May contain format keys.
 

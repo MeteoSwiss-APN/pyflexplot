@@ -661,9 +661,9 @@ class RawReleaseMetaData:
     @classmethod
     def from_file(cls, fi: nc4.Dataset, dimensions: Dimensions) -> "RawReleaseMetaData":
         """Read information on a release from open file."""
-        # Fetch numpoint
-        assert dimensions.numpoint is not None  # mypy
-        idx_point = dimensions.numpoint
+        # Fetch release
+        assert dimensions.release is not None  # mypy
+        idx_release = dimensions.release
 
         # Fetch species_id
         assert dimensions.species_id is not None  # mypy
@@ -684,21 +684,23 @@ class RawReleaseMetaData:
         if n == 0:
             raise ValueError(f"file '{fi.name}': no release points ('{var_name}')")
         elif n == 1:
-            if idx_point is None:
-                idx_point = 0
+            if idx_release is None:
+                idx_release = 0
         elif n > 1:
-            if idx_point is None:
+            if idx_release is None:
                 raise ValueError(
                     f"file '{fi.name}': idx is None despite {n} release points"
                 )
-        assert idx_point is not None  # mypy
-        if idx_point < 0 or idx_point >= n:
+        assert idx_release is not None  # mypy
+        if idx_release < 0 or idx_release >= n:
             raise ValueError(
-                f"file '{fi.name}': invalid index {idx_point} for {n} release points"
+                f"file '{fi.name}': invalid index {idx_release} for {n} release points"
             )
 
         # Name: convert from byte character array
-        site = var[idx_point][~var[idx_point].mask].tobytes().decode("utf-8").rstrip()
+        site = (
+            var[idx_release][~var[idx_release].mask].tobytes().decode("utf-8").rstrip()
+        )
 
         # Other attributes
         key_pairs = [
@@ -721,9 +723,9 @@ class RawReleaseMetaData:
             var = fi.variables[key_in]
             # SR_TMP < TODO more flexible solution w/o hardcoding so much
             if var.dimensions == ("numpoint",):
-                params[key_out] = var[idx_point].tolist()
+                params[key_out] = var[idx_release].tolist()
             elif var.dimensions == ("numspec", "numpoint"):
-                params[key_out] = var[idx_spec, idx_point].tolist()
+                params[key_out] = var[idx_spec, idx_release].tolist()
             elif var.dimensions == ("nageclass",):
                 params[key_out] = var[idx_age].tolist()
             else:

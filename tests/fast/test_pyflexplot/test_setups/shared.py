@@ -49,8 +49,7 @@ OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
             "dimensions": {
                 "level": None,
                 "nageclass": None,
-                "noutrel": None,
-                "numpoint": None,
+                "release": None,
                 "species_id": None,
                 "time": None,
                 "variable": "concentration",

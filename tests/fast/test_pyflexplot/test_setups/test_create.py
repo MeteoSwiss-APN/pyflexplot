@@ -98,8 +98,7 @@ class Test_WildcardToNone:
                     {
                         "dimensions": {
                             "nageclass": "*",
-                            "noutrel": "*",
-                            "numpoint": "*",
+                            "release": "*",
                         },
                     }
                 ],
@@ -107,5 +106,4 @@ class Test_WildcardToNone:
         )
         setup = PlotSetup.create(params)
         assert setup.panels.collect_equal("dimensions").nageclass is None
-        assert setup.panels.collect_equal("dimensions").noutrel is None
-        assert setup.panels.collect_equal("dimensions").numpoint is None
+        assert setup.panels.collect_equal("dimensions").release is None

@@ -54,8 +54,7 @@ class Test_CompleteDimensions:
         "rlat": {"name": "rlat", "size": 30},
         "level": {"name": "level", "size": 3},
         "nageclass": {"name": "nageclass", "size": 1},
-        "noutrel": {"name": "numpoint", "size": 1},
-        "numpoint": {"name": "numpoint", "size": 2},
+        "release": {"name": "release", "size": 2},
         "nchar": {"name": "nchar", "size": 45},
     }
     species_ids = (1, 2)
@@ -80,15 +79,13 @@ class Test_CompleteDimensions:
 
     def test_others(self):
         setup = PlotPanelSetup.create(
-            {"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}}
+            {"dimensions": {"nageclass": "*", "release": "*"}}
         )
         assert setup.dimensions.nageclass is None
-        assert setup.dimensions.noutrel is None
-        assert setup.dimensions.numpoint is None
+        assert setup.dimensions.release is None
         setup = setup.complete_dimensions(self.raw_dimensions, self.species_ids)
         assert setup.dimensions.nageclass == 0
-        assert setup.dimensions.noutrel == 0
-        assert setup.dimensions.numpoint == (0, 1)
+        assert setup.dimensions.release is None
 
     def test_completion_mode_all(self):
         dimensions = {
@@ -96,8 +93,7 @@ class Test_CompleteDimensions:
             "level": "*",
             "species_id": "*",
             "nageclass": "*",
-            "noutrel": "*",
-            "numpoint": "*",
+            "release": "*",
         }
         setup = PlotPanelSetup.create(
             {"dimensions": dimensions, "dimensions_default": "all"}
@@ -106,15 +102,13 @@ class Test_CompleteDimensions:
         assert setup.dimensions.level is None
         assert setup.dimensions.species_id is None
         assert setup.dimensions.nageclass is None
-        assert setup.dimensions.noutrel is None
-        assert setup.dimensions.numpoint is None
+        assert setup.dimensions.release is None
         setup = setup.complete_dimensions(self.raw_dimensions, self.species_ids)
         assert setup.dimensions.time == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
         assert setup.dimensions.level == (0, 1, 2)
         assert setup.dimensions.species_id == (1, 2)
         assert setup.dimensions.nageclass == 0
-        assert setup.dimensions.noutrel == 0
-        assert setup.dimensions.numpoint == (0, 1)
+        assert setup.dimensions.release is None
 
     def test_completion_mode_first(self):
         dimensions = {
@@ -122,8 +116,7 @@ class Test_CompleteDimensions:
             "level": "*",
             "species_id": "*",
             "nageclass": "*",
-            "noutrel": "*",
-            "numpoint": "*",
+            "release": "*",
         }
         setup = PlotPanelSetup.create(
             {"dimensions": dimensions, "dimensions_default": "first"}
@@ -132,15 +125,13 @@ class Test_CompleteDimensions:
         assert setup.dimensions.level is None
         assert setup.dimensions.species_id is None
         assert setup.dimensions.nageclass is None
-        assert setup.dimensions.noutrel is None
-        assert setup.dimensions.numpoint is None
+        assert setup.dimensions.release is None
         setup = setup.complete_dimensions(self.raw_dimensions, self.species_ids)
         assert setup.dimensions.time == 0
         assert setup.dimensions.level == 0
         assert setup.dimensions.species_id == 1
         assert setup.dimensions.nageclass == 0
-        assert setup.dimensions.noutrel == 0
-        assert setup.dimensions.numpoint == 0
+        assert setup.dimensions.release is None
 
 
 class Test_Decompress:
@@ -151,8 +142,7 @@ class Test_Decompress:
         "dimensions": {
             "level": [0, 1],
             "nageclass": (0,),
-            "noutrel": (0,),
-            "numpoint": (0,),
+            "release": (0,),
             "species_id": [1, 2],
             "time": [1, 2, 3],
         },

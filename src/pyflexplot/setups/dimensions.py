@@ -48,8 +48,7 @@ class CoreDimensions:
 
     level: Optional[int] = None
     nageclass: Optional[int] = None
-    noutrel: Optional[int] = None
-    numpoint: Optional[int] = None
+    release: Optional[int] = None
     species_id: Optional[int] = None
     time: Optional[int] = None
     variable: Optional[str] = None
@@ -286,21 +285,18 @@ class Dimensions:
                 elif mode == "first":
                     obj.nageclass = next(iter(values))
 
-        if obj.noutrel is None:
-            if "noutrel" in raw_dimensions:
-                values = range(raw_dimensions["noutrel"]["size"])
+        if obj.release is None:
+            # SR_TMP < TODO Try not to hardcode dimensions names here
+            n1: int = raw_dimensions.get("numpoint", {}).get("size", 0)
+            n2: int = raw_dimensions.get("noutrel", {}).get("size", 0)
+            n3: int = raw_dimensions.get("pointspec", {}).get("size", 0)
+            # SR_TMP >
+            if any([n1, n2, n3]):
+                values = range(max([n1, n2, n3]))
                 if mode == "all":
-                    obj.noutrel = tuple(values)
+                    obj.release = tuple(values)
                 elif mode == "first":
-                    obj.noutrel = next(iter(values))
-
-        if obj.numpoint is None:
-            if "numpoint" in raw_dimensions:
-                values = range(raw_dimensions["numpoint"]["size"])
-                if mode == "all":
-                    obj.numpoint = tuple(values)
-                elif mode == "first":
-                    obj.numpoint = next(iter(values))
+                    obj.release = next(iter(values))
 
         return None if inplace else obj
 

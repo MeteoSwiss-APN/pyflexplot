@@ -298,8 +298,7 @@ class Test_Decompress:
             "dimensions": {
                 "level": (0, 1),
                 "nageclass": (0,),
-                "noutrel": (0,),
-                "numpoint": (0,),
+                "release": (0,),
                 "species_id": [1, 2],
                 "time": [1, 2, 3],
             },
@@ -449,8 +448,7 @@ class Test_Decompress:
             "dimensions": {
                 "level": [4, 8],
                 "nageclass": (0,),
-                "noutrel": (0,),
-                "numpoint": (0,),
+                "release": (0,),
                 "species_id": [1, 2],
                 "time": [1, 2, 3],
             },

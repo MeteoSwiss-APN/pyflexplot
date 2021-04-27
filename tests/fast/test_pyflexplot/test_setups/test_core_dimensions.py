@@ -15,8 +15,7 @@ class Test_Init:
         sol = {
             "level": None,
             "nageclass": None,
-            "noutrel": None,
-            "numpoint": None,
+            "release": None,
             "species_id": None,
             "time": None,
             "variable": None,
@@ -27,8 +26,7 @@ class Test_Init:
         params = {
             "level": 2,
             "nageclass": 0,
-            "noutrel": 1,
-            "numpoint": 3,
+            "release": 3,
             "species_id": 2,
             "time": 0,
             "variable": "dry_deposition",
@@ -40,7 +38,7 @@ class Test_Init:
 
     def test_some_args(self):
         params = {
-            "noutrel": 1,
+            "release": 1,
             "species_id": 2,
             "variable": "concentration",
         }
@@ -49,8 +47,7 @@ class Test_Init:
         sol = {
             "level": None,
             "nageclass": None,
-            "noutrel": 1,
-            "numpoint": None,
+            "release": 1,
             "species_id": 2,
             "time": None,
             "variable": "concentration",

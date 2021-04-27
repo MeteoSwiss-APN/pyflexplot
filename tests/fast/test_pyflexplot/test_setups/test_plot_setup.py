@@ -150,8 +150,7 @@ class Test_Decompress:
                     "combine_species": True,
                     "dimensions": {
                         "nageclass": (0,),
-                        "noutrel": (0,),
-                        "numpoint": (0,),
+                        "release": (0,),
                         "species_id": [1, 2],
                         "time": [1, 2, 3],
                     },

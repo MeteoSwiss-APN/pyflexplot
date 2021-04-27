@@ -91,7 +91,7 @@ class Test_Create:
         panels_lst: List[List[Dict[str, Any]]] = [
             [{"plot_variable": "concentration", "domain": "ch"}],
             [{"plot_variable": "tot_deposition", "lang": "de"}],
-            [{"dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}}],
+            [{"dimensions": {"nageclass": 1, "release": 5}}],
         ]
         dicts: List[Dict[str, Any]] = [
             merge_dicts(

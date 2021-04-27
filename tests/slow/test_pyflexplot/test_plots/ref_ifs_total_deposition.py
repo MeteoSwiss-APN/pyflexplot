@@ -187,8 +187,7 @@ field_summary = {
         "dimensions": {
             "level": None,
             "nageclass": 0,
-            "noutrel": None,
-            "numpoint": 0,
+            "release": 0,
             "species_id": 1,
             "time": 16,
             "variable": ["dry_deposition", "wet_deposition"],
@@ -281,8 +280,7 @@ plot_summary = {
                     "dimensions": {
                         "level": None,
                         "nageclass": 0,
-                        "noutrel": None,
-                        "numpoint": 0,
+                        "release": 0,
                         "species_id": 1,
                         "time": 16,
                         "variable": ["dry_deposition", "wet_deposition"],
@@ -685,8 +683,7 @@ plot_summary = {
                     "dimensions": {
                         "level": None,
                         "nageclass": 0,
-                        "noutrel": None,
-                        "numpoint": 0,
+                        "release": 0,
                         "species_id": 1,
                         "time": 16,
                         "variable": ["dry_deposition", "wet_deposition"],

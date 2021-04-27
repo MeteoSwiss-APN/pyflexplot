@@ -17,8 +17,7 @@ class Test_Init:
         sol = {
             "level": (None,),
             "nageclass": (None,),
-            "noutrel": (None,),
-            "numpoint": (None,),
+            "release": (None,),
             "species_id": (None,),
             "time": (None,),
             "variable": (None,),
@@ -29,8 +28,7 @@ class Test_Init:
         cdims = CoreDimensions(
             level=2,
             nageclass=0,
-            noutrel=1,
-            numpoint=3,
+            release=3,
             species_id=2,
             time=0,
             variable="wet_deposition",
@@ -40,8 +38,7 @@ class Test_Init:
         sol = {
             "level": (2,),
             "nageclass": (0,),
-            "noutrel": (1,),
-            "numpoint": (3,),
+            "release": (3,),
             "species_id": (2,),
             "time": (0,),
             "variable": ("wet_deposition",),
@@ -55,8 +52,7 @@ class Test_Init:
         sol = {
             "level": (None, None),
             "nageclass": (None, None),
-            "noutrel": (None, None),
-            "numpoint": (None, None),
+            "release": (None, None),
             "species_id": (None, None),
             "time": (None, None),
             "variable": (None, None),
@@ -77,7 +73,7 @@ class Test_Init:
             CoreDimensions(
                 level=1,
                 nageclass=0,
-                noutrel=1,
+                release=1,
                 species_id=2,
                 time=1,
                 variable="dry_deposition",
@@ -88,8 +84,7 @@ class Test_Init:
         sol = {
             "level": (None, None, 1, 1),
             "nageclass": (0, None, 3, 0),
-            "noutrel": (None, None, None, 1),
-            "numpoint": (None, None, None, None),
+            "release": (None, None, None, 1),
             "species_id": (None, None, 0, 2),
             "time": (0, None, 2, 1),
             "variable": (
@@ -115,8 +110,7 @@ class Test_Create:
         sol = {
             "level": None,
             "nageclass": None,
-            "noutrel": None,
-            "numpoint": None,
+            "release": None,
             "species_id": None,
             "time": None,
             "variable": "concentration",
@@ -127,8 +121,7 @@ class Test_Create:
         params = {
             "level": 2,
             "nageclass": 0,
-            "noutrel": 1,
-            "numpoint": 3,
+            "release": 3,
             "species_id": 2,
             "time": 0,
             "variable": "dry_deposition",
@@ -142,8 +135,7 @@ class Test_Create:
         params = {
             "level": 1,
             "nageclass": (0, 3),
-            "noutrel": 1,
-            "numpoint": None,
+            "release": None,
             "species_id": (0, 2),
             "time": (2, 1, 0),
             "variable": ("wet_deposition", "dry_deposition"),
@@ -178,8 +170,7 @@ class Test_Dict:
         sol = {
             "level": None,
             "nageclass": None,
-            "noutrel": None,
-            "numpoint": None,
+            "release": None,
             "species_id": None,
             "time": None,
             "variable": None,
@@ -190,8 +181,7 @@ class Test_Dict:
         cdims = CoreDimensions(
             level=2,
             nageclass=0,
-            noutrel=1,
-            numpoint=3,
+            release=3,
             species_id=2,
             time=0,
             variable="dry_deposition",
@@ -201,8 +191,7 @@ class Test_Dict:
         sol = {
             "level": 2,
             "nageclass": 0,
-            "noutrel": 1,
-            "numpoint": 3,
+            "release": 3,
             "species_id": 2,
             "time": 0,
             "variable": "dry_deposition",
@@ -216,8 +205,7 @@ class Test_Dict:
         sol = {
             "level": None,
             "nageclass": None,
-            "noutrel": None,
-            "numpoint": None,
+            "release": None,
             "species_id": None,
             "time": None,
             "variable": None,
@@ -237,7 +225,6 @@ class Test_Dict:
             ),
             CoreDimensions(
                 nageclass=0,
-                noutrel=1,
                 species_id=2,
                 time=1,
                 level=1,
@@ -249,8 +236,7 @@ class Test_Dict:
         sol = {
             "level": 1,
             "nageclass": (0, 3),
-            "noutrel": 1,
-            "numpoint": None,
+            "release": None,
             "species_id": (0, 2),
             "time": (0, 1, 2),
             "variable": ("concentration", "dry_deposition", "wet_deposition"),
@@ -261,8 +247,7 @@ class Test_Dict:
 class TestDecompress:
     params = {
         "nageclass": (0,),
-        "noutrel": (0,),
-        "numpoint": (0,),
+        "release": (0,),
         "species_id": [1, 2],
         "time": [1, 2, 3],
         "variable": ["dry_deposition", "wet_deposition"],
@@ -339,8 +324,7 @@ class Test_Interact:
     params = {
         "level": 1,
         "nageclass": (3, None, 0),
-        "noutrel": (1, 1),
-        "numpoint": None,
+        "release": None,
         "species_id": (0, 2),
         "time": (2, 0, 1),
         "variable": (
@@ -361,8 +345,7 @@ class Test_Interact:
         dims = self.create_dims()
         assert dims.get_raw("level") == (1, None, None, None)
         assert dims.get_raw("nageclass") == (3, None, 0, None)
-        assert dims.get_raw("noutrel") == (1, 1, None, None)
-        assert dims.get_raw("numpoint") == (None, None, None, None)
+        assert dims.get_raw("release") == (None, None, None, None)
         assert dims.get_raw("species_id") == (0, 2, None, None)
         assert dims.get_raw("time") == (2, 0, 1, None)
         assert dims.get_raw("variable") == (
@@ -376,8 +359,7 @@ class Test_Interact:
         dims = self.create_dims()
         assert dims.get("level") == 1
         assert dims.get("nageclass") == (0, 3)
-        assert dims.get("noutrel") == 1
-        assert dims.get("numpoint") is None
+        assert dims.get("release") is None
         assert dims.get("species_id") == (0, 2)
         assert dims.get("time") == (0, 1, 2)
         assert dims.get("variable") == (
@@ -390,8 +372,7 @@ class Test_Interact:
         dims = self.create_dims()
         assert dims.level == dims.get("level")
         assert dims.nageclass == dims.get("nageclass")
-        assert dims.noutrel == dims.get("noutrel")
-        assert dims.numpoint == dims.get("numpoint")
+        assert dims.release == dims.get("release")
         assert dims.species_id == dims.get("species_id")
         assert dims.time == dims.get("time")
         assert dims.variable == dims.get("variable")
@@ -406,8 +387,7 @@ class Test_Interact:
         self.assert_is_empty(dims)
         dims.set("level", (1, None, None, None))
         dims.set("nageclass", (3, None, 0, None))
-        dims.set("noutrel", (1, 1, None, None))
-        dims.set("numpoint", (None, None, None, None))
+        dims.set("release", (None, None, None, None))
         dims.set("species_id", (0, 2, None, None))
         dims.set("time", (2, 0, 1, None))
         dims.set(
@@ -423,8 +403,7 @@ class Test_Interact:
         self.assert_is_empty(dims)
         dims.set("level", 1)
         dims.set("nageclass", (0, 3))
-        dims.set("noutrel", 1)
-        dims.set("numpoint", None)
+        dims.set("release", None)
         dims.set("species_id", (0, 2))
         dims.set("time", (0, 1, 2))
         dims.set("variable", ("concentration", "dry_deposition", "wet_deposition"))
@@ -437,8 +416,7 @@ class Test_Interact:
         self.assert_is_empty(dims)
         dims.level = (1, None, None, None)
         dims.nageclass = (3, None, 0, None)
-        dims.noutrel = (1, 1, None, None)
-        dims.numpoint = (None, None, None, None)
+        dims.release = (None, None, None, None)
         dims.species_id = (0, 2, None, None)
         dims.time = (2, 0, 1, None)
         dims.variable = (
@@ -456,8 +434,7 @@ class Test_Interact:
         self.assert_is_empty(dims)
         dims.level = 1
         dims.nageclass = (0, 3)
-        dims.noutrel = 1
-        dims.numpoint = None
+        dims.release = None
         dims.species_id = (0, 2)
         dims.time = (0, 1, 2)
         dims.variable = ("concentration", "dry_deposition", "wet_deposition")
@@ -478,14 +455,12 @@ class Test_Interact:
         self.assert_is_empty(dims)
         dims.update({"level": 1})
         dims.update({"nageclass": (3, None, 0)})
-        dims.update({"noutrel": (1, 1)})
         dims.update({"variable": "wet_deposition"})
         res = dims.dict()
         sol = {
             "level": 1,
             "nageclass": (0, 3),
-            "noutrel": 1,
-            "numpoint": None,
+            "release": None,
             "species_id": None,
             "time": None,
             "variable": "wet_deposition",
