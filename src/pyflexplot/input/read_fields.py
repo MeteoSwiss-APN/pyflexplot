@@ -641,11 +641,6 @@ class InputFileEnsemble:
         # Assemble indices for slicing
         indices: List[Any] = [None] * len(nc_var.dimensions)
         for dim_name, dim_idx in dim_idcs_by_name.items():
-            err_dct = {
-                "dim_idx": dim_idx,
-                "dim_name": dim_name,
-                "fi.filepath": fi.filepath(),
-            }
             # Get the index of the dimension for this variable
             try:
                 idx = nc_var.dimensions.index(dim_name)
@@ -654,14 +649,16 @@ class InputFileEnsemble:
                 if dim_idx in (None, 0):
                     continue  # Zero-index: We're good after all!
                 raise Exception(
-                    "dimension with non-zero index missing",
-                    {**err_dct, "dimensions": nc_var.dimensions, "var_name": var_name},
+                    f"'{dim_name}' (#{dim_idx}) not among dimensions"
+                    f" {list(nc_var.dimensions)} of variable '{var_name}' in"
+                    f" {fi.filepath()}"
                 ) from e
 
             # Check that the index along the dimension is valid
             if dim_idx is None:
                 raise Exception(
-                    f"value of dimension '{err_dct['dim_name']} is None", idx, err_dct
+                    f"value of dimension #{idx} '{dim_name}' (#{dim_idx}) of variable"
+                    f" '{var_name}' is None in {fi.filepath()}"
                 )
 
             indices[idx] = dim_idx
