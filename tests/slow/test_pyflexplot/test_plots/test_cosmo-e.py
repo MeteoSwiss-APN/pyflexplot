@@ -1,14 +1,11 @@
 """Test the elements of complete plots based on ensemble COSMO-2 data."""
-# Third-party
-import pytest
-
 # Local
 from .shared import _TestBase
 from .shared import _TestCreatePlot  # noqa:F401
 from .shared import _TestCreateReference  # noqa:F401
 from .shared import datadir  # noqa  # required by _TestBase.test
 
-INFILE_NAME = "flexpart_cosmo-e_2019072712_{ens_member:03d}.nc"
+INFILE_1 = "flexpart_cosmo-e_2019072712_{ens_member:03d}.nc"
 ENS_MEMBER_IDS = [0, 1, 5, 10, 15, 20]
 
 
@@ -24,7 +21,7 @@ class Test_EnsMedian_Concentration(_TestBase):
     reference = "ref_cosmo-e_ens_mean_concentration"
     setup_dct = {
         "files": {
-            "input": INFILE_NAME,
+            "input": INFILE_1,
             "output": f"{reference}.png",
         },
         "model": {
@@ -53,7 +50,7 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
     reference = "ref_cosmo-e_ens_max_integrated_concentration"
     setup_dct = {
         "files": {
-            "input": INFILE_NAME,
+            "input": INFILE_1,
             "output": f"{reference}.png",
         },
         "model": {
@@ -81,7 +78,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
     reference = "ref_cosmo-e_ens_mean_total_deposition"
     setup_dct = {
         "files": {
-            "input": INFILE_NAME,
+            "input": INFILE_1,
             "output": f"{reference}.png",
         },
         "model": {
@@ -109,7 +106,7 @@ class Test_EnsProbability_WetDeposition(_TestBase):
     reference = "ref_cosmo-e_ens_probability_wet_deposition"
     setup_dct = {
         "files": {
-            "input": INFILE_NAME,
+            "input": INFILE_1,
             "output": f"{reference}.png",
         },
         "model": {
@@ -132,41 +129,11 @@ class Test_EnsProbability_WetDeposition(_TestBase):
     }
 
 
-@pytest.mark.skip("TODO implement plots like ens min affected area")
-class Test_EnsMin_AffectedArea(_TestBase):
-    reference = "ref_cosmo-e_ens_min_affected_area"
-    setup_dct = {
-        "files": {
-            "input": INFILE_NAME,
-            "output": f"{reference}.png",
-        },
-        "model": {
-            "name": "COSMO-E",
-            "ens_member_id": ENS_MEMBER_IDS,
-        },
-        "panels": [
-            {
-                "plot_variable": "affected_area",
-                "ens_variable": "minimum",
-                "integrate": True,
-                "combine_species": True,
-                "lang": "de",
-                "domain": "ch",
-                "dimensions": {
-                    "species_id": (1, 2),
-                    "time": -1,
-                    "level": 0,
-                },
-            }
-        ],
-    }
-
-
 class Test_CloudArrivalTime(_TestBase):
     reference = "ref_cosmo-e_ens_cloud_arrival_time"
     setup_dct = {
         "files": {
-            "input": INFILE_NAME,
+            "input": INFILE_1,
             "output": f"{reference}.png",
         },
         "model": {
@@ -198,7 +165,7 @@ class Test_CloudDepartureTime(_TestBase):
     reference = "ref_cosmo-e_ens_cloud_departure_time"
     setup_dct = {
         "files": {
-            "input": INFILE_NAME,
+            "input": INFILE_1,
             "output": f"{reference}.png",
         },
         "model": {
@@ -222,41 +189,6 @@ class Test_CloudDepartureTime(_TestBase):
                     "species_id": (1, 2),
                     "time": 3,
                     "level": (0, 1, 2),
-                },
-            }
-        ],
-    }
-
-
-@pytest.mark.skip("WIP")
-# class Test_MultipanelEnsStats_Concentration(_TestCreatePlot):
-class Test_MultipanelEnsStats_Concentration(_TestBase):
-    reference = "ref_cosmo-e_multipanel_ens_stats_integr_concentration"
-    setup_dct = {
-        "files": {
-            "input": INFILE_NAME,
-            "output": f"{reference}.png",
-        },
-        "layout": {
-            "plot_type": "multipanel",
-            "multipanel_param": "ens_variable",
-        },
-        "model": {
-            "name": "COSMO-E",
-            "ens_member_id": ENS_MEMBER_IDS,
-        },
-        "panels": [
-            {
-                "plot_variable": "concentration",
-                "ens_variable": ["minimum", "maximum", "median", "mean"],
-                "integrate": True,
-                "combine_species": True,
-                "lang": "de",
-                "domain": "ch",
-                "dimensions": {
-                    "species_id": (1, 2),
-                    "time": -1,
-                    "level": 0,
                 },
             }
         ],
