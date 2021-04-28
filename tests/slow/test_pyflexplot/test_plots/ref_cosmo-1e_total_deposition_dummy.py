@@ -191,7 +191,7 @@ field_summary = {
         },
     },
     "model_setup": {
-        "name": "COSMO-1",
+        "name": "COSMO-1E",
         "base_time": 202010210500,
         "ens_member_id": None,
         "simulation_type": "deterministic",
@@ -247,7 +247,7 @@ plot_summary = {
         "setup": {
             "files": {
                 "input": "flexpart_cosmo-1e-ctrl_2020102105.nc",
-                "output": "ref_cosmo-1_total_deposition_dummy.png",
+                "output": "ref_cosmo-1e_total_deposition_dummy.png",
                 "output_time_format": "%Y%m%d%H%M",
             },
             "layout": {
@@ -257,7 +257,7 @@ plot_summary = {
                 "type": "post_vintage",
             },
             "model": {
-                "name": "COSMO-1",
+                "name": "COSMO-1E",
                 "base_time": 202010210500,
                 "ens_member_id": None,
                 "simulation_type": "deterministic",
@@ -395,7 +395,7 @@ plot_summary = {
                 "unit": "Bq m$^{-2}$",
             },
             "bottom": {
-                "model_info": "FLEXPART basierend auf COSMO-1, 2020-10-21 05:00 UTC",
+                "model_info": "FLEXPART basierend auf COSMO-1E Kontrolllauf, 2020-10-21 05:00 UTC",
                 "copyright": "©MeteoSchweiz",
             },
             "release_info": {
@@ -682,7 +682,7 @@ plot_summary = {
                     },
                 },
                 "model_setup": {
-                    "name": "COSMO-1",
+                    "name": "COSMO-1E",
                     "base_time": 202010210500,
                     "ens_member_id": None,
                     "simulation_type": "deterministic",
@@ -5536,7 +5536,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "FLEXPART basierend auf COSMO-1, 2020-10-21 05:00 UTC",
+                    "s": "FLEXPART basierend auf COSMO-1E Kontrolllauf, 2020-10-21 05:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
