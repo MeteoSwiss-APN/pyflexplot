@@ -141,12 +141,25 @@ class ReferenceFileCreationError(Exception):
 
 
 class _TestCreateReference(_TestBase):
-    """Test parent class to create a new test reference for a test."""
+    """Replacement parent class for test classes to create new reference.
+
+    For test classes that (temporarily) inherit from ``_TestCreateReference``
+    instead of ``_TestBase``, a new test reference file will be created when
+    the respective test is run.
+
+    Upon successful reference file creation, ``ReferenceFileCreationSuccess`` is
+    raised, otherwise ``ReferenceFileCreationError``.
+
+    To check a newly created reference, the corresponding plot can be created
+    by temporarily inheriting from ``_TestCreatePlot``.
+
+    """
 
     def test(self, datadir):
         if black is None:
             raise ImportError("must install black to create test reference")
-        ref_file = f"{self.reference}.py"  # pylint: disable=no-member
+        curdir = Path(__file__).absolute().parent
+        ref_file = curdir / f"{self.reference}.py"  # pylint: disable=no-member
         field_group = self.get_field_group(datadir)
         plot = self.get_plot(field_group)
 
@@ -218,10 +231,22 @@ class PlotCreationError(Exception):
 
 
 class _TestCreatePlot(_TestBase):
-    """Test parent class to create plots based on a test setup."""
+    """Replacement parent class for test classes to create plot.
+
+    For test classes that (temporarily) inherit from ``_TestCreatePlot`` instead
+    of ``_TestBase``, the plot will be created when the respective test is run.
+
+    Upon successful reference file creation, ``PlotCreationSuccess`` is raised,
+    otherwise ``PlotCreationError``.
+
+    If the plot looks good, a new test reference can be created by temporarily
+    inheriting from ``_TestCreateReference``.
+
+    """
 
     def test(self, datadir):
-        plot_file = f"{self.reference}.png"  # pylint: disable=no-member
+        curdir = Path(__file__).absolute().parent
+        plot_file = curdir / f"{self.reference}.png"  # pylint: disable=no-member
         field_group = self.get_field_group(datadir)
         plot = self.get_plot(field_group)
         try:
