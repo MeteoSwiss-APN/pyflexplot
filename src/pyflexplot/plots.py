@@ -649,11 +649,20 @@ def create_plot_config(
         legend_config_dct["range_widths"] = (4, 3, 4)
         legend_config_dct["rstrip_zeros"] = True
         duration = int(mdata.simulation.get_duration("hours"))
-        cloud_levels = [0, 3, 6, 12, 18] + list(range(24, duration, 12))
+        cloud_levels = [0, 3, 6, 9, 12, 18] + list(range(24, duration, 12))
         if cloud_levels[-1] != duration:
             cloud_levels += [duration]
         levels_config_dct["levels"] = cloud_levels
-        levels_config_dct["extend"] = "min"
+        if (
+            plot_variable == "cloud_arrival_time"
+            or ens_variable == "cloud_arrival_time"
+        ):
+            levels_config_dct["extend"] = "min"
+        elif (
+            plot_variable == "cloud_departure_time"
+            or ens_variable == "cloud_departure_time"
+        ):
+            levels_config_dct["extend"] = "max"
     # SR_TMP < TODO proper multipanel support
     if setup.layout.plot_type == "multipanel":
         if setup.layout.multipanel_param == "ens_variable":
