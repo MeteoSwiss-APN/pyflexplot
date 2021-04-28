@@ -9,8 +9,8 @@ species_id = 1
 
 [_base._cloud]
 level = 0
-# time = 0
-time = "*"
+time = 0
+# time = "*"
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_{plot_variable}_{time_step}.png"
 
 [_base._cloud."_arrival+"]
