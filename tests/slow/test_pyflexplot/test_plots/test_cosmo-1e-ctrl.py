@@ -6,6 +6,7 @@ from .shared import _TestCreateReference  # noqa:F401
 from .shared import datadir  # noqa:F401  # required by _TestBase.test
 
 INFILE_1 = "flexpart_cosmo-1e-ctrl_2020102105.nc"
+INFILE_2 = "flexpart_cosmo-1e-ctrl_1032_2021040800_6-releases.nc"
 
 
 # Uncomment to create plots for all tests
@@ -36,6 +37,33 @@ class Test_TotalDeposition_MissingField(_TestBase):
                 "lang": "de",
                 "domain": "full",
                 "dimensions": {
+                    "species_id": 1,
+                    "time": -1,
+                },
+            }
+        ],
+    }
+
+
+class Test_AffectedArea(_TestBase):
+    reference = "ref_cosmo-1e-ctrl_affected_area"
+    setup_dct = {
+        "files": {
+            "input": INFILE_2,
+            "output": f"{reference}.png",
+        },
+        "model": {
+            "name": "COSMO-1E",
+        },
+        "panels": [
+            {
+                "domain": "ch",
+                "plot_variable": "affected_area",
+                "integrate": True,
+                "lang": "en",
+                "dimensions": {
+                    "level": 0,
+                    "release": 5,
                     "species_id": 1,
                     "time": -1,
                 },
