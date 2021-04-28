@@ -163,11 +163,7 @@ class _TestCreateReference(_TestBase):
         field_group = self.get_field_group(datadir)
         plot = self.get_plot(field_group)
 
-        # SR_TMP < TODO Add support for multiple plots!
-        assert len(field_group) == 1
-        field = next(iter(field_group))
-        # SR_TMP >
-        field_summary = summarize(field)
+        field_summary = summarize(field_group)
         plot_summary = summarize(plot)
         plot.clean()
 
