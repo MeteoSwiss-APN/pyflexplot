@@ -8,6 +8,7 @@ from copy import deepcopy
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
+from pathlib import Path
 from pprint import pformat
 from typing import Any
 from typing import cast
@@ -394,8 +395,18 @@ class VariableMetaData(_MetaDataBase):
                 var = fi.variables["level"]
             except KeyError:  # SR_TMP IFS
                 var = fi.variables["height"]  # SR_TMP IFS
-            level_bot = 0.0 if idx == 0 else float(var[idx - 1])
-            level_top = float(var[idx])
+            try:
+                level_bot = 0.0 if idx == 0 else float(var[idx - 1])
+            except IndexError as e:
+                raise Exception(
+                    f"index of bottom level out of bounds: {idx} > {var.size - 1}"
+                ) from e
+            try:
+                level_top = float(var[idx])
+            except IndexError as e:
+                raise Exception(
+                    f"index of top level out of bounds: {idx} > {var.size - 1}"
+                ) from e
             level_unit = getncattr(var, "units")
         return cls(
             unit=unit,
@@ -667,10 +678,15 @@ class RawReleaseMetaData:
 
         # Fetch species_id
         assert dimensions.species_id is not None  # mypy
-        # SR_TMP <
+        n_species = fi.dimensions["numspec"].size
+        if dimensions.species_id < 1:
+            raise Exception(f"invalid species_id: {dimensions.species_id} <= 0")
+        elif dimensions.species_id > n_species:
+            raise Exception(
+                f"invalid species_id: {dimensions.species_id} > {n_species}"
+                f" (no. species in {Path(fi.filepath()).name})"
+            )
         idx_spec = dimensions.species_id - 1
-        assert 0 <= idx_spec < fi.dimensions["numspec"].size
-        # SR_TMP >
 
         # Fetch nageclass
         assert dimensions.nageclass is not None  # mypy
