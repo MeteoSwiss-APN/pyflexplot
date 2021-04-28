@@ -109,11 +109,7 @@ class _TestBase:
     def test(self, datadir):
         field_group = self.get_field_group(datadir)
 
-        # SR_TMP < TODO Add support for multiple plots!
-        assert len(field_group) == 1
-        field = next(iter(field_group))
-        # SR_TMP >
-        res = summarize(field)
+        res = summarize(field_group)
         sol = self.get_reference("field_summary")
         try:
             assert_nested_equal(res, sol, "res", "sol", float_close_ok=True)
