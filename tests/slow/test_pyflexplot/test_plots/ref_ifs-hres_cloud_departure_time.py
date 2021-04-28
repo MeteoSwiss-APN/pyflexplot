@@ -2,30 +2,32 @@
 """Test reference for pytest test.
 
 tests/slow/test_pyflexplot/test_plots/shared.py
-    ::Test_IntegratedConcentration
+    ::Test_CloudDepartureTime
     ::test
 
 Created by temporarily changing the parent class of
-``Test_IntegratedConcentration``
+``Test_CloudDepartureTime``
 from ``_TestBase`` to ``_TestCreateReference`` and running pytest.
 
 """
+# Third-party
+import numpy as np
 
 field_summary = {
     "type": "Field",
     "fld": {
         "dtype": "float32",
         "shape": [80, 160],
-        "nanmin": 0.0,
-        "nanmean": 1.1403092e-08,
-        "nanmedian": 0.0,
-        "nanmax": 4.5312503e-05,
-        "nanmin_nonzero": 1.1891268e-09,
-        "nanmean_nonzero": 9.122474e-06,
-        "nanmedian_nonzero": 1.3973697e-06,
-        "nanmax_nonzero": 4.5312503e-05,
+        "nanmin": "-inf",
+        "nanmean": np.nan,
+        "nanmedian": "-inf",
+        "nanmax": np.inf,
+        "nanmin_nonzero": "-inf",
+        "nanmean_nonzero": np.nan,
+        "nanmedian_nonzero": "-inf",
+        "nanmax_nonzero": np.inf,
         "n_nan": 0,
-        "n_zero": 12784,
+        "n_zero": 0,
     },
     "lat": {
         "dtype": "float32",
@@ -107,10 +109,10 @@ field_summary = {
         "simulation": {
             "start": "2020-03-17 00:00:00+00:00",
             "end": "2020-03-19 00:00:00+00:00",
-            "now": "2020-03-18 06:00:00+00:00",
-            "now_rel": "1 day, 6:00:00",
+            "now": "2020-03-17 00:00:00+00:00",
+            "now_rel": "0:00:00",
             "base_time": "2020-03-17 00:00:00+00:00",
-            "lead_time": "1 day, 6:00:00",
+            "lead_time": "0:00:00",
             "reduction_start": "2020-03-17 00:00:00+00:00",
             "reduction_start_rel": "0:00:00",
             "time_steps": [
@@ -149,7 +151,7 @@ field_summary = {
             "washout_exponent": 0.8,
         },
         "variable": {
-            "unit": "Bq h m-3",
+            "unit": "h",
             "bottom_level": 0.0,
             "top_level": 500.0,
             "level_unit": "meters",
@@ -159,23 +161,23 @@ field_summary = {
         "type": "FieldTimeProperties",
         "stats": {
             "type": "FieldStats",
-            "min": 0.0,
-            "max": 4.996603e-05,
-            "mean": 1.00528235e-08,
-            "median": 0.0,
+            "min": 3.0,
+            "max": 48.0,
+            "mean": 22.864864,
+            "median": 24.0,
         },
         "stats_nz": {
             "type": "FieldStats",
-            "min": 4.869674e-11,
-            "max": 4.996603e-05,
-            "mean": 8.41344e-06,
-            "median": 2.1751425e-06,
+            "min": 3.0,
+            "max": 48.0,
+            "mean": 22.864864,
+            "median": 24.0,
         },
     },
     "panel_setup": {
-        "plot_variable": "concentration",
+        "plot_variable": "cloud_departure_time",
         "ens_variable": "none",
-        "integrate": True,
+        "integrate": False,
         "combine_levels": False,
         "combine_species": False,
         "ens_params": {"mem_min": None, "pctl": None, "thr": None, "thr_type": "lower"},
@@ -189,7 +191,7 @@ field_summary = {
             "nageclass": 0,
             "release": 0,
             "species_id": 1,
-            "time": 10,
+            "time": 0,
             "variable": "concentration",
         },
     },
@@ -243,8 +245,8 @@ plot_summary = {
         "type": "BoxedPlotConfig",
         "setup": {
             "files": {
-                "input": "flexpart_ifs_20200317000000.nc",
-                "output": "ref_ifs_integrated_concentration.png",
+                "input": "flexpart_ifs-hres_20200317000000.nc",
+                "output": "ref_ifs-hres_cloud_departure_time.png",
                 "output_time_format": "%Y%m%d%H%M",
             },
             "layout": {
@@ -261,9 +263,9 @@ plot_summary = {
             },
             "panels": [
                 {
-                    "plot_variable": "concentration",
+                    "plot_variable": "cloud_departure_time",
                     "ens_variable": "none",
-                    "integrate": True,
+                    "integrate": False,
                     "combine_levels": False,
                     "combine_species": False,
                     "ens_params": {
@@ -282,7 +284,7 @@ plot_summary = {
                         "nageclass": 0,
                         "release": 0,
                         "species_id": 1,
-                        "time": 10,
+                        "time": 0,
                         "variable": "concentration",
                     },
                 }
@@ -321,24 +323,24 @@ plot_summary = {
             "include_lower": False,
             "legend": {
                 "type": "ContourLevelsLegendConfig",
-                "range_align": "center",
+                "range_align": "right",
                 "range_style": "base",
-                "range_widths": [5, 3, 5],
+                "range_widths": [4, 3, 4],
                 "rstrip_zeros": True,
                 "labels": [
-                    "1E-12 $\\tt -$ 1E-11",
-                    "1E-11 $\\tt -$ 1E-10",
-                    "1E-10 $\\tt -$ 1E-09",
-                    "1E-09 $\\tt -$ 1E-08",
-                    "1E-08 $\\tt -$ 1E-07",
-                    "1E-07 $\\tt -$ 1E-06",
-                    "1E-06 $\\tt -$ 1E-05",
-                    "      $\\tt >$ 1E-05",
+                    " 0.0 $\\tt -$  3.0",
+                    " 3.0 $\\tt -$  6.0",
+                    " 6.0 $\\tt -$  9.0",
+                    " 9.0 $\\tt -$ 12.0",
+                    "12.0 $\\tt -$ 18.0",
+                    "18.0 $\\tt -$ 24.0",
+                    "24.0 $\\tt -$ 33.0",
+                    "     $\\tt >$ 33.0",
                 ],
             },
-            "levels": [1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07, 1e-06, 1e-05],
-            "n": 8,
-            "scale": "log",
+            "levels": [0, 3, 6, 9, 12, 18, 24, 33],
+            "n": 0,
+            "scale": "lin",
         },
         "markers": {
             "type": "MarkersConfig",
@@ -357,42 +359,37 @@ plot_summary = {
                     "markeredgewidth": 1.5,
                 },
             },
-            "mark_field_max": True,
+            "mark_field_max": False,
             "mark_release_site": True,
         },
         "colors": [
-            "bisque",
-            "violet",
-            "rebeccapurple",
-            "cornflowerblue",
-            "yellowgreen",
-            "greenyellow",
-            "yellow",
-            "lightgray",
+            [0.993248, 0.906157, 0.143936, 1.0],
+            [0.565498, 0.84243, 0.262877, 1.0],
+            [0.20803, 0.718701, 0.472873, 1.0],
+            [0.128729, 0.563265, 0.551229, 1.0],
+            [0.190631, 0.407061, 0.556089, 1.0],
+            [0.267968, 0.223549, 0.512008, 1.0],
+            [0.267004, 0.004874, 0.329415, 1.0],
+            "slategray",
         ],
         "fig_size": [12.5, 8.0],
         "labels": {
             "title": {
-                "tl": "Integrated air activity concentration",
-                "bl": "Summed over 30:00$\\,$h (since 2020-03-17 00:00 UTC)",
-                "tr": "2020-03-18 06:00 UTC (lead time +30:00$\\,$h)",
-                "br": "30:00$\\,$h after release start",
+                "tl": "Cloud departure time",
+                "bl": "Averaged over 0:00$\\,$h (since 2020-03-17 00:00 UTC)",
+                "tr": "2020-03-17 00:00 UTC (lead time +0:00$\\,$h)",
+                "br": "0:00$\\,$h after release start",
             },
             "data_info": {
-                "lines": [
-                    "Substance:\tCs-137",
-                    "Input variable:\tInt. air activ. concentr.",
-                    "Height:\t0$-$500 m AGL",
-                ]
+                "lines": ["Substance:\tCs-137", "Input variable:\tCloud departure time"]
             },
             "legend": {
-                "title": "Int. concentr. (Bq h m$^{-3}$)",
+                "title": "Hours until departure",
                 "release_site": "Release site",
                 "site": "Site",
                 "max": "Max.",
                 "maximum": "Maximum",
-                "tc": "Height: 0$-$500 m AGL",
-                "unit": "Bq h m$^{-3}$",
+                "unit": "H",
             },
             "bottom": {
                 "model_info": "FLEXPART based on IFS-HRES, 2020-03-17 00:00 UTC",
@@ -510,16 +507,16 @@ plot_summary = {
                 "fld": {
                     "dtype": "float32",
                     "shape": [80, 160],
-                    "nanmin": 0.0,
-                    "nanmean": 1.1403092e-08,
-                    "nanmedian": 0.0,
-                    "nanmax": 4.5312503e-05,
-                    "nanmin_nonzero": 1.1891268e-09,
-                    "nanmean_nonzero": 9.122474e-06,
-                    "nanmedian_nonzero": 1.3973697e-06,
-                    "nanmax_nonzero": 4.5312503e-05,
+                    "nanmin": "-inf",
+                    "nanmean": np.nan,
+                    "nanmedian": "-inf",
+                    "nanmax": np.inf,
+                    "nanmin_nonzero": "-inf",
+                    "nanmean_nonzero": np.nan,
+                    "nanmedian_nonzero": "-inf",
+                    "nanmax_nonzero": np.inf,
                     "n_nan": 0,
-                    "n_zero": 12784,
+                    "n_zero": 0,
                 },
                 "lat": {
                     "dtype": "float32",
@@ -601,10 +598,10 @@ plot_summary = {
                     "simulation": {
                         "start": "2020-03-17 00:00:00+00:00",
                         "end": "2020-03-19 00:00:00+00:00",
-                        "now": "2020-03-18 06:00:00+00:00",
-                        "now_rel": "1 day, 6:00:00",
+                        "now": "2020-03-17 00:00:00+00:00",
+                        "now_rel": "0:00:00",
                         "base_time": "2020-03-17 00:00:00+00:00",
-                        "lead_time": "1 day, 6:00:00",
+                        "lead_time": "0:00:00",
                         "reduction_start": "2020-03-17 00:00:00+00:00",
                         "reduction_start_rel": "0:00:00",
                         "time_steps": [
@@ -643,7 +640,7 @@ plot_summary = {
                         "washout_exponent": 0.8,
                     },
                     "variable": {
-                        "unit": "Bq h m-3",
+                        "unit": "h",
                         "bottom_level": 0.0,
                         "top_level": 500.0,
                         "level_unit": "meters",
@@ -653,23 +650,23 @@ plot_summary = {
                     "type": "FieldTimeProperties",
                     "stats": {
                         "type": "FieldStats",
-                        "min": 0.0,
-                        "max": 4.996603e-05,
-                        "mean": 1.00528235e-08,
-                        "median": 0.0,
+                        "min": 3.0,
+                        "max": 48.0,
+                        "mean": 22.864864,
+                        "median": 24.0,
                     },
                     "stats_nz": {
                         "type": "FieldStats",
-                        "min": 4.869674e-11,
-                        "max": 4.996603e-05,
-                        "mean": 8.41344e-06,
-                        "median": 2.1751425e-06,
+                        "min": 3.0,
+                        "max": 48.0,
+                        "mean": 22.864864,
+                        "median": 24.0,
                     },
                 },
                 "panel_setup": {
-                    "plot_variable": "concentration",
+                    "plot_variable": "cloud_departure_time",
                     "ens_variable": "none",
-                    "integrate": True,
+                    "integrate": False,
                     "combine_levels": False,
                     "combine_species": False,
                     "ens_params": {
@@ -688,7 +685,7 @@ plot_summary = {
                         "nageclass": 0,
                         "release": 0,
                         "species_id": 1,
-                        "time": 10,
+                        "time": 0,
                         "variable": "concentration",
                     },
                 },
@@ -1213,17 +1210,6 @@ plot_summary = {
                     "markersize": 7.5,
                     "markeredgewidth": 1.5,
                 },
-                {
-                    "element_type": "marker",
-                    "p_lon": 131.125,
-                    "p_lat": 40.625,
-                    "marker": "+",
-                    "transform": "PlateCarree instance",
-                    "zorder": 6,
-                    "color": "black",
-                    "markersize": 10.0,
-                    "markeredgewidth": 1.5,
-                },
             ],
         },
         "top": {
@@ -1281,7 +1267,6 @@ plot_summary = {
                                 [-89.875, -89.875, 87.875, 87.875, -89.875],
                             ],
                             [[129.08999633789062], [41.279998779296875]],
-                            [[131.125], [40.625]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -1511,10 +1496,7 @@ plot_summary = {
                         "fc": (1.0, 1.0, 1.0, 1.0),
                         "frame_on": True,
                         "label": "",
-                        "lines": [
-                            [[0.19999999999999996], [0.3952439024390245]],
-                            [[0.19999999999999996], [0.34036585365853667]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.3952439024390245]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": (
@@ -1791,7 +1773,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Integrated air activity concentration",
+                    "s": "Cloud departure time",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -1819,7 +1801,7 @@ plot_summary = {
                         "va": "baseline",
                         "ha": "left",
                     },
-                    "s": "Summed over 30:00$\\,$h (since 2020-03-17 00:00 UTC)",
+                    "s": "Averaged over 0:00$\\,$h (since 2020-03-17 00:00 UTC)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -1847,7 +1829,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2020-03-18 06:00 UTC (lead time +30:00$\\,$h)",
+                    "s": "2020-03-17 00:00 UTC (lead time +0:00$\\,$h)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -1875,7 +1857,7 @@ plot_summary = {
                         "va": "baseline",
                         "ha": "right",
                     },
-                    "s": "30:00$\\,$h after release start",
+                    "s": "0:00$\\,$h after release start",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -1942,7 +1924,6 @@ plot_summary = {
                                 [-89.875, -89.875, 87.875, 87.875, -89.875],
                             ],
                             [[129.08999633789062], [41.279998779296875]],
-                            [[131.125], [40.625]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -2172,10 +2153,7 @@ plot_summary = {
                         "fc": (1.0, 1.0, 1.0, 1.0),
                         "frame_on": True,
                         "label": "",
-                        "lines": [
-                            [[0.19999999999999996], [0.3952439024390245]],
-                            [[0.19999999999999996], [0.34036585365853667]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.3952439024390245]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": (
@@ -2547,7 +2525,6 @@ plot_summary = {
                                 [-89.875, -89.875, 87.875, 87.875, -89.875],
                             ],
                             [[129.08999633789062], [41.279998779296875]],
-                            [[131.125], [40.625]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -2777,10 +2754,7 @@ plot_summary = {
                         "fc": (1.0, 1.0, 1.0, 1.0),
                         "frame_on": True,
                         "label": "",
-                        "lines": [
-                            [[0.19999999999999996], [0.3952439024390245]],
-                            [[0.19999999999999996], [0.34036585365853667]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.3952439024390245]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": (
@@ -3057,7 +3031,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "Int. concentr. (Bq h m$^{-3}$)",
+                    "s": "Hours until departure",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3085,7 +3059,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "      $\\tt >$ 1E-05",
+                    "s": "     $\\tt >$ 33.0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3115,7 +3089,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "1E-06 $\\tt -$ 1E-05",
+                    "s": "24.0 $\\tt -$ 33.0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3145,7 +3119,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "1E-07 $\\tt -$ 1E-06",
+                    "s": "18.0 $\\tt -$ 24.0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3175,7 +3149,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "1E-08 $\\tt -$ 1E-07",
+                    "s": "12.0 $\\tt -$ 18.0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3205,7 +3179,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "1E-09 $\\tt -$ 1E-08",
+                    "s": " 9.0 $\\tt -$ 12.0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3235,7 +3209,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "1E-10 $\\tt -$ 1E-09",
+                    "s": " 6.0 $\\tt -$  9.0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3265,7 +3239,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "1E-11 $\\tt -$ 1E-10",
+                    "s": " 3.0 $\\tt -$  6.0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3295,7 +3269,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "1E-12 $\\tt -$ 1E-11",
+                    "s": " 0.0 $\\tt -$  3.0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3327,7 +3301,7 @@ plot_summary = {
                     },
                     "w": 4.0,
                     "h": 2.0,
-                    "fc": "lightgray",
+                    "fc": "slategray",
                     "ec": "black",
                     "x_anker": "left",
                     "kwargs": {"lw": 1.0},
@@ -3352,7 +3326,7 @@ plot_summary = {
                     },
                     "w": 4.0,
                     "h": 2.0,
-                    "fc": "yellow",
+                    "fc": [0.267004, 0.004874, 0.329415, 1.0],
                     "ec": "black",
                     "x_anker": "left",
                     "kwargs": {"lw": 1.0},
@@ -3377,7 +3351,7 @@ plot_summary = {
                     },
                     "w": 4.0,
                     "h": 2.0,
-                    "fc": "greenyellow",
+                    "fc": [0.267968, 0.223549, 0.512008, 1.0],
                     "ec": "black",
                     "x_anker": "left",
                     "kwargs": {"lw": 1.0},
@@ -3402,7 +3376,7 @@ plot_summary = {
                     },
                     "w": 4.0,
                     "h": 2.0,
-                    "fc": "yellowgreen",
+                    "fc": [0.190631, 0.407061, 0.556089, 1.0],
                     "ec": "black",
                     "x_anker": "left",
                     "kwargs": {"lw": 1.0},
@@ -3427,7 +3401,7 @@ plot_summary = {
                     },
                     "w": 4.0,
                     "h": 2.0,
-                    "fc": "cornflowerblue",
+                    "fc": [0.128729, 0.563265, 0.551229, 1.0],
                     "ec": "black",
                     "x_anker": "left",
                     "kwargs": {"lw": 1.0},
@@ -3452,7 +3426,7 @@ plot_summary = {
                     },
                     "w": 4.0,
                     "h": 2.0,
-                    "fc": "rebeccapurple",
+                    "fc": [0.20803, 0.718701, 0.472873, 1.0],
                     "ec": "black",
                     "x_anker": "left",
                     "kwargs": {"lw": 1.0},
@@ -3477,7 +3451,7 @@ plot_summary = {
                     },
                     "w": 4.0,
                     "h": 2.0,
-                    "fc": "violet",
+                    "fc": [0.565498, 0.84243, 0.262877, 1.0],
                     "ec": "black",
                     "x_anker": "left",
                     "kwargs": {"lw": 1.0},
@@ -3502,7 +3476,7 @@ plot_summary = {
                     },
                     "w": 4.0,
                     "h": 2.0,
-                    "fc": "bisque",
+                    "fc": [0.993248, 0.906157, 0.143936, 1.0],
                     "ec": "black",
                     "x_anker": "left",
                     "kwargs": {"lw": 1.0},
@@ -3525,59 +3499,6 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "m": "+",
-                    "kwargs": {
-                        "color": "black",
-                        "markersize": 10.0,
-                        "markeredgewidth": 1.5,
-                    },
-                },
-                {
-                    "type": "TextBoxElementText",
-                    "loc": {
-                        "type": "TextBoxLocation",
-                        "loc": "tc",
-                        "loc_y": "t",
-                        "loc_x": "c",
-                        "dx_unit": 0.037500000000000006,
-                        "dy_unit": 0.021951219512195117,
-                        "dx": -3.5,
-                        "dy": -25.85,
-                        "x0": 0.5,
-                        "y0": 0.9780487804878049,
-                        "x": 0.36874999999999997,
-                        "y": 0.410609756097561,
-                        "va": "top",
-                        "ha": "center",
-                    },
-                    "s": "Max.: 4.53E-05",
-                    "replace_edge_spaces": False,
-                    "edge_spaces_replacement_char": "␣",
-                    "kwargs": {
-                        "ha": "left",
-                        "fontname": "Liberation Sans",
-                        "size": 10.0,
-                        "va": "top",
-                    },
-                },
-                {
-                    "type": "TextBoxElementMarker",
-                    "loc": {
-                        "type": "TextBoxLocation",
-                        "loc": "tc",
-                        "loc_y": "t",
-                        "loc_x": "c",
-                        "dx_unit": 0.037500000000000006,
-                        "dy_unit": 0.021951219512195117,
-                        "dx": -8.0,
-                        "dy": -29.05,
-                        "x0": 0.5,
-                        "y0": 0.9780487804878049,
-                        "x": 0.19999999999999996,
-                        "y": 0.34036585365853667,
-                        "va": "top",
-                        "ha": "center",
-                    },
                     "m": "^",
                     "kwargs": {
                         "markeredgecolor": "red",
@@ -3596,11 +3517,11 @@ plot_summary = {
                         "dx_unit": 0.037500000000000006,
                         "dy_unit": 0.021951219512195117,
                         "dx": -3.5,
-                        "dy": -28.35,
+                        "dy": -25.85,
                         "x0": 0.5,
                         "y0": 0.9780487804878049,
                         "x": 0.36874999999999997,
-                        "y": 0.35573170731707326,
+                        "y": 0.410609756097561,
                         "va": "top",
                         "ha": "center",
                     },
@@ -3671,7 +3592,6 @@ plot_summary = {
                                 [-89.875, -89.875, 87.875, 87.875, -89.875],
                             ],
                             [[129.08999633789062], [41.279998779296875]],
-                            [[131.125], [40.625]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -3901,10 +3821,7 @@ plot_summary = {
                         "fc": (1.0, 1.0, 1.0, 1.0),
                         "frame_on": True,
                         "label": "",
-                        "lines": [
-                            [[0.19999999999999996], [0.3952439024390245]],
-                            [[0.19999999999999996], [0.34036585365853667]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.3952439024390245]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": (
@@ -5060,7 +4977,6 @@ plot_summary = {
                                 [-89.875, -89.875, 87.875, 87.875, -89.875],
                             ],
                             [[129.08999633789062], [41.279998779296875]],
-                            [[131.125], [40.625]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -5290,10 +5206,7 @@ plot_summary = {
                         "fc": (1.0, 1.0, 1.0, 1.0),
                         "frame_on": True,
                         "label": "",
-                        "lines": [
-                            [[0.19999999999999996], [0.3952439024390245]],
-                            [[0.19999999999999996], [0.34036585365853667]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.3952439024390245]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": (
@@ -5637,7 +5550,6 @@ plot_summary = {
                                 [-89.875, -89.875, 87.875, 87.875, -89.875],
                             ],
                             [[129.08999633789062], [41.279998779296875]],
-                            [[131.125], [40.625]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -5867,10 +5779,7 @@ plot_summary = {
                         "fc": (1.0, 1.0, 1.0, 1.0),
                         "frame_on": True,
                         "label": "",
-                        "lines": [
-                            [[0.19999999999999996], [0.3952439024390245]],
-                            [[0.19999999999999996], [0.34036585365853667]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.3952439024390245]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": (

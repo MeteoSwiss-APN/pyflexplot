@@ -245,8 +245,8 @@ plot_summary = {
         "type": "BoxedPlotConfig",
         "setup": {
             "files": {
-                "input": "flexpart_ifs-hres_1018_20200921000000.nc",
-                "output": "ref_ifs_total_deposition_empty_field.png",
+                "input": "flexpart_ifs-hres_1018_20200921000000_no-deposition.nc",
+                "output": "ref_ifs-hres_total_deposition.png",
                 "output_time_format": "%Y%m%d%H%M",
             },
             "layout": {
