@@ -160,6 +160,16 @@ class PlotPanelSetup(BaseSetup):
                 f" with plot_variable '{self.plot_variable}'; expecting '{variable}'"
             )
 
+    def collect(self, param: str) -> Any:
+        """Collect the value(s) of a parameter."""
+        if is_plot_panel_setup_param(param):
+            value = getattr(self, param)
+        elif is_dimensions_param(param):
+            value = self.dimensions.get(param.replace("dimensions.", ""))
+        else:
+            raise ValueError(f"invalid param '{param}'")
+        return value
+
     @overload
     def complete_dimensions(
         self,
@@ -247,16 +257,6 @@ class PlotPanelSetup(BaseSetup):
             setup = type(self)(**params)
             setups.append(setup)
         return PlotPanelSetupGroup(setups)
-
-    def collect(self, param: str) -> Any:
-        """Collect the value(s) of a parameter."""
-        if is_plot_panel_setup_param(param):
-            value = getattr(self, param)
-        elif is_dimensions_param(param):
-            value = self.dimensions.get(param.replace("dimensions.", ""))
-        else:
-            raise ValueError(f"invalid param '{param}'")
-        return value
 
     def dict(self, rec: bool = True) -> Dict[str, Any]:
         """Return the parameter names and values as a dict.
