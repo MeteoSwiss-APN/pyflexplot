@@ -81,6 +81,7 @@ def read_fields(
     config: Optional[Union[InputConfig, Dict[str, Any]]] = None,
     *,
     only: Optional[int] = None,
+    _override_indir: Optional[str] = None,
     _override_infile: Optional[str] = None,
 ) -> List[FieldGroup]:
     """Read fields from an input file, or multiple files derived from one path.
@@ -94,8 +95,11 @@ def read_fields(
 
         only (optional): Restrict the number of fields that are read.
 
-        _override_infile (optional): Override ``setups.files.input``; should not be
-            used outside of tests.
+        _override_indir (optional): Override directory of
+            ``setups.files.input``; should not be used outside of tests.
+
+        _override_infile (optional): Override ``setups.files.input``; should not
+            be used outside of tests.
 
     """
     setup_group = setup_group.copy()
@@ -105,12 +109,21 @@ def read_fields(
     if not isinstance(config, InputConfig):
         config = InputConfig(**(config or {}))
 
+    override_path: Optional[str] = None
+    if _override_infile is not None:
+        override_path = _override_infile
+    if _override_indir is not None:
+        if override_path is not None:
+            override_path = f"{_override_indir}/{Path(override_path).name}"
+        else:
+            override_path = f"{_override_indir}/{Path(setup_group.infile).name}"
+
     files = InputFileEnsemble(
         raw_path=setup_group.infile,
         config=config,
         model_setup=model_setup,
         ens_member_ids=ens_member_ids,
-        override_raw_path=_override_infile,
+        override_raw_path=override_path,
     )
 
     # SR_TMP < TODO improve log message
