@@ -357,6 +357,15 @@ class PlotPanelSetup(BaseSetup):
             plot_variable = params["plot_variable"]
         except KeyError:
             plot_variable = cls().plot_variable  # default
+        if "variable" in dims_params:
+            variable = dims_params["variable"]
+            variable_check = Dimensions.derive_variable(plot_variable)
+            if variable != variable_check and set(variable) != set(variable_check):
+                raise ValueError(
+                    f"'dimensions.variable' param value {sfmt(variable)} is"
+                    f" incompatible with plot_variable '{plot_variable}'"
+                    f": expecting {sfmt(variable_check)}"
+                )
         params["dimensions"] = Dimensions.create(
             dims_params, plot_variable=plot_variable
         )

@@ -38,11 +38,42 @@ class Test_Create:
         with pytest.raises(ValueError, match="combine_species"):
             PlotPanelSetup.create(params)
 
-    @pytest.mark.skip(
-        "consider exception when dimensions.variable passed to PlotPanelSetup.create"
+    @pytest.mark.parametrize(
+        "plot_variable, variable",
+        [
+            (None, "concentration"),
+            ("concentration", "concentration"),
+            ("dry_deposition", "dry_deposition"),
+            ("wet_deposition", "wet_deposition"),
+            ("tot_deposition", ("dry_deposition", "wet_deposition")),
+            ("tot_deposition", ["wet_deposition", "dry_deposition"]),
+            ("affected_area", ("concentration", "dry_deposition", "wet_deposition")),
+        ],
     )
-    def test_dimensions_variable_fail(self):
-        params = {"dimensions": {"variable": "concentration"}}
+    def test_dimensions_variable_ok(self, plot_variable, variable):
+        params = {"dimensions": {"variable": variable}}
+        if plot_variable is not None:
+            params["plot_variable"] = plot_variable
+        try:
+            PlotPanelSetup.create(params)
+        except ValueError as e:
+            raise AssertionError(f"did raise ValueError: {e}") from e
+
+    @pytest.mark.parametrize(
+        "plot_variable, variable",
+        [
+            (None, "dry_deposition"),
+            ("concentration", "wet_deposition"),
+            ("tot_deposition", "dry_deposition"),
+            ("tot_deposition", "tot_deposition"),
+            ("dry_deposition", "wet_deposition"),
+            ("affected_area", ("concentration", "wet_deposition")),
+        ],
+    )
+    def test_dimensions_variable_fail(self, plot_variable, variable):
+        params = {"dimensions": {"variable": variable}}
+        if plot_variable is not None:
+            params["plot_variable"] = plot_variable
         with pytest.raises(ValueError, match="variable"):
             PlotPanelSetup.create(params)
 
