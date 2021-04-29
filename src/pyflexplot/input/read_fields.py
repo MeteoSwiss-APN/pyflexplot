@@ -315,7 +315,7 @@ class InputFileEnsemble:
         first_path = next(iter(self.paths))
         with nc4.Dataset(first_path) as fi:
             nc_dimensions_dct = read_dimensions(fi, add_ts0=self.config.add_ts0)
-            ts_hrs = self.get_temp_res_hrs(fi)
+            ts_hrs: float = self.get_temp_res_hrs(fi)
 
         field_lst_by_ts: Dict[int, List[Field]] = {}
         for panel_setup_i in plot_setup.panels:
@@ -359,21 +359,7 @@ class InputFileEnsemble:
                         fld_time_i = np.empty(fld_time_mem.shape[1:], np.float32)
                     fld_time_mem[idx_mem][:] = fld_time_i[:]
 
-            # Compute single field from all ensemble members
-            fld_time: np.ndarray = self._reduce_ensemble(
-                fld_time_mem, panel_setup_i, ts_hrs
-            )
-
-            if panel_setup_i.plot_variable == "affected_area":
-                assert fld_time.shape[-1] == 3  # SR_TMP
-                fld_time = (
-                    (fld_time > AFFECTED_AREA_THRESHOLD)
-                    .any(axis=-1)
-                    .astype(fld_time.dtype)
-                )
-            else:
-                assert fld_time.shape[-1] == 1  # SR_TMP
-                fld_time = fld_time.reshape(fld_time.shape[:-1])
+            fld_time = self._reduce_ensemble_etc(fld_time_mem, panel_setup_i, ts_hrs)
 
             # Compute some statistics across all time steps
             time_stats = FieldTimeProperties(fld_time)
@@ -545,6 +531,50 @@ class InputFileEnsemble:
         new_fld_time = np.zeros(new_shape, fld_time.dtype)
         new_fld_time[1:] = fld_time
         return new_fld_time
+
+    def _reduce_ensemble_etc(
+        self, fld_time_mem: np.ndarray, panel_setup: PlotPanelSetup, ts_hrs: float
+    ) -> np.ndarray:
+        def reduce_last_dimension(arr: np.ndarray) -> np.ndarray:
+            """Reduce the last dimension used for the affect area fields."""
+            if panel_setup.plot_variable == "affected_area":
+                assert arr.shape[-1] == 3  # SR_TMP
+                return (arr > AFFECTED_AREA_THRESHOLD).any(axis=-1).astype(arr.dtype)
+            assert arr.shape[-1] == 1  # SR_TMP
+            return arr.reshape(arr.shape[:-1])
+
+        fld_time: np.ndarray
+        if panel_setup.plot_variable == "affected_area":
+            if panel_setup.ens_variable in [
+                "none",
+                "minimum",
+                "maximum",
+                "median",
+                "mean",
+                "percentile",
+            ]:
+                fld_time = reduce_last_dimension(
+                    self._reduce_ensemble(fld_time_mem, panel_setup, ts_hrs)
+                )
+            elif panel_setup.ens_variable in [
+                "std_dev",
+                "med_abs_dev",
+                "probability",
+            ]:
+                fld_time = self._reduce_ensemble(
+                    reduce_last_dimension(fld_time_mem), panel_setup, ts_hrs
+                )
+            else:
+                raise NotImplementedError(
+                    f"plot_variable='{panel_setup.plot_variable}'"
+                    f"; ens_variable='{panel_setup.ens_variable}'"
+                )
+        else:
+            fld_time = reduce_last_dimension(
+                self._reduce_ensemble(fld_time_mem, panel_setup, ts_hrs)
+            )
+
+        return fld_time
 
     # pylint: disable=R0912  # too-many-branches
     # pylint: disable=R1702  # too-many-nested-blocks (>5)
