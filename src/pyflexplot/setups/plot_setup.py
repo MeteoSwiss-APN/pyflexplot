@@ -331,7 +331,11 @@ class PlotSetup(BaseSetup):
             params = dict(params)
             if isinstance(params.get("panels"), Mapping):
                 params["panels"] = [params["panels"]]
-            dct = merge_dicts(self.dict(), params, overwrite_seqs=True)
+            self_dct = self.dict()
+            # Reset 'dimensions.variable'; re-derived from 'plot_variable'
+            for panel_dct in self_dct["panels"]:
+                panel_dct["dimensions"].pop("variable")
+            dct = merge_dicts(self_dct, params, overwrite_seqs=True)
             if len(dct.get("panels", [])) == 1:
                 dct["panels"] = next(iter(dct["panels"]))
             return type(self).create(dct)
