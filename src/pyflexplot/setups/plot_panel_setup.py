@@ -258,6 +258,13 @@ class PlotPanelSetup(BaseSetup):
             setups.append(setup)
         return PlotPanelSetupGroup(setups)
 
+    def derive(self, params: Mapping[str, Any]) -> "PlotPanelSetup":
+        params = dict(params)
+        self_dct = self.dict()
+        # Remove 'dimensions.variable' as it is re-derived from 'plot_variable'
+        self_dct["dimensions"].pop("variable")
+        return self.create(merge_dicts(self_dct, params, overwrite_seqs=True))
+
     def dict(self, rec: bool = True) -> Dict[str, Any]:
         """Return the parameter names and values as a dict.
 

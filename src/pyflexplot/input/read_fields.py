@@ -2,6 +2,7 @@
 # Standard library
 import dataclasses as dc
 import re
+from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
@@ -125,10 +126,7 @@ def read_fields(
         ens_member_ids=ens_member_ids,
         override_raw_path=override_path,
     )
-
-    # SR_TMP < TODO improve log message
     log(dbg=f"reading fields from {files}")
-    # SR_TMP >
 
     first_path = next(iter(files.paths))
     with nc4.Dataset(first_path) as fi:
@@ -328,7 +326,11 @@ class InputFileEnsemble:
             )
 
             fld_time_mem = np.full(
-                self._get_shape_mem_time(nc_dimensions_dct), np.nan, np.float32
+                self._get_shape_mem_time(
+                    nc_dimensions_dct, panel_setup_i.plot_variable
+                ),
+                np.nan,
+                np.float32,
             )
             for idx_mem, file_path in enumerate(self.paths):
                 timeless_panel_setup = panel_setup_i.derive(
@@ -361,6 +363,17 @@ class InputFileEnsemble:
             fld_time: np.ndarray = self._reduce_ensemble(
                 fld_time_mem, panel_setup_i, ts_hrs
             )
+
+            if panel_setup_i.plot_variable == "affected_area":
+                assert fld_time.shape[-1] == 3  # SR_TMP
+                fld_time = (
+                    (fld_time > AFFECTED_AREA_THRESHOLD)
+                    .any(axis=-1)
+                    .astype(fld_time.dtype)
+                )
+            else:
+                assert fld_time.shape[-1] == 1  # SR_TMP
+                fld_time = fld_time.reshape(fld_time.shape[:-1])
 
             # Compute some statistics across all time steps
             time_stats = FieldTimeProperties(fld_time)
@@ -406,22 +419,32 @@ class InputFileEnsemble:
         self, fi: nc4.Dataset, timeless_panel_setup: PlotPanelSetup
     ) -> np.ndarray:
         """Read field over all time steps for each member."""
-        fld_time_lst = []
         plot_variable = timeless_panel_setup.plot_variable
-        for dimensions in timeless_panel_setup.dimensions.decompress():
-            fld_time_lst.append(
-                self._read_fld_over_time(fi, dimensions, timeless_panel_setup.integrate)
-            )
+
+        def read_fld_time_of_dimensions(sub_setup: PlotPanelSetup) -> List[np.ndarray]:
+            fld_time_lst: List[np.ndarray] = []
+            for dimensions in sub_setup.dimensions.decompress():
+                fld_time_lst.append(
+                    self._read_fld_over_time(fi, dimensions, sub_setup.integrate)
+                )
+            return fld_time_lst
+
+        # Read fields for all dimensions that are to be merged (e.g., summed up)
         if plot_variable == "affected_area":
-            shapes = [fld.shape for fld in fld_time_lst]
-            if len(set(shapes)) != 1:
-                raise Exception(f"field shapes differ: {shapes}")
-            fld_time = (np.array(fld_time_lst) > AFFECTED_AREA_THRESHOLD).any(axis=0)
+            fld_time_lst = []
+            for variable in timeless_panel_setup.dimensions.variable:
+                sub_setup_i = timeless_panel_setup.derive({"plot_variable": variable})
+                fld_time_lst.append(
+                    merge_fields(read_fld_time_of_dimensions(sub_setup_i))
+                )
+            fld_time = np.moveaxis(np.array(fld_time_lst), 0, -1)
         else:
-            fld_time = merge_fields(fld_time_lst)
+            # By default, sum up over all dimensions
+            fld_time = merge_fields(read_fld_time_of_dimensions(timeless_panel_setup))
+            fld_time = fld_time[..., np.newaxis]
         if self.fixer and self.model_setup.name == "IFS-HRES":
             # Note: IFS-HRES-EU is not global, so doesn't need this fix
-            self.fixer.fix_global_grid(self.lon, fld_time)
+            self.fixer.fix_global_grid(self.lon, fld_time, lon_axis=2)
         if self.config.add_ts0:
             fld_time = self._add_ts0_to_fld_time(fld_time)
         if plot_variable in ["cloud_arrival_time", "cloud_departure_time"]:
@@ -467,8 +490,8 @@ class InputFileEnsemble:
         return mdata_lst
 
     def _get_shape_mem_time(
-        self, raw_dimensions: Mapping[str, Mapping[str, Any]]
-    ) -> Tuple[int, int, int, int]:
+        self, raw_dimensions: Mapping[str, Mapping[str, Any]], plot_variable: str
+    ) -> Tuple[int, int, int, int, int]:
         """Get the shape of an array of fields across members and time steps."""
         renamed_dims = self._renamed_dims()
         if self.config.dry_run:
@@ -481,7 +504,10 @@ class InputFileEnsemble:
         n_mem = len(self.paths)
         self.lat = np.full((nlat,), np.nan)
         self.lon = np.full((nlon,), np.nan)
-        return (n_mem, nts, nlat, nlon)
+        if plot_variable == "affected_area":
+            # Read concentration, dry_deposition and wet_deposition separately
+            return (n_mem, nts, nlat, nlon, 3)
+        return (n_mem, nts, nlat, nlon, 1)
 
     def _read_grid(self, fi: nc4.Dataset) -> None:
         """Read and prepare grid variables."""

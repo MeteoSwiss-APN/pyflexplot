@@ -21,7 +21,7 @@ field_summary = {
                 "dtype": "float32",
                 "shape": [30, 40],
                 "nanmin": 0.0,
-                "nanmean": 0.765,
+                "nanmean": 0.74083334,
                 "nanmedian": 1.0,
                 "nanmax": 1.0,
                 "nanmin_nonzero": 1.0,
@@ -29,7 +29,7 @@ field_summary = {
                 "nanmedian_nonzero": 1.0,
                 "nanmax_nonzero": 1.0,
                 "n_nan": 0,
-                "n_zero": 282,
+                "n_zero": 311,
             },
             "lat": {
                 "dtype": "float32",
@@ -164,7 +164,7 @@ field_summary = {
                     "type": "FieldStats",
                     "min": 0.0,
                     "max": 1.0,
-                    "mean": 0.29864582,
+                    "mean": 0.29416665,
                     "median": 0.0,
                 },
                 "stats_nz": {
@@ -564,7 +564,7 @@ plot_summary = {
                     "dtype": "float32",
                     "shape": [30, 40],
                     "nanmin": 0.0,
-                    "nanmean": 0.765,
+                    "nanmean": 0.74083334,
                     "nanmedian": 1.0,
                     "nanmax": 1.0,
                     "nanmin_nonzero": 1.0,
@@ -572,7 +572,7 @@ plot_summary = {
                     "nanmedian_nonzero": 1.0,
                     "nanmax_nonzero": 1.0,
                     "n_nan": 0,
-                    "n_zero": 282,
+                    "n_zero": 311,
                 },
                 "lat": {
                     "dtype": "float32",
@@ -707,7 +707,7 @@ plot_summary = {
                         "type": "FieldStats",
                         "min": 0.0,
                         "max": 1.0,
-                        "mean": 0.29864582,
+                        "mean": 0.29416665,
                         "median": 0.0,
                     },
                     "stats_nz": {

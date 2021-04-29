@@ -13,6 +13,7 @@ import numpy as np
 
 # First-party
 from pyflexplot.input.data import ensemble_probability
+from pyflexplot.input.field import Field
 from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setups.dimensions import Dimensions
 from pyflexplot.setups.plot_setup import PlotSetup
@@ -353,3 +354,58 @@ class TestReadFieldEnsemble_Multiple:
 
     def test_ens_max_deposition_tot(self, datadir):  # noqa:F811
         self.run_deposition_tot(datadir, "maximum")
+
+
+def test_affected_area_stats(datadir):  # npqa:F811
+    """Check that ens min/mean/max etc. of affected area differ.
+
+    Background: There was a bug that lead to mean being equal to max.
+
+    """
+    datafile_name = "flexpart_cosmo-e_2019072712_{ens_member:03d}.nc"
+    # datafile = f"{datadir}/{datafile_name}"
+
+    def read_field(ens_var: str) -> Field:
+        setup_dct = {
+            "files": {
+                "input": datafile_name,
+                "output": "dummy.png",
+            },
+            "model": {
+                "name": "COSMO-E",
+                "ens_member_id": [0, 5, 10, 15, 20],
+            },
+            "panels": {
+                "plot_variable": "affected_area",
+                "ens_variable": ens_var,
+                "combine_species": True,
+                "dimensions": {
+                    "time": -1,
+                    "level": 0,
+                },
+            },
+        }
+        plot_setups = PlotSetupGroup.create(setup_dct)
+        field_groups = read_fields(
+            plot_setups, {"add_ts0": True}, _override_indir=datadir
+        )
+        assert len(field_groups) == 1
+        field_group = next(iter(field_groups))
+        assert len(field_group) == 1
+        return next(iter(field_group))
+
+    field_min = read_field("minimum")
+    field_mean = read_field("mean")
+    field_max = read_field("maximum")
+
+    fld_min = field_min.fld
+    fld_mean = field_mean.fld
+    fld_max = field_max.fld
+
+    assert ((fld_min == 0) | (fld_min == 1)).all()
+    assert ((fld_mean == 0) | (fld_mean == 1)).all()
+    assert ((fld_max == 0) | (fld_max == 1)).all()
+
+    assert not (fld_min == fld_max).all()
+    assert not (fld_min == fld_mean).all()
+    assert not (fld_max == fld_mean).all()
