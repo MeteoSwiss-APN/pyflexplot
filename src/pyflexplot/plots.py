@@ -138,9 +138,7 @@ def create_plot(
     time_stats = next(iter(field_group)).time_props.stats
     # SR_TMP >  SR_MULTIPANEL
     labels = create_box_labels(plot_setup, mdata)
-    plot_config = create_plot_config(
-        setup=plot_setup, time_stats=time_stats, labels=labels
-    )
+    plot_config = create_plot_config(plot_setup, mdata, time_stats, labels)
     map_configs: List[MapAxesConfig] = [
         create_map_config(
             field_group.plot_setup,
@@ -589,6 +587,7 @@ def create_map_config(
 # pylint: disable=R0914  # too-many-locals (>15)
 def create_plot_config(
     setup: PlotSetup,
+    mdata: MetaData,
     time_stats: FieldStats,
     labels: Dict[str, Dict[str, Any]],
 ) -> BoxedPlotConfig:
@@ -649,15 +648,19 @@ def create_plot_config(
         legend_config_dct["range_align"] = "right"
         legend_config_dct["range_widths"] = (4, 3, 4)
         legend_config_dct["rstrip_zeros"] = True
-        # SR_TMP < Adapt to simulation duration (not always 33 h)!
-        levels_config_dct["levels"] = [0, 3, 6, 9, 12, 18, 24, 33]
-        # SR_TMP >
-        if plot_variable == "cloud_arrival_time" or (
-            ens_variable == "cloud_arrival_time"
+        duration = int(mdata.simulation.get_duration("hours"))
+        cloud_levels = [0, 3, 6, 9, 12, 18] + list(range(24, duration, 12))
+        if cloud_levels[-1] != duration:
+            cloud_levels += [duration]
+        levels_config_dct["levels"] = cloud_levels
+        if (
+            plot_variable == "cloud_arrival_time"
+            or ens_variable == "cloud_arrival_time"
         ):
             levels_config_dct["extend"] = "min"
-        elif plot_variable == "cloud_departure_time" or (
-            ens_variable == "cloud_departure_time"
+        elif (
+            plot_variable == "cloud_departure_time"
+            or ens_variable == "cloud_departure_time"
         ):
             levels_config_dct["extend"] = "max"
     # SR_TMP < TODO proper multipanel support

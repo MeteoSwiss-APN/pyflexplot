@@ -31,6 +31,7 @@ from srutils.dataclasses import get_dataclass_fields
 from srutils.datetime import datetime_range
 from srutils.datetime import init_datetime
 from srutils.dict import compress_multival_dicts
+from srutils.format import sfmt
 
 # Local
 from ..setups.dimensions import Dimensions
@@ -349,7 +350,7 @@ class _MetaDataBase:
         return dct
 
 
-@dc.dataclass
+@dc.dataclass(repr=False)
 class VariableMetaData(_MetaDataBase):
     unit: str
     bottom_level: float
@@ -418,7 +419,7 @@ class VariableMetaData(_MetaDataBase):
 
 # pylint: disable=R0902  # too-many-instance-attributes
 # pylint: disable=R0914  # too-many-instance-locals (>15)
-@dc.dataclass
+@dc.dataclass(repr=False)
 class SimulationMetaData(_MetaDataBase):
     start: datetime
     end: datetime
@@ -432,6 +433,25 @@ class SimulationMetaData(_MetaDataBase):
     grid_is_rotated: bool
     grid_north_pole_lat: float
     grid_north_pole_lon: float
+
+    @overload
+    def get_duration(self, unit: None = None) -> timedelta:
+        ...
+
+    @overload
+    def get_duration(self, unit: str) -> float:
+        ...
+
+    def get_duration(self, unit=None):
+        if unit is None:
+            return self.end - self.start
+        elif unit in ["h", "hours"]:
+            return self.get_duration().total_seconds() / 3600
+        else:
+            choices = [None, "h", "hours"]
+            raise ValueError(
+                f"unit {sfmt(unit)} not among [{', '.join(map(sfmt, choices))}]"
+            )
 
     # pylint: disable=R0913  # too-many-arguments (>5)
     @classmethod
@@ -500,7 +520,7 @@ class SimulationMetaData(_MetaDataBase):
         )
 
 
-@dc.dataclass
+@dc.dataclass(repr=False)
 # pylint: disable=R0902  # too-many-instance-attrbutes
 class ReleaseMetaData(_MetaDataBase):
     duration: timedelta
@@ -554,7 +574,7 @@ class ReleaseMetaData(_MetaDataBase):
         )
 
 
-@dc.dataclass
+@dc.dataclass(repr=False)
 # pylint: disable=R0902  # too-many-instance-attributes
 class SpeciesMetaData(_MetaDataBase):
     name: Union[str, Tuple[str, ...]]
