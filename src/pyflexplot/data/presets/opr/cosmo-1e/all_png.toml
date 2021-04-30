@@ -79,8 +79,8 @@ ens_variable = "maximum"
 ens_variable = "mean"
 [_base._tot_deposition."_mean+"]
 ens_variable = "mean"
-[_base._affected_area."_mean+"]
-ens_variable = "mean"
+# [_base._affected_area."_mean+"]
+# ens_variable = "mean"
 [_base._concentration._integr."_median+"]
 ens_variable = "median"
 [_base._tot_deposition."_median+"]
