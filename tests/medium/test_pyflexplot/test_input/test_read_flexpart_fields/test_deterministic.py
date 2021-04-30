@@ -57,7 +57,7 @@ class Config:
 
 datafilename1 = "flexpart_cosmo-1_2019052800.nc"
 datafilename2 = "flexpart_cosmo-1_2019093012.nc"
-datafilename3 = "flexpart_ifs_20200317000000.nc"
+datafilename3 = "flexpart_ifs-hres_20200317000000.nc"
 datafilename4 = "flexpart_cosmo-1e-ctrl_2020102105.nc"
 datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
 

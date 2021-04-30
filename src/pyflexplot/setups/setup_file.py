@@ -66,6 +66,8 @@ class SetupFile:
                 if raw_params not in raw_params_lst:
                     raw_params_lst.append(raw_params)
         raw_params_lst = self.prepare_raw_params(raw_params_lst)
+        if not raw_params_lst:
+            raise Exception(f"no setups defined in file {self.path}")
         setups = PlotSetupGroup.create(raw_params_lst)
         if only is not None:
             if only < 0:

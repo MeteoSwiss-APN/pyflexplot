@@ -104,25 +104,34 @@ class FlexPartDataFixer:
         mdata.variable.unit = new_unit
 
     @staticmethod
-    def fix_global_grid(lon, fld_time, idx_lon=-1):
+    def fix_global_grid(
+        lon: np.ndarray, fld_time: np.ndarray, lon_axis: int = -1
+    ) -> None:
         """Shift global grid longitudinally to fit into (-180..180) range."""
         # Check longitude dimension index
         if (
-            (idx_lon < 0 and -idx_lon > len(fld_time.shape))
-            or (idx_lon >= 0 and idx_lon >= len(fld_time.shape))
-            or fld_time.shape[idx_lon] != lon.size
+            (lon_axis < 0 and -lon_axis > len(fld_time.shape))
+            or (lon_axis >= 0 and lon_axis >= len(fld_time.shape))
+            or fld_time.shape[lon_axis] != lon.size
         ):
-            raise ValueError("invalid idx_lon", idx_lon, fld_time.shape, lon.size)
+            raise ValueError(
+                f"invalid idx_lon {lon_axis}"
+                f" (fld_time.shape={fld_time.shape}, lon.size={lon.size})"
+            )
 
         # Check longitudinal range
         if lon.max() - lon.min() > 360.0:
-            raise ValueError("longitutinal range too large", lon.max() - lon.min())
+            raise ValueError(
+                f"longitutinal range too large: {lon.max() - lon.min()} > 360"
+            )
 
         # Check that longitude is evenly spaced and seamless across date line
         dlons_raw = np.r_[lon, lon[0]] - np.r_[lon[-1], lon]
         dlons = np.abs(np.stack([dlons_raw, 360 - np.abs(dlons_raw)])).min(axis=0)
         if np.unique(dlons).size > 1:
-            raise ValueError("longitude not evenly spaced/seamless", np.unique(dlons))
+            raise ValueError(
+                f"longitude not evenly spaced/seamless: {np.unique(dlons).tolist()}"
+            )
         dlon = next(iter(dlons))
 
         # Shift the grid
@@ -134,15 +143,15 @@ class FlexPartDataFixer:
                 lon[:] = np.r_[lon[0] - dlon, lon[:-1]]
                 if lon[0] < -180.0 or n_shift >= lon.size:
                     raise Exception(
-                        "unexpected error while shifting lon eastward", lon, n_shift
+                        f"unexpected error while shifting lon eastward by {n_shift}"
                     )
-                idcs = np.arange(fld_time.shape[idx_lon] - 1)
+                idcs = np.arange(fld_time.shape[lon_axis] - 1)
                 fld_time[:] = np.concatenate(
                     [
-                        np.take(fld_time, [-1], idx_lon),
-                        np.take(fld_time, idcs, idx_lon),
+                        np.take(fld_time, [-1], lon_axis),
+                        np.take(fld_time, idcs, lon_axis),
                     ],
-                    axis=idx_lon,
+                    axis=lon_axis,
                 )
             log(wrn=f"fix global data: shift eastward by {n_shift} * {dlon} deg")
             return
@@ -155,15 +164,15 @@ class FlexPartDataFixer:
                 lon[:] = np.r_[lon[1:], lon[-1] + dlon]
                 if lon[-1] < -180.0 or n_shift >= lon.size:
                     raise Exception(
-                        "unexpected error while shifting lon eastward", lon, n_shift
+                        f"unexpected error while shifting lon eastward by {n_shift}"
                     )
-                idcs = np.arange(1, fld_time.shape[idx_lon])
+                idcs = np.arange(1, fld_time.shape[lon_axis])
                 fld_time[:] = np.concatenate(
                     [
-                        np.take(fld_time, idcs, idx_lon),
-                        np.take(fld_time, [0], idx_lon),
+                        np.take(fld_time, idcs, lon_axis),
+                        np.take(fld_time, [0], lon_axis),
                     ],
-                    axis=idx_lon,
+                    axis=lon_axis,
                 )
             log(wrn=f"fix global data: shift westward by {n_shift} * {dlon} deg")
             return

@@ -41,7 +41,7 @@ class Config:
         Config(ens_mem_ids=[2, 4, 8, 16], ens_var="maximum"),  # [conf9]
     ],
 )
-def test_one_setup_one_field(datadir, config):  # noqa:F811
+def test_concentration(datadir, config):  # noqa:F811
     datafile_fmt = f"{datadir}/flexpart_cosmo-e_const_{{ens_member:03d}}.nc"
 
     setup_dct = {
@@ -56,7 +56,11 @@ def test_one_setup_one_field(datadir, config):  # noqa:F811
         "panels": [
             {
                 "plot_variable": "concentration",
-                "dimensions": {"time": -1, "species_id": 1, "level": 0},
+                "dimensions": {
+                    "time": -1,
+                    "species_id": 1,
+                    "level": 0,
+                },
                 "ens_variable": config.ens_var,
             }
         ],

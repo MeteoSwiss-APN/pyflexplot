@@ -160,6 +160,16 @@ class PlotPanelSetup(BaseSetup):
                 f" with plot_variable '{self.plot_variable}'; expecting '{variable}'"
             )
 
+    def collect(self, param: str) -> Any:
+        """Collect the value(s) of a parameter."""
+        if is_plot_panel_setup_param(param):
+            value = getattr(self, param)
+        elif is_dimensions_param(param):
+            value = self.dimensions.get(param.replace("dimensions.", ""))
+        else:
+            raise ValueError(f"invalid param '{param}'")
+        return value
+
     @overload
     def complete_dimensions(
         self,
@@ -248,15 +258,12 @@ class PlotPanelSetup(BaseSetup):
             setups.append(setup)
         return PlotPanelSetupGroup(setups)
 
-    def collect(self, param: str) -> Any:
-        """Collect the value(s) of a parameter."""
-        if is_plot_panel_setup_param(param):
-            value = getattr(self, param)
-        elif is_dimensions_param(param):
-            value = self.dimensions.get(param.replace("dimensions.", ""))
-        else:
-            raise ValueError(f"invalid param '{param}'")
-        return value
+    def derive(self, params: Mapping[str, Any]) -> "PlotPanelSetup":
+        params = dict(params)
+        self_dct = self.dict()
+        # Remove 'dimensions.variable' as it is re-derived from 'plot_variable'
+        self_dct["dimensions"].pop("variable")
+        return self.create(merge_dicts(self_dct, params, overwrite_seqs=True))
 
     def dict(self, rec: bool = True) -> Dict[str, Any]:
         """Return the parameter names and values as a dict.
@@ -357,6 +364,15 @@ class PlotPanelSetup(BaseSetup):
             plot_variable = params["plot_variable"]
         except KeyError:
             plot_variable = cls().plot_variable  # default
+        if "variable" in dims_params:
+            variable = dims_params["variable"]
+            variable_check = Dimensions.derive_variable(plot_variable)
+            if variable != variable_check and set(variable) != set(variable_check):
+                raise ValueError(
+                    f"'dimensions.variable' param value {sfmt(variable)} is"
+                    f" incompatible with plot_variable '{plot_variable}'"
+                    f": expecting {sfmt(variable_check)}"
+                )
         params["dimensions"] = Dimensions.create(
             dims_params, plot_variable=plot_variable
         )

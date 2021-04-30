@@ -70,7 +70,7 @@ class Test_COSMO2(_TestBase):
 
 
 class Test_IFS(_TestBase):
-    datafilename = "flexpart_ifs_20200317000000.nc"
+    datafilename = "flexpart_ifs-hres_20200317000000.nc"
 
     def test_species_ids(self, datadir):
         assert self.read_species_ids(datadir) == (1,)
