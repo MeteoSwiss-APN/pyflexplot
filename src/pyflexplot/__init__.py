@@ -2,7 +2,7 @@
 
 __author__ = """Stefan Ruedisuehli"""
 __email__ = "stefan.ruedisuehli@env.ethz.ch"
-__version__ = "0.15.3"
+__version__ = "0.15.4"
 
 # Standard library
 import logging as _logging
