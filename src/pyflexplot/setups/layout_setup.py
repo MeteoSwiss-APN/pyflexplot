@@ -6,6 +6,7 @@ from typing import Mapping
 from typing import Optional
 
 # Local
+from ..plot_layouts import BoxedPlotLayout
 from .base_setup import BaseSetup
 
 
@@ -37,17 +38,10 @@ class LayoutSetup(BaseSetup):
                 )
 
         # Check type
-        layouts = [
-            "auto",
-            "vintage",
-            "post_vintage",
-            "post_vintage_ens",
-        ]
-        if self.type not in layouts:
-            raise ValueError(
-                f"invalid type '{self.type}'; choices: "
-                + ", ".join(map("'{}'".format, layouts))
-            )
+        try:
+            BoxedPlotLayout.create(self.type)
+        except ValueError as e:
+            raise ValueError(f"invalid type '{self.type}'") from e
 
     # pylint: disable=W0221  # arguments-differ (simulation_type)
     @classmethod

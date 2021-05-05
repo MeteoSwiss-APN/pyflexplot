@@ -19,9 +19,11 @@ from typing import Union
 
 # First-party
 from srutils.datetime import derive_datetime_fmt
+from srutils.exceptions import IncompatibleTypesError
 from srutils.exceptions import InvalidParameterNameError
 from srutils.exceptions import InvalidParameterValueError
-from srutils.exceptions import TypeCastError
+from srutils.exceptions import UnsupportedTypeError
+from srutils.format import sfmt
 from srutils.str import split_outside_parens
 
 DataclassT = TypeVar("DataclassT")
@@ -106,13 +108,13 @@ def dataclass_repr(
     return f"\n{' ' * indent * (nested + 1)}".join([head] + body) + foot
 
 
-def cast_field_value(cls: Type, field: str, value: Any, **kwargs: Any) -> Any:
+def cast_field_value(cls: Type, name: str, value: Any, **kwargs: Any) -> Any:
     """Cast a value to the type of a dataclass field.
 
     Args:
         cls: A dataclass.
 
-        field: Name of dataclass field.
+        name: Name of dataclass field.
 
         value: Value to cast to type of ``field``.
 
@@ -120,16 +122,22 @@ def cast_field_value(cls: Type, field: str, value: Any, **kwargs: Any) -> Any:
 
     """
     try:
-        type_ = get_type_hints(cls)[field]
+        type_ = get_type_hints(cls)[name]
     except KeyError as e:
-        raise InvalidParameterNameError(field) from e
+        raise InvalidParameterNameError(name) from e
     try:
         return cast_value(type_, value, **kwargs)
-    except TypeCastError as e:
-        msg = (
-            f"value {{}} incompatible with type {type_} of param {cls.__name__}.{field}"
-        ).format(f"'{value}'" if isinstance(value, str) else value)
-        raise InvalidParameterValueError(msg) from e
+    except Exception as e:
+        exc: Type[Exception]
+        if isinstance(e, IncompatibleTypesError):
+            exc = InvalidParameterValueError
+            msg = f"value incompatible with type {type_}"
+        elif isinstance(e, UnsupportedTypeError):
+            exc = InvalidParameterNameError
+            msg = f"type {type_} not supported"
+        else:
+            raise e
+        raise exc(f"{msg}: {cls.__name__}.{name} = {sfmt(value)}") from e
 
 
 # pylint: disable=R0911  # too-many-return-statements (>6)
@@ -202,7 +210,7 @@ def cast_value(
 
     def error(value: Any, type_: str, msg: str = "") -> Exception:
         msg = f": {msg}" if msg else ""
-        return TypeCastError(
+        return IncompatibleTypesError(
             f"type '{type(value).__name__}' incompatible with '{type_}'{msg}"
         )
 
@@ -302,7 +310,7 @@ def cast_value(
         for inner_type in inner_types:
             try:
                 return cast_value(inner_type, value, **kwargs)
-            except TypeCastError:
+            except IncompatibleTypesError:
                 pass
         raise error(value, type_, f"no compatible inner type: {inner_types}")
 
@@ -374,4 +382,4 @@ def cast_value(
         )
 
     else:
-        raise NotImplementedError(f"type '{type_}'")
+        raise UnsupportedTypeError(f"{type_}")

@@ -18,6 +18,7 @@ import toml
 from srutils.dict import decompress_nested_dict
 from srutils.dict import nested_dict_resolve_wildcards
 from srutils.exceptions import InvalidParameterNameError
+from srutils.exceptions import InvalidParameterValueError
 
 # Local
 from .dimensions import is_dimensions_param
@@ -157,7 +158,9 @@ class SetupFile:
         return params_lst
 
     @classmethod
-    def is_valid_raw_param(cls, name: str, raw_value: Optional[str] = None) -> bool:
+    def is_valid_raw_param_name(
+        cls, name: str, raw_value: Optional[str] = None
+    ) -> bool:
         """Check a raw parameter with optional raw value for validity."""
         try:
             name = cls.correct_raw_param_name(name)
@@ -169,6 +172,27 @@ class SetupFile:
                 PlotSetup.prepare_params([(name, raw_value)])
             except InvalidParameterNameError:
                 return False
+            except InvalidParameterValueError:
+                pass
+        return True
+
+    @classmethod
+    def is_valid_raw_param_value(
+        cls, name: str, raw_value: Optional[str] = None
+    ) -> bool:
+        """Check a raw parameter with optional raw value for validity."""
+        try:
+            name = cls.correct_raw_param_name(name)
+        # pylint: disable=W0703  # broad-except
+        except Exception:
+            return False
+        if raw_value is not None:
+            try:
+                PlotSetup.prepare_params([(name, raw_value)])
+            except InvalidParameterValueError:
+                return False
+            except InvalidParameterNameError as e:
+                raise e
         return True
 
     @staticmethod
@@ -176,7 +200,7 @@ class SetupFile:
         """Convert raw param name as used in setup files to internal name."""
         return {
             "infile": "files.input",
-            "layout_type": "layout.time",
+            "layout_type": "layout.type",
             "model": "model.name",
             "outfile": "files.output",
             "outfile_time_format": "files.output_time_format",

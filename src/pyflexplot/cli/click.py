@@ -38,10 +38,11 @@ def click_prepare_setup_params(ctx, param, value):
     if not value:
         return None
     for raw_name, raw_value in value:
-        if not SetupFile.is_valid_raw_param(raw_name, raw_value):
+        if not SetupFile.is_valid_raw_param_name(raw_name, raw_value):
+            click_error(ctx, f"Invalid setup parameter '{raw_name}'")
+        elif not SetupFile.is_valid_raw_param_value(raw_name, raw_value):
             click_error(
-                ctx,
-                f"Invalid raw setup parameter: name='{raw_name}', value='{raw_value}'",
+                ctx, f"setup parameter '{raw_name}' has invalid value '{raw_value}'"
             )
     return value
 

@@ -26,7 +26,7 @@ class BoxedPlotLayout:
         return self.rects[name]
 
     @classmethod
-    def create(cls, name: str, aspect: float) -> "BoxedPlotLayout":
+    def create(cls, name: str, aspect: float = 1.0) -> "BoxedPlotLayout":
         """Create the predefined plot layout ``name`` with ``aspect``."""
         if name == "vintage":
             aspects, rects = create_layout_vintage(aspect)

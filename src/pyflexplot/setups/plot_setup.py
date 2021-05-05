@@ -572,7 +572,7 @@ class PlotSetup(BaseSetup):
                 param = "layout.type"
             elif param == "model":
                 param = "model.name"
-            elif value in ["None", "*"]:
+            if value in ["None", "*"]:
                 value = None
             elif "," in value:
                 value = value.split(",")

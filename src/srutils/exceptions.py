@@ -15,10 +15,6 @@ class InvalidVariableNameError(Exception):
     """A string is not a valid variable name."""
 
 
-class TypeCastError(Exception):
-    """Error casting a value to a type."""
-
-
 class UnexpandableValueError(Exception):
     """Value is not expandable."""
 
@@ -26,8 +22,16 @@ class UnexpandableValueError(Exception):
 # Derived from other standard exceptions
 
 
+class IncompatibleTypesError(TypeError):
+    """Types are incompatible."""
+
+
 class KeyConflictError(KeyError):
     """Key conflict."""
+
+
+class UnsupportedTypeError(TypeError):
+    """Type is unsupported."""
 
 
 # Derived from custom exceptions
