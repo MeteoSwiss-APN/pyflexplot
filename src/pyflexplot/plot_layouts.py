@@ -42,35 +42,37 @@ class BoxedPlotLayout:
 # pylint: disable=R0914  # too-many-locals (>15)
 def create_layout_vintage(
     aspect: float,
-    *,
-    x0_tot: float = 0.0,
-    x1_tot: float = 1.0,
-    y0_tot: float = 0.0,
-    y1_tot: float = 1.0,
-    y_pad: float = 0.02,
-    h_top: float = 0.08,
-    w_right: float = 0.2,
-    h_rigbot: float = 0.42,
-    h_bottom: float = 0.05,
 ) -> Tuple[Dict[str, float], Dict[str, RectType]]:
-    x_pad = y_pad / aspect
-    h_tot = y1_tot - y0_tot
-    y1_top = y1_tot
-    y0_top = y1_top - h_top
-    y1_center = y0_top - y_pad
-    y0_center = y0_tot + h_bottom
-    h_center = y1_center - y0_center
-    w_tot = x1_tot - x0_tot
-    x1_right = x1_tot
-    x0_right = x1_right - w_right
-    x1_left = x0_right - x_pad
-    x0_left = x0_tot
-    w_left = x1_left - x0_left
-    y0_rigbot = y0_center
-    y1_rigbot = y0_rigbot + h_rigbot
-    y1_rigmid = y0_top - y_pad
-    y0_rigmid = y1_rigbot + y_pad
-    h_rigmid = y1_rigmid - y0_rigmid
+    # Primary
+    x0_tot: float = 0.0
+    x1_tot: float = 1.0
+    y0_tot: float = 0.0
+    y1_tot: float = 1.0
+    y_pad: float = 0.02
+    h_top: float = 0.08
+    h_rigbot: float = 0.42
+    h_bottom: float = 0.05
+    w_right: float = 0.2
+
+    # Derived
+    x_pad: float = y_pad / aspect
+    h_tot: float = y1_tot - y0_tot
+    y1_top: float = y1_tot
+    y0_top: float = y1_top - h_top
+    y1_center: float = y0_top - y_pad
+    y0_center: float = y0_tot + h_bottom
+    h_center: float = y1_center - y0_center
+    w_tot: float = x1_tot - x0_tot
+    x1_right: float = x1_tot
+    x0_right: float = x1_right - w_right
+    x1_left: float = x0_right - x_pad
+    x0_left: float = x0_tot
+    w_left: float = x1_left - x0_left
+    y0_rigbot: float = y0_center
+    y1_rigbot: float = y0_rigbot + h_rigbot
+    y1_rigmid: float = y0_top - y_pad
+    y0_rigmid: float = y1_rigbot + y_pad
+    h_rigmid: float = y1_rigmid - y0_rigmid
     aspects: Dict[str, float] = {
         "tot": aspect,
         "center": w_left / h_center * aspect,
@@ -91,17 +93,21 @@ def create_layout_vintage(
 def create_layout_post_vintage(
     aspect: float,
     *,
-    x0_tot: float = 0.0,
-    x1_tot: float = 1.0,
-    y0_tot: float = 0.0,
-    y1_tot: float = 1.0,
-    y_pad: float = 0.02,
-    h_top: float = 0.08,
-    w_right: float = 0.2,
     h_rigtop: float = 0.08,
-    h_rigbot: float = 0.42,
-    h_bottom: float = 0.05,
 ) -> Tuple[Dict[str, float], Dict[str, RectType]]:
+    # Primary
+    x0_tot: float = 0.0
+    x1_tot: float = 1.0
+    y0_tot: float = 0.0
+    y1_tot: float = 1.0
+    y_pad: float = 0.02
+    h_top: float = 0.08
+    # h_rigtop: float = ...
+    h_rigbot: float = 0.42
+    h_bottom: float = 0.05
+    w_right: float = 0.2
+
+    # Derived
     x_pad: float = y_pad / aspect
     # h_tot: float = y1_tot - y0_tot
     y1_top: float = y1_tot
@@ -139,10 +145,7 @@ def create_layout_post_vintage(
     return (aspects, rects)
 
 
-# pylint: disable=R0902  # too-many-instance-attributes
 def create_layout_post_vintage_ens(
-    aspect: float, **kwargs: float
+    aspect: float,
 ) -> Tuple[Dict[str, float], Dict[str, RectType]]:
-    if "h_rigtop" not in kwargs:
-        kwargs["h_rigtop"] = 0.2
-    return create_layout_post_vintage(aspect, **kwargs)
+    return create_layout_post_vintage(aspect, h_rigtop=0.2)
