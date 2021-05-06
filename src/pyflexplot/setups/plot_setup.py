@@ -7,7 +7,6 @@ the docstring of the class method ``Setup.create``.
 """
 # Standard library
 import dataclasses as dc
-import re
 from copy import deepcopy
 from pprint import pformat
 from typing import Any
@@ -34,7 +33,6 @@ from srutils.format import sfmt
 
 # Local
 from ..utils.exceptions import UnequalSetupParamValuesError
-from ..utils.wrappers import cast_field_value
 from .base_setup import BaseSetup
 from .dimensions import Dimensions
 from .dimensions import is_dimensions_param
@@ -559,26 +557,6 @@ class PlotSetup(BaseSetup):
                 f"{param} ({type(value).__name__}: {value})"
             )
         return value
-
-    @classmethod
-    def prepare_params(cls, raw_params: Sequence[Tuple[str, str]]) -> Dict[str, Any]:
-        """Prepare raw input params and cast them to their appropriate types."""
-        params: Dict[str, Any] = {}
-        value: Any
-        for param, value in raw_params:
-            if param == "layout_type":
-                param = "layout.type"
-            elif param == "model":
-                param = "model.name"
-            if value in ["None", "*"]:
-                value = None
-            elif "," in value:
-                value = value.split(",")
-            elif re.match(r"[0-9]+-[0-9]+", value):
-                start, end = value.split("-")
-                value = range(int(start), int(end) + 1)
-            params[param] = value
-        return cls.cast_many(params)
 
     @classmethod
     def compress(
