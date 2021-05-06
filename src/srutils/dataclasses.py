@@ -129,12 +129,13 @@ def cast_field_value(cls: Type, name: str, value: Any, **kwargs: Any) -> Any:
         return cast_value(type_, value, **kwargs)
     except Exception as e:
         exc: Type[Exception]
+        type_name = type_.__name__ if isinstance(type_, type) else type
         if isinstance(e, IncompatibleTypesError):
             exc = InvalidParameterValueError
-            msg = f"value incompatible with type {type_}"
+            msg = f"value incompatible with type {type_name}"
         elif isinstance(e, UnsupportedTypeError):
             exc = InvalidParameterNameError
-            msg = f"type {type_} not supported"
+            msg = f"type {type_name} not supported"
         else:
             raise e
         raise exc(f"{msg}: {cls.__name__}.{name} = {sfmt(value)}") from e
@@ -385,6 +386,9 @@ def cast_value(
         return cls(
             [cast_value(inner_type, inner_value, **kwargs) for inner_value in value]
         )
+
+    elif type_ == type(value).__name__:
+        return value
 
     else:
         raise UnsupportedTypeError(f"{type_}")
