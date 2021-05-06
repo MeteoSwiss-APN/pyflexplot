@@ -24,7 +24,6 @@ from typing import Union
 from typing_extensions import Literal
 
 # First-party
-from srutils.dataclasses import cast_field_value
 from srutils.dict import decompress_multival_dict
 from srutils.dict import merge_dicts
 from srutils.exceptions import InvalidParameterValueError
@@ -34,6 +33,7 @@ from srutils.str import join_multilines
 
 # Local
 from ..utils.exceptions import UnequalSetupParamValuesError
+from ..utils.wrappers import cast_field_value
 from .base_setup import BaseSetup
 from .dimensions import CoreDimensions
 from .dimensions import Dimensions

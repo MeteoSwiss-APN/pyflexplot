@@ -26,7 +26,6 @@ from typing import Union
 from typing_extensions import Literal
 
 # First-party
-from srutils.dataclasses import cast_field_value
 from srutils.dict import compress_multival_dicts
 from srutils.dict import decompress_multival_dict
 from srutils.dict import merge_dicts
@@ -35,6 +34,7 @@ from srutils.format import sfmt
 
 # Local
 from ..utils.exceptions import UnequalSetupParamValuesError
+from ..utils.wrappers import cast_field_value
 from .base_setup import BaseSetup
 from .dimensions import Dimensions
 from .dimensions import is_dimensions_param
@@ -511,15 +511,7 @@ class PlotSetup(BaseSetup):
                 "mapping or sequence thereof"
             )
         for name, value in dict(params).items():
-            value = cast_field_value(
-                cls,
-                name,
-                value,
-                auto_wrap=True,
-                bool_mode="intuitive",
-                timedelta_unit="hours",
-                unpack_str=False,
-            )
+            value = cast_field_value(cls, name, value)
             params[name] = value
         files_setup = FilesSetup.create(files_params)
         model_setup = ModelSetup.create(model_params)

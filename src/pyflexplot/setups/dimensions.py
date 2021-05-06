@@ -20,7 +20,6 @@ from typing import Union
 from typing_extensions import Literal
 
 # First-party
-from srutils.dataclasses import cast_field_value
 from srutils.dict import decompress_multival_dict
 from srutils.exceptions import InvalidParameterValueError
 from srutils.format import sfmt
@@ -29,6 +28,7 @@ from srutils.str import join_multilines
 
 # Local
 from ..utils.summarize import summarizable
+from ..utils.wrappers import cast_field_value
 
 
 # SR_TMP <<< TODO cleaner solution
@@ -81,15 +81,7 @@ class CoreDimensions:
     def cast(cls, param: str, value: Any) -> Any:
         if value is None:
             return None
-        return cast_field_value(
-            cls,
-            param,
-            value,
-            auto_wrap=True,
-            bool_mode="intuitive",
-            timedelta_unit="hours",
-            unpack_str=False,
-        )
+        return cast_field_value(cls, param, value)
 
     # SR_TMP Identical to CoreSetup.get_params and ModelSetup.get_params
     @classmethod

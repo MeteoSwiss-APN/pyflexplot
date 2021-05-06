@@ -18,9 +18,11 @@ from typing import TypeVar
 from typing import Union
 
 # First-party
-from srutils.dataclasses import cast_field_value
 from srutils.dict import merge_dicts
 from srutils.format import nested_repr
+
+# Local
+from ..utils.wrappers import cast_field_value
 
 SetupT = TypeVar("SetupT", bound="BaseSetup")
 
@@ -69,15 +71,7 @@ class BaseSetup:
 
     @classmethod
     def cast(cls: Type[SetupT], param: str, value: Any) -> Any:
-        return cast_field_value(
-            cls,
-            param,
-            value,
-            auto_wrap=True,
-            bool_mode="intuitive",
-            timedelta_unit="hours",
-            unpack_str=False,
-        )
+        return cast_field_value(cls, param, value)
 
     @classmethod
     def cast_many(

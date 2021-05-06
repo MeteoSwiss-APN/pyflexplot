@@ -25,7 +25,6 @@ import netCDF4 as nc4
 import numpy as np
 
 # First-party
-from srutils.dataclasses import cast_field_value
 from srutils.dataclasses import dataclass_repr
 from srutils.dataclasses import get_dataclass_fields
 from srutils.datetime import datetime_range
@@ -36,6 +35,7 @@ from srutils.format import sfmt
 # Local
 from ..setups.dimensions import Dimensions
 from ..setups.model_setup import ModelSetup
+from ..utils.wrappers import cast_field_value
 from ..words import SYMBOLS
 from .species import get_species
 from .species import Species
@@ -675,15 +675,7 @@ class RawReleaseMetaData:
     @classmethod
     def create(cls, params: Dict[str, Any]) -> "RawReleaseMetaData":
         params = {
-            param: cast_field_value(
-                cls,
-                param,
-                value,
-                auto_wrap=True,
-                bool_mode="intuitive",
-                timedelta_unit="seconds",
-                unpack_str=False,
-            )
+            param: cast_field_value(cls, param, value, timedelta_unit="seconds")
             for param, value in params.items()
         }
         return cls(**params)
