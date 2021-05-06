@@ -277,14 +277,19 @@ def cast_value(
         raise error(value, type_)
 
     elif type_ == "bool":
-        if isinstance(value, str):
-            if bool_mode == "intuitive" and value == "False":
-                return False
-            return bool(value)
-        elif isinstance(value, Collection):
+        if isinstance(value, Collection) and not isinstance(value, str):
             raise error(value, type_, "is a collection")
-        else:
-            return bool(value)
+        if bool_mode == "intuitive":
+            try:
+                value = int(value)
+            except ValueError:
+                value = {
+                    "t": True,
+                    "f": False,
+                    "true": True,
+                    "false": False,
+                }.get(str(value).lower(), value)
+        return bool(value)
 
     elif type_ == "str":
         if isinstance(value, Collection) and not isinstance(value, str):
