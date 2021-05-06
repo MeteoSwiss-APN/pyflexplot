@@ -432,7 +432,6 @@ def plot_add_text_boxes(
                 size=plot.config.font.sizes.content_medium,
             )
 
-    # pylint: disable=R0915  # too-many-statements
     def fill_box_release_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the box containing the release info."""
         labels = plot.config.labels["release_info"]

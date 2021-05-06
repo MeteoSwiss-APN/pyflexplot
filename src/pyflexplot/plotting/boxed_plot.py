@@ -2,6 +2,7 @@
 # Standard library
 import dataclasses as dc
 import warnings
+from pathlib import Path
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -123,7 +124,7 @@ class BoxedPlot:
             self._fig = plt.figure(figsize=self.config.fig_size)
         return self._fig
 
-    def write(self, file_path: str) -> None:
+    def write(self, file_path: Union[Path, str]) -> None:
         self.fig.savefig(
             file_path,
             facecolor=self.fig.get_facecolor(),
