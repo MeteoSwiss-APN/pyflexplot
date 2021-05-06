@@ -18,6 +18,7 @@ until sane design choices emerge from the code mess.
 import os
 from datetime import datetime
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 from typing import cast
 from typing import Collection
@@ -190,9 +191,58 @@ def create_plot(
                 os.makedirs(dir_path, exist_ok=True)
             log(dbg=f"writing plot {file_path}")
             plot.write(file_path)
+            # SR_TMP < TODO clean this up; add optional setup param for file name
+            if "standalone_release_info" in plot.config.labels:
+                write_standalone_release_info(
+                    file_path,
+                    plot.config,
+                )
+            # SR_TMP >
         log(dbg=f"created plot {file_path}")
     plot.clean()
     return plot
+
+
+def write_standalone_release_info(plot_path: str, plot_config: BoxedPlotConfig) -> str:
+    path = Path(plot_path).with_suffix(f".release_info{Path(plot_path).suffix}")
+    log(inf=f"write standalone release info to {path}")
+    layout = BoxedPlotLayout(
+        "standalone_release_info", aspects={"tot": 1.5}, rects={"tot": (0, 0, 1, 1)}
+    )
+    species_id = plot_config.setup.panels.collect_equal("dimensions.species_id")
+    n_species = 1 if isinstance(species_id, int) else len(species_id)
+    width = 1.67 + 0.67 * n_species
+    config = BoxedPlotConfig(
+        fig_size=(width, 2.5),
+        layout=layout,
+        labels=plot_config.labels,
+        setup=plot_config.setup,
+    )
+
+    def fill_box(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        labels = plot.config.labels["standalone_release_info"]
+
+        # Box title
+        box.text(
+            s=labels["title"],
+            loc="tc",
+            fontname=plot.config.font.name,
+            size=plot.config.font.sizes.title_small,
+        )
+
+        # Add lines bottom-up (to take advantage of baseline alignment)
+        box.text_blocks_hfill(
+            labels["lines_str"],
+            dy_unit=-10.0,
+            dy_line=8.0,
+            fontname=plot.config.font.name,
+            size=plot.config.font.sizes.content_small,
+        )
+
+    plt = BoxedPlot(config)
+    plt.add_text_box("standalone_release_info", (0, 0, 1, 1), fill=fill_box)
+    plt.write(path)
+    return str(path)
 
 
 # pylint: disable=R0912  # too-many-branches (>12)
@@ -502,6 +552,12 @@ def plot_add_text_boxes(
             lambda box, plot: fill_box_2nd_title(box, plot, field),
         )
     elif layout.name == "post_vintage_ens":
+        plot.add_text_box(
+            "right_top",
+            layout.get_rect("right_top"),
+            fill_box_data_info,
+        )
+    elif layout.name == "standalone_details":
         plot.add_text_box(
             "right_top",
             layout.get_rect("right_top"),
@@ -963,35 +1019,70 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
         mdata.species.washout_coefficient_unit,
     )
     washout_exponent = format_meta_datum(mdata.species.washout_exponent)
-    lines_parts: List[Optional[Tuple[Word, str]]] = [
-        (words["site"], site_name),
-        (words["latitude"], site_lat_lon[0]),
-        (words["longitude"], site_lat_lon[1]),
-        (words["height"], release_height),
-        None,
-        (words["start"], release_start),
-        (words["end"], release_end),
-        (words["rate"], release_rate),
-        (words["total_mass"], release_mass),
-        None,
-        (words["substance"], substance),
-        (words["half_life"], half_life),
-        (words["deposition_velocity", "abbr"], deposit_vel),
-        (words["sedimentation_velocity", "abbr"], sediment_vel),
-        (words["washout_coeff"], washout_coeff),
-        (words["washout_exponent"], washout_exponent),
-    ]
-    lines_str = ""
-    for line_parts in lines_parts:
-        if line_parts is None:
-            lines_str += "\n\n"
-        else:
-            left, right = line_parts
-            lines_str += f"{capitalize(left)}:\t{right}\n"
+    lines_parts: List[Optional[Tuple[Word, str]]]
+    if setup.layout.type == "standalone_details":
+        lines_parts = [
+            (words["site"], site_name),
+            (words["latitude"], site_lat_lon[0]),
+            (words["longitude"], site_lat_lon[1]),
+            (words["height"], release_height),
+            (words["start"], release_start),
+            (words["end"], release_end),
+        ]
+    else:
+        lines_parts = [
+            (words["site"], site_name),
+            (words["latitude"], site_lat_lon[0]),
+            (words["longitude"], site_lat_lon[1]),
+            (words["height"], release_height),
+            None,
+            (words["start"], release_start),
+            (words["end"], release_end),
+            (words["rate"], release_rate),
+            (words["total_mass"], release_mass),
+            None,
+            (words["substance"], substance),
+            (words["half_life"], half_life),
+            (words["deposition_velocity", "abbr"], deposit_vel),
+            (words["sedimentation_velocity", "abbr"], sediment_vel),
+            (words["washout_coeff"], washout_coeff),
+            (words["washout_exponent"], washout_exponent),
+        ]
+
+    def format_lines_block(parts: Sequence[Optional[Tuple[Word, str]]]) -> str:
+        block = ""
+        for line_parts in parts:
+            if line_parts is None:
+                block += "\n\n"
+            else:
+                left, right = line_parts
+                block += f"{capitalize(left)}:\t{right}\n"
+        return block
+
     labels["release_info"] = {
         "title": capitalize(words["release"].t),
-        "lines_str": lines_str,
+        "lines_str": format_lines_block(lines_parts),
     }
+
+    if setup.layout.type == "standalone_details":
+        labels["standalone_release_info"] = {
+            "title": capitalize(words["release"].t),
+            "lines_str": format_lines_block(
+                [
+                    (words["start"], release_start),
+                    (words["end"], release_end),
+                    (words["rate"], release_rate),
+                    (words["total_mass"], release_mass),
+                    None,
+                    (words["substance"], substance),
+                    (words["half_life"], half_life),
+                    (words["deposition_velocity", "abbr"], deposit_vel),
+                    (words["sedimentation_velocity", "abbr"], sediment_vel),
+                    (words["washout_coeff"], washout_coeff),
+                    (words["washout_exponent"], washout_exponent),
+                ],
+            ),
+        }
 
     # Capitalize all labels
     for label_group in labels.values():

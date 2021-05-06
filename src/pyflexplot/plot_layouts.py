@@ -34,6 +34,8 @@ class BoxedPlotLayout:
             aspects, rects = create_layout_post_vintage(aspect)
         elif name == "post_vintage_ens":
             aspects, rects = create_layout_post_vintage_ens(aspect)
+        elif name == "standalone_details":
+            aspects, rects = create_layout_standalone_details(aspect)
         else:
             raise ValueError(f"invalid name '{name}'")
         return cls(name, aspects=aspects, rects=rects)
@@ -94,6 +96,7 @@ def create_layout_post_vintage(
     aspect: float,
     *,
     h_rigtop: float = 0.08,
+    h_rigbot: float = 0.42,
 ) -> Tuple[Dict[str, float], Dict[str, RectType]]:
     # Primary
     x0_tot: float = 0.0
@@ -103,7 +106,7 @@ def create_layout_post_vintage(
     y_pad: float = 0.02
     h_top: float = 0.08
     # h_rigtop: float = ...
-    h_rigbot: float = 0.42
+    # h_rigbot: float = ...
     h_bottom: float = 0.05
     w_right: float = 0.2
 
@@ -149,3 +152,9 @@ def create_layout_post_vintage_ens(
     aspect: float,
 ) -> Tuple[Dict[str, float], Dict[str, RectType]]:
     return create_layout_post_vintage(aspect, h_rigtop=0.2)
+
+
+def create_layout_standalone_details(
+    aspect: float,
+) -> Tuple[Dict[str, float], Dict[str, RectType]]:
+    return create_layout_post_vintage(aspect, h_rigtop=0.25, h_rigbot=0.25)
