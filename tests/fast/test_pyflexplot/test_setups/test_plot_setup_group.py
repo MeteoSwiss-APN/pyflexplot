@@ -270,6 +270,51 @@ class Test_Create:
                 name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
             )
 
+    class Test_Cast:
+        base_params = {
+            "files": {
+                "input": "foo.nc",
+                "output": "bar.png",
+            },
+            "model": {"name": "COSMO-baz"},
+        }
+
+        @pytest.mark.parametrize(
+            "raw, cast",
+            [
+                (True, True),
+                (False, False),
+                (0, False),
+                (1, True),
+                (666, True),
+                ("True", True),
+                ("False", False),
+                ("true", True),
+                ("false", False),
+                ("T", True),
+                ("F", False),
+                ("t", True),
+                ("f", False),
+                ("TRUE", True),
+                ("FALSE", False),
+                ("0", False),
+                ("1", True),
+                ("666", True),
+            ],
+        )
+        def test_bool(self, raw, cast):
+            params = merge_dicts(
+                self.base_params,
+                {"panels": {"combine_species": raw}},
+                overwrite_seqs=True,
+            )
+            group = PlotSetupGroup.create(params)
+            res = group.dicts()
+            sol = [{"panels": [{"combine_species": cast}]}]
+            assert_is_sub_element(
+                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+            )
+
 
 class Test_Compress:
     dcts: List[Dict[str, Any]] = [

@@ -59,4 +59,5 @@ class LayoutSetup(BaseSetup):
                 params["type"] = "post_vintage_ens"
             else:
                 raise ValueError(f"invalid simulation_type '{simulation_type}'")
+        params = cls.cast_many(params)
         return cls(**params)

@@ -377,6 +377,7 @@ class PlotPanelSetup(BaseSetup):
             dims_params, plot_variable=plot_variable
         )
         params["ens_params"] = EnsembleParams.create(params.pop("ens_params", {}))
+        params = cls.cast_many(params)
         return cls(**params)
 
 

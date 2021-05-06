@@ -493,11 +493,13 @@ class PlotSetup(BaseSetup):
 
         """
         params = dict(params)
+
         files_params: Dict[str, Any] = dict(params.pop("files", {}))
         layout_params: Dict[str, Any] = dict(params.pop("layout", {}))
         model_params: Dict[str, Any] = dict(params.pop("model", {}))
-        raw_panels_params: Any = params.pop("panels", {})
         panels_params: Union[Dict[str, Any], List[Dict[str, Any]]]
+
+        raw_panels_params: Any = params.pop("panels", {})
         if isinstance(raw_panels_params, Mapping):
             panels_params = dict(raw_panels_params)
         elif isinstance(raw_panels_params, Sequence) and all(
@@ -510,21 +512,25 @@ class PlotSetup(BaseSetup):
                 f"params 'panels' has invalid type '{raw_type}'; expecting "
                 "mapping or sequence thereof"
             )
-        for name, value in dict(params).items():
-            value = cast_field_value(cls, name, value)
-            params[name] = value
+
+        params = cls.cast_many(params)
+
         files_setup = FilesSetup.create(files_params)
+        params["files"] = files_setup
+
         model_setup = ModelSetup.create(model_params)
+        params["model"] = model_setup
+
         layout_setup = LayoutSetup.create(
             layout_params, simulation_type=model_setup.simulation_type
         )
+        params["layout"] = layout_setup
+
         panels = PlotPanelSetupGroup.create(
             panels_params, multipanel_param=layout_setup.multipanel_param
         )
-        params["files"] = files_setup
-        params["model"] = model_setup
-        params["layout"] = layout_setup
         params["panels"] = panels
+
         return cls(**params)
 
     @classmethod
@@ -983,7 +989,6 @@ class PlotSetupGroup:
             dcts: List[Dict[str, Any]] = []
             for panels_dct in panels_dcts:
                 dcts.append({**dct, "panels": panels_dct})
-            # breakpoint()
             return dcts
 
         if isinstance(setups, Mapping):

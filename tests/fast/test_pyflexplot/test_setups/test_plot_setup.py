@@ -6,6 +6,7 @@ import pytest
 from pyflexplot.setups.plot_setup import PlotSetup
 from pyflexplot.setups.plot_setup import PlotSetupGroup
 from srutils.dict import merge_dicts
+from srutils.exceptions import InvalidParameterValueError
 from srutils.testing import check_is_sub_element
 
 # Local
@@ -70,7 +71,7 @@ class Test_Create:
     )
     def test_multiple_values_fail(self, dct):
         params = merge_dicts(self.base_params, dct)
-        with pytest.raises(ValueError):
+        with pytest.raises((ValueError, InvalidParameterValueError)):
             PlotSetup.create(params)
 
     def test_multipanel(self):
