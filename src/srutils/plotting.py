@@ -1,11 +1,15 @@
 """Plotting utilities."""
 # Standard library
+from typing import Sequence
+from typing import Tuple
 from typing import Union
 
 # Third-party
 import matplotlib as mpl
 import numpy as np
 from matplotlib.colors import Colormap
+
+ColorType = Union[str, Tuple[float, float, float], Tuple[float, float, float, float]]
 
 
 def truncate_cmap(
@@ -37,3 +41,16 @@ def concatenate_cmaps(
     return mpl.colors.LinearSegmentedColormap.from_list(
         f"concatenated({cmap1.name}, {cmap2.name})", colors1 + colors2
     )
+
+
+def linear_cmap(
+    name: str, colors: Union[Sequence[ColorType], ColorType], n: int = 100
+) -> Colormap:
+    """Create a linear color map from one or more colors."""
+    if (
+        isinstance(colors, str)
+        or isinstance(colors, tuple)
+        and isinstance(next(iter(colors)), float)
+    ):
+        colors = ["white", colors]  # type: ignore
+    return mpl.colors.LinearSegmentedColormap.from_list(name, colors, N=n)
