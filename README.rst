@@ -104,7 +104,7 @@ You can also install it with your system package manager, but this may tie it to
 Manually
 --------
 
-You may install PyFlexPlot manually from Github if you cannot (or do not want to) use Pipx; if you want to run tests to verify your installation; and/or if you want to further develop it further.
+You may install PyFlexPlot manually from Github if you cannot (or do not want to) use Pipx; if you want to run tests to verify your installation; and/or if you want to develop it further.
 If you only want to deploy the tool -- without easy access to the code, without running tests, etc. -- you can directly install it into a virtual environment with pip, without cloning the git repository yourself.
 However, if you also want to test and/or develop, you first have to clone the git repository and can then use the Makefile (or manual comands) to install the tool for your purposes.
 
