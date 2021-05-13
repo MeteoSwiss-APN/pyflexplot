@@ -12,7 +12,9 @@ from .base_setup import BaseSetup
 
 
 # SR_TMP <<< TODO cleaner solution
-def is_model_setup_param(param: str) -> bool:
+def is_model_setup_param(param: str, recursive: bool = False) -> bool:
+    if recursive:
+        raise NotImplementedError("recursive")
     return param.replace("model.", "") in ModelSetup.get_params()
 
 

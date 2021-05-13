@@ -34,8 +34,6 @@ from srutils.format import sfmt
 # Local
 from ..utils.exceptions import UnequalSetupParamValuesError
 from .base_setup import BaseSetup
-from .dimensions import Dimensions
-from .dimensions import is_dimensions_param
 from .files_setup import FilesSetup
 from .files_setup import is_files_setup_param
 from .layout_setup import is_layout_setup_param
@@ -49,7 +47,9 @@ from .plot_panel_setup import PlotPanelSetupGroupFormatter
 
 
 # SR_TMP <<< TODO cleaner solution
-def is_plot_setup_param(param: str) -> bool:
+def is_plot_setup_param(param: str, recursive: bool = False) -> bool:
+    if recursive:
+        raise NotImplementedError("recursive")
     return param in PlotSetup.get_params()
 
 
@@ -63,10 +63,8 @@ def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
         return getattr(setup.layout, param.replace("layout.", ""))
     elif is_model_setup_param(param):
         return getattr(setup.model, param.replace("model.", ""))
-    elif is_plot_panel_setup_param(param):
+    elif is_plot_panel_setup_param(param, recursive=True):
         return setup.panels.collect_equal(param)
-    elif is_dimensions_param(param):
-        return setup.panels.collect_equal(param.replace("dimensions.", ""))
     raise ValueError("invalid input setup parameter", param)
 
 
@@ -143,7 +141,7 @@ class PlotSetup(BaseSetup):
             value = getattr(self.layout, param.replace("layout.", ""))
         elif is_model_setup_param(param):
             value = getattr(self.model, param.replace("model.", ""))
-        elif is_plot_panel_setup_param(param) or is_dimensions_param(param):
+        elif is_plot_panel_setup_param(param, recursive=True):
             # pylint: disable=E1101  # no-member [pylint 2.7.4]
             # (pylint 2.7.4 does not support dataclasses.field)
             value = self.panels.collect(param, unique=unique)
@@ -235,9 +233,7 @@ class PlotSetup(BaseSetup):
                     layout.append(param.replace("layout.", ""))
                 elif is_model_setup_param(param):
                     model.append(param.replace("model.", ""))
-                elif is_plot_panel_setup_param(param) or is_dimensions_param(param):
-                    if param.startswith("dimensions."):
-                        param = param.replace("dimensions.", "")
+                elif is_plot_panel_setup_param(param, recursive=True):
                     panels.append(param)
                 else:
                     other.append(param)
@@ -540,25 +536,28 @@ class PlotSetup(BaseSetup):
         return cls.create(obj)  # type: ignore
 
     @classmethod
-    def cast(cls, param: str, value: Any) -> Any:
+    def cast(cls, param: str, value: Any, recursive: bool = True) -> Any:
         """Cast a parameter to the appropriate type."""
         if is_plot_setup_param(param):
-            value = super().cast(param, value)
-        elif is_files_setup_param(param):
-            value = FilesSetup.cast(param.replace("files.", ""), value)
-        elif is_layout_setup_param(param):
-            value = LayoutSetup.cast(param.replace("layout.", ""), value)
-        elif is_model_setup_param(param):
-            value = ModelSetup.cast(param.replace("model.", ""), value)
-        elif is_plot_panel_setup_param(param):
-            value = PlotPanelSetup.cast(param, value)
-        elif is_dimensions_param(param):
-            value = Dimensions.cast(param.replace("dimensions.", ""), value)
-        else:
-            raise InvalidParameterNameError(
-                f"{param} ({type(value).__name__}: {value})"
-            )
-        return value
+            return super().cast(param, value)
+        elif recursive:
+            if is_files_setup_param(param):
+                return FilesSetup.cast(param.replace("files.", ""), value)
+            elif is_layout_setup_param(param):
+                return LayoutSetup.cast(param.replace("layout.", ""), value)
+            elif is_model_setup_param(param):
+                return ModelSetup.cast(param.replace("model.", ""), value)
+            elif is_plot_panel_setup_param(param, recursive=True):
+                return PlotPanelSetup.cast(param, value, recursive=True)
+        raise InvalidParameterNameError(f"{param} ({type(value).__name__}: {value})")
+
+    @classmethod
+    def cast_many(
+        cls,
+        params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]],
+        recursive: bool = True,
+    ) -> Dict[str, Any]:
+        return super().cast_many(params, recursive)
 
     @classmethod
     def compress(
@@ -756,7 +755,7 @@ class PlotSetupGroup:
 
     def collect_equal(self, param: str) -> Any:
         """Collect the value of a parameter that is shared by all setups."""
-        flatten = is_plot_panel_setup_param(param) or is_dimensions_param(param)
+        flatten = is_plot_panel_setup_param(param, recursive=True)
         values = self.collect(param, unique=True, flatten=flatten)
         if not values:
             return None

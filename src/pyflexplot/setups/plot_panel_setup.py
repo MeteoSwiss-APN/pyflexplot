@@ -9,6 +9,7 @@ the docstring of the class method ``Setup.create``.
 import dataclasses as dc
 from pprint import pformat
 from typing import Any
+from typing import Callable
 from typing import Collection
 from typing import Dict
 from typing import Iterator
@@ -46,12 +47,16 @@ ENS_CLOUD_TIME_DEFAULT_PARAM_THR = 0.0
 
 
 # SR_TMP <<< TODO cleaner solution
-def is_plot_panel_setup_param(param: str) -> bool:
+def is_plot_panel_setup_param(param: str, recursive: bool = False) -> bool:
+    if recursive:
+        return is_plot_panel_setup_param(param) or is_dimensions_param(param)
     return param in PlotPanelSetup.get_params()
 
 
 # SR_TMP <<< TODO cleaner solution
-def is_ensemble_params_param(param: str) -> bool:
+def is_ensemble_params_param(param: str, recursive: bool = False) -> bool:
+    if recursive:
+        raise NotImplementedError("recursive")
     if param.startswith("ens_params."):
         param = param.replace("ens_params.", "")
     return param in EnsembleParams.get_params()
@@ -357,6 +362,13 @@ class PlotPanelSetup(BaseSetup):
         return cls(**obj)
 
     @classmethod
+    def cast(cls, param: str, value: Any, recursive: bool = False) -> Any:
+        if recursive:
+            if is_dimensions_param(param):
+                return Dimensions.cast(param.replace("dimensions.", ""), value)
+        return super().cast(param, value)
+
+    @classmethod
     def create(cls, params: Mapping[str, Any]) -> "PlotPanelSetup":
         params = dict(params)
         dims_params = dict(params.pop("dimensions", {}))
@@ -575,6 +587,7 @@ class PlotPanelSetupGroup:
                 return
 
             for params_i in params:
+                fct: Callable[[str], bool]
                 for fct, name in [
                     (is_ensemble_params_param, "ens_params"),
                     (is_dimensions_param, "dimensions"),

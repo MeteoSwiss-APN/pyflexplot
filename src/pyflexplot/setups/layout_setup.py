@@ -11,7 +11,9 @@ from .base_setup import BaseSetup
 
 
 # SR_TMP <<< TODO cleaner solution
-def is_layout_setup_param(param: str) -> bool:
+def is_layout_setup_param(param: str, recursive: bool = False) -> bool:
+    if recursive:
+        raise NotImplementedError("recursive")
     return param.replace("layout.", "") in LayoutSetup.get_params()
 
 

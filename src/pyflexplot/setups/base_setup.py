@@ -70,12 +70,16 @@ class BaseSetup:
         return nested_repr(self)
 
     @classmethod
-    def cast(cls: Type[SetupT], param: str, value: Any) -> Any:
+    def cast(cls: Type[SetupT], param: str, value: Any, recursive: bool = False) -> Any:
+        if recursive:
+            raise ValueError(f"recursive cast not implemented for class {cls.__name__}")
         return cast_field_value(cls, param, value)
 
     @classmethod
     def cast_many(
-        cls: Type[SetupT], params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]]
+        cls: Type[SetupT],
+        params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]],
+        recursive: bool = False,
     ) -> Dict[str, Any]:
         if not isinstance(params, Mapping):
             params_dct: Dict[str, Any] = {}
@@ -83,10 +87,10 @@ class BaseSetup:
                 if param in params_dct:
                     raise ValueError("duplicate parameter", param)
                 params_dct[param] = value
-            return cls.cast_many(params_dct)
+            return cls.cast_many(params_dct, recursive)
         params_cast = {}
         for param, value in params.items():
-            params_cast[param] = cls.cast(param, value)
+            params_cast[param] = cls.cast(param, value, recursive)
         return params_cast
 
     @classmethod

@@ -32,7 +32,9 @@ from ..utils.wrappers import cast_field_value
 
 
 # SR_TMP <<< TODO cleaner solution
-def is_dimensions_param(param: str) -> bool:
+def is_dimensions_param(param: str, recursive: bool = False) -> bool:
+    if recursive:
+        raise NotImplementedError("recursive")
     return param.replace("dimensions.", "") in Dimensions.get_params()
 
 
@@ -78,7 +80,9 @@ class CoreDimensions:
 
     # SR_TMP Identical to ModelSetup.cast
     @classmethod
-    def cast(cls, param: str, value: Any) -> Any:
+    def cast(cls, param: str, value: Any, recursive: bool = False) -> Any:
+        if recursive:
+            raise ValueError(f"recursive cast not implemented for class {cls.__name__}")
         if value is None:
             return None
         return cast_field_value(cls, param, value)
@@ -404,8 +408,10 @@ class Dimensions:
         return cls(core_dims_lst)
 
     @classmethod
-    def cast(cls, param: str, value: Any) -> Any:
+    def cast(cls, param: str, value: Any, recursive: bool = False) -> Any:
         """Cast a parameter to the appropriate type."""
+        if recursive:
+            raise ValueError(f"recursive cast not implemented for class {cls.__name__}")
         if isinstance(value, Sequence) and not isinstance(value, str):
             sub_values = []
             for sub_value in value:
