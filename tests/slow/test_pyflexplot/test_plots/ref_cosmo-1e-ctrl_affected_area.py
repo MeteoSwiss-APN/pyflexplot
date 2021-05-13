@@ -372,6 +372,80 @@ plot_summary = {
                 "bottom_right": [0.8, 0.0, 0.2, 0.05],
             },
         },
+        "panels": [
+            {
+                "type": "BoxedPlotPanelConfig",
+                "setup": {
+                    "plot_variable": "affected_area",
+                    "ens_variable": "none",
+                    "integrate": True,
+                    "combine_levels": False,
+                    "combine_species": False,
+                    "ens_params": {
+                        "mem_min": None,
+                        "pctl": None,
+                        "thr": None,
+                        "thr_type": "lower",
+                    },
+                    "lang": "en",
+                    "domain": "ch",
+                    "domain_size_lat": None,
+                    "domain_size_lon": None,
+                    "dimensions_default": "all",
+                    "dimensions": {
+                        "level": 0,
+                        "nageclass": 0,
+                        "release": 5,
+                        "species_id": 1,
+                        "time": 11,
+                        "variable": [
+                            "concentration",
+                            "dry_deposition",
+                            "wet_deposition",
+                        ],
+                    },
+                },
+                "colors": [
+                    [0.7843137254901961, 0.7843137254901961, 0.7843137254901961]
+                ],
+                "levels": {
+                    "type": "ContourLevelsConfig",
+                    "extend": "none",
+                    "include_lower": False,
+                    "legend": {
+                        "type": "ContourLevelsLegendConfig",
+                        "range_align": "center",
+                        "range_style": "base",
+                        "range_widths": [5, 3, 5],
+                        "rstrip_zeros": True,
+                        "labels": ["      $\\tt >$   0.0"],
+                    },
+                    "levels": [0.0, np.inf],
+                    "n": 0,
+                    "scale": "lin",
+                },
+                "markers": {
+                    "type": "MarkersConfig",
+                    "markers": {
+                        "max": {
+                            "marker": "+",
+                            "color": "black",
+                            "markersize": 10.0,
+                            "markeredgewidth": 1.5,
+                        },
+                        "site": {
+                            "marker": "^",
+                            "markeredgecolor": "red",
+                            "markerfacecolor": "white",
+                            "markersize": 7.5,
+                            "markeredgewidth": 1.5,
+                        },
+                    },
+                    "mark_field_max": False,
+                    "mark_release_site": True,
+                },
+            }
+        ],
         "font": {
             "type": "FontConfig",
             "name": "Liberation Sans",
@@ -385,44 +459,6 @@ plot_summary = {
                 "content_small": 9.0,
             },
         },
-        "levels": {
-            "type": "ContourLevelsConfig",
-            "extend": "none",
-            "include_lower": False,
-            "legend": {
-                "type": "ContourLevelsLegendConfig",
-                "range_align": "center",
-                "range_style": "base",
-                "range_widths": [5, 3, 5],
-                "rstrip_zeros": True,
-                "labels": ["      $\\tt >$   0.0"],
-            },
-            "levels": [0.0, np.inf],
-            "n": 0,
-            "scale": "lin",
-        },
-        "markers": {
-            "type": "MarkersConfig",
-            "markers": {
-                "max": {
-                    "marker": "+",
-                    "color": "black",
-                    "markersize": 10.0,
-                    "markeredgewidth": 1.5,
-                },
-                "site": {
-                    "marker": "^",
-                    "markeredgecolor": "red",
-                    "markerfacecolor": "white",
-                    "markersize": 7.5,
-                    "markeredgewidth": 1.5,
-                },
-            },
-            "mark_field_max": False,
-            "mark_release_site": True,
-        },
-        "colors": [[0.7843137254901961, 0.7843137254901961, 0.7843137254901961]],
-        "fig_size": [12.5, 8.0],
         "labels": {
             "title": {
                 "tl": "Affected area",
@@ -450,6 +486,7 @@ plot_summary = {
                 "lines_str": "Site:\tBugey\nLatitude:\t45$^\\circ$$\\,$47'$\\,$N (45.7992$^\\circ$$\\,$N)\nLongitude:\t5$^\\circ$$\\,$16'$\\,$E (5.2700$^\\circ$$\\,$E)\nHeight:\t100$\\,$$\\,$m AGL\n\n\nStart:\t2021-04-08 00:00 UTC\nEnd:\t2021-04-08 08:00 UTC\nRate:\t34722.2$\\,$Bq s$^{-1}$\nTotal mass:\t1e+09$\\,$Bq\n\n\nSubstance:\tCs-137\nHalf-life:\t30$\\,$a\nDeposit. vel.:\t0.0015$\\,$m s$^{-1}$\nSediment. vel.:\t0$\\,$m s$^{-1}$\nWashout coeff.:\t7e-05$\\,$s$^{-1}$\nWashout exponent:\t0.8\n",
             },
         },
+        "fig_size": [12.5, 8.0],
         "lw_frame": 1.0,
         "model_info": "N/A",
     },

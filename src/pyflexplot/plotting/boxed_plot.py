@@ -8,6 +8,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -22,6 +23,7 @@ from pyflexplot.plotting.domain import Domain
 # Local
 from ..input.field import Field
 from ..plot_layouts import BoxedPlotLayout
+from ..setups.plot_panel_setup import PlotPanelSetup
 from ..setups.plot_setup import PlotSetup
 from ..utils.exceptions import FieldAllNaNError
 from ..utils.summarize import summarizable
@@ -87,20 +89,28 @@ class MarkersConfig:
     mark_release_site: bool = True
 
 
+@summarizable
+@dc.dataclass
+class BoxedPlotPanelConfig:
+    setup: PlotPanelSetup  # SR_TODO consider removing this
+    # ---
+    colors: Optional[Sequence[ColorType]] = None
+    levels: ContourLevelsConfig = dc.field(default_factory=ContourLevelsConfig)
+    markers: MarkersConfig = dc.field(default_factory=MarkersConfig)
+
+
 # pylint: disable=R0902  # too-many-instance-attributes (>7)
 @summarizable
 @dc.dataclass
 class BoxedPlotConfig:
     setup: PlotSetup  # SR_TODO consider removing this
     layout: BoxedPlotLayout
+    panels: Sequence[BoxedPlotPanelConfig]
     # ---
     font: FontConfig = dc.field(default_factory=FontConfig)
-    levels: ContourLevelsConfig = dc.field(default_factory=ContourLevelsConfig)
-    markers: MarkersConfig = dc.field(default_factory=MarkersConfig)
-    # ---
-    colors: Optional[List[ColorType]] = None
-    fig_size: Optional[Tuple[float, float]] = None
     labels: Dict[str, Any] = dc.field(default_factory=dict)
+    # ---
+    fig_size: Optional[Tuple[float, float]] = None
     lw_frame: float = 1.0
     model_info: str = "N/A"
 
@@ -153,14 +163,15 @@ class BoxedPlot:
             fig=self.fig,
             rect=rect,
         )
-        assert self.config.colors is not None  # SR_TMP
+        panel_config = next(iter(self.config.panels))  # SR_TMP TODO multipanel
+        assert panel_config.colors is not None  # SR_TMP
         _draw_colors_contours(
             ax,
             field,
-            levels_config=self.config.levels,
-            colors=self.config.colors,
+            levels_config=panel_config.levels,
+            colors=panel_config.colors,
         )
-        _add_markers(ax, field, self.config.markers)
+        _add_markers(ax, field, panel_config.markers)
         self.axes[name] = ax
         return ax
 
@@ -185,7 +196,7 @@ def _draw_colors_contours(
     ax: MapAxes,
     field: Field,
     levels_config: ContourLevelsConfig,
-    colors: List[ColorType],
+    colors: Sequence[ColorType],
 ) -> None:
     arr = np.asarray(field.fld)
     levels = np.asarray(levels_config.levels)

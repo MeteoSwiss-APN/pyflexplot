@@ -56,6 +56,7 @@ from .output import FilePathFormatter
 from .plot_layouts import BoxedPlotLayout
 from .plotting.boxed_plot import BoxedPlot
 from .plotting.boxed_plot import BoxedPlotConfig
+from .plotting.boxed_plot import BoxedPlotPanelConfig
 from .plotting.boxed_plot import ContourLevelsConfig
 from .plotting.boxed_plot import ContourLevelsLegendConfig
 from .plotting.boxed_plot import FontConfig
@@ -217,6 +218,7 @@ def write_standalone_release_info(plot_path: str, plot_config: BoxedPlotConfig) 
         fig_size=(width, 2.5),
         layout=layout,
         labels=plot_config.labels,
+        panels=[],
         setup=plot_config.setup,
     )
 
@@ -378,6 +380,9 @@ def plot_add_text_boxes(
     # pylint: disable=R0915  # too-many-statements
     def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot, field: Field) -> None:
         """Fill the box containing the plot legend."""
+        # SR_TMP TODO multipanel
+        panel_config = next(iter(plot.config.panels))
+        # SR_TMP >
         labels = plot.config.labels["legend"]
         mdata = field.mdata
 
@@ -403,7 +408,7 @@ def plot_add_text_boxes(
         dy0_boxes = dy0_labels - 0.8 * h_legend_box
 
         # Format level ranges (contour plot legend)
-        legend_labels = plot.config.levels.legend.labels
+        legend_labels = panel_config.levels.legend.labels
 
         # Legend labels (level ranges)
         box.text_block(
@@ -419,7 +424,7 @@ def plot_add_text_boxes(
         )
 
         # Legend color boxes
-        colors = plot.config.colors
+        colors = panel_config.colors
         assert colors is not None  # SR_TMP
         dy = dy0_boxes
         for color in colors[::-1]:
@@ -440,16 +445,16 @@ def plot_add_text_boxes(
         dy0_marker = dy0_markers
 
         # Field maximum marker
-        if plot.config.markers.mark_field_max:
+        if panel_config.markers.mark_field_max:
             dy_marker_label_max = dy0_marker
             dy0_marker -= dy_line
             dy_max_marker = dy_marker_label_max - 0.7
-            assert plot.config.markers.markers is not None  # mypy
+            assert panel_config.markers.markers is not None  # mypy
             box.marker(
                 loc="tc",
                 dx=dx_marker,
                 dy=dy_max_marker,
-                **plot.config.markers.markers["max"],
+                **panel_config.markers.markers["max"],
             )
             box.text(
                 s=format_max_marker_label(labels, field.fld),
@@ -462,16 +467,16 @@ def plot_add_text_boxes(
             )
 
         # Release site marker
-        if plot.config.markers.mark_release_site:
+        if panel_config.markers.mark_release_site:
             dy_site_label = dy0_marker
             dy0_marker -= dy_line
             dy_site_marker = dy_site_label - 0.7
-            assert plot.config.markers.markers is not None  # mypy
+            assert panel_config.markers.markers is not None  # mypy
             box.marker(
                 loc="tc",
                 dx=dx_marker,
                 dy=dy_site_marker,
-                **plot.config.markers.markers["site"],
+                **panel_config.markers.markers["site"],
             )
             box.text(
                 s=f"{labels['site']}: {format_meta_datum(mdata.release.site_name)}",
@@ -802,7 +807,6 @@ def create_plot_config(
         if ens_param_pctl <= 25:
             # cmap = "Oranges"
             cmap = linear_cmap("browns", "saddlebrown")
-            print(type(cmap))
         elif ens_param_pctl <= 45:
             # cmap = "Greens"
             cmap = linear_cmap("greens", "darkgreen")
@@ -827,6 +831,7 @@ def create_plot_config(
         cmap = "viridis_r"
         color_under = "lightgray"
         color_over = "slategray"
+    colors: Sequence[ColorType]
     if cmap == "flexplot":
         n_levels = levels_config.n
         assert n_levels  # SR_TMP
@@ -848,7 +853,6 @@ def create_plot_config(
             colors.insert(0, color_under)
         if extend in ["max", "both"] and color_over:
             colors.append(color_over)
-    plot_config_dct["colors"] = colors
 
     # Markers
     markers_config_dct: Dict[str, Any] = {}
@@ -892,12 +896,19 @@ def create_plot_config(
     markers_config_dct["markers"] = markers
     markers_config = MarkersConfig(**markers_config_dct)
 
+    panels_config = [
+        BoxedPlotPanelConfig(
+            setup=next(iter(setup.panels)),  # SR_TMP TODO multipanel
+            colors=colors,
+            levels=levels_config,
+            markers=markers_config,
+        )
+    ]
     return BoxedPlotConfig(
         setup=setup,
-        labels=labels,
+        panels=panels_config,
         font=font_config,
-        levels=levels_config,
-        markers=markers_config,
+        labels=labels,
         **plot_config_dct,
     )
 
