@@ -154,7 +154,7 @@ class _TestCreateReference(_TestBase):
     def test(self, datadir):
         if black is None:
             raise ImportError("must install black to create test reference")
-        target_dir = Path(__file__).resolve()().parent
+        target_dir = Path(__file__).resolve().parent
         ref_file = target_dir / f"{self.reference}.py"  # pylint: disable=no-member
         field_group = self.get_field_group(datadir)
         plot = self.get_plot(field_group)
