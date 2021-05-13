@@ -41,6 +41,7 @@ from pyflexplot.plotting.domain import ReleaseSiteDomain
 from srutils.datetime import init_datetime
 from srutils.format import format_numbers_range
 from srutils.geo import Degrees
+from srutils.plotting import linear_cmap
 from srutils.plotting import truncate_cmap
 from words import Word
 
@@ -766,6 +767,30 @@ def create_plot_config(
     elif setup.model.simulation_type == "ensemble" and ens_variable == "probability":
         # cmap = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
         cmap = truncate_cmap("terrain_r", 0.075)
+    elif (
+        setup.model.simulation_type == "ensemble"
+        and ens_variable == "percentile"
+        and setup.layout.color_style == "mono"
+    ):
+        # SR_TMP < TODO Move cmap from plot to panel scope
+        pctl = setup.panels.collect_equal("ens_params.pctl")
+        if pctl <= 25:
+            # cmap = "Oranges"
+            cmap = linear_cmap("browns", "saddlebrown")
+            print(type(cmap))
+        elif pctl <= 45:
+            # cmap = "Greens"
+            cmap = linear_cmap("greens", "darkgreen")
+        elif pctl <= 65:
+            # cmap = "Blues"
+            cmap = linear_cmap("blues", "darkblue")
+        elif pctl <= 85:
+            # cmap = "Purples"
+            cmap = linear_cmap("purples", "indigo")
+        else:
+            # cmap = "Greys"
+            cmap = linear_cmap("grays", "black")
+        # SR_TMP >
     elif plot_variable == "cloud_arrival_time" or (
         ens_variable == "cloud_arrival_time"
     ):

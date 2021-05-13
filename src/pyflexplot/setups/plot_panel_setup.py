@@ -49,7 +49,11 @@ ENS_CLOUD_TIME_DEFAULT_PARAM_THR = 0.0
 # SR_TMP <<< TODO cleaner solution
 def is_plot_panel_setup_param(param: str, recursive: bool = False) -> bool:
     if recursive:
-        return is_plot_panel_setup_param(param) or is_dimensions_param(param)
+        return (
+            is_plot_panel_setup_param(param)
+            or is_ensemble_params_param(param)
+            or is_dimensions_param(param)
+        )
     return param in PlotPanelSetup.get_params()
 
 
@@ -169,6 +173,8 @@ class PlotPanelSetup(BaseSetup):
         """Collect the value(s) of a parameter."""
         if is_plot_panel_setup_param(param):
             value = getattr(self, param)
+        elif is_ensemble_params_param(param):
+            value = getattr(self.ens_params, param.replace("ens_params.", ""))
         elif is_dimensions_param(param):
             value = self.dimensions.get(param.replace("dimensions.", ""))
         else:
@@ -364,7 +370,9 @@ class PlotPanelSetup(BaseSetup):
     @classmethod
     def cast(cls, param: str, value: Any, recursive: bool = False) -> Any:
         if recursive:
-            if is_dimensions_param(param):
+            if is_ensemble_params_param(param):
+                return EnsembleParams.cast(param.replace("ens_params.", ""), value)
+            elif is_dimensions_param(param):
                 return Dimensions.cast(param.replace("dimensions.", ""), value)
         return super().cast(param, value)
 
