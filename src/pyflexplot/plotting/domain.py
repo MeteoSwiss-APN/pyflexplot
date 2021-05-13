@@ -190,7 +190,7 @@ class CloudDomain(Domain):
                     f": {mask.shape} != ({shape[0]}, {shape[1]})"
                 )
             if mask is None:
-                mask = np.zeros([self.lat.size, self.lon.size], dtype=np.bool)
+                mask = np.zeros([self.lat.size, self.lon.size], dtype=np.bool_)
         self.mask: np.ndarray = mask
 
     # pylint: disable=R0912  # too-many-branches (>12)

@@ -23,7 +23,7 @@ class Test_GlobalCloudDomain:
         lon = np.arange(-175, 175.1, 10)
 
         def get_mask(self, bboxes):
-            mask = np.zeros([self.lat.size, self.lon.size], np.bool)
+            mask = np.zeros([self.lat.size, self.lon.size], np.bool_)
             for lllon, urlon, lllat, urlat in bboxes:
                 if lllon < 0:
                     mask[lllat:urlat, lllon:] = True

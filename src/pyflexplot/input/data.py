@@ -56,7 +56,7 @@ class Cloud:
             thr (optional): Threshold value defining a cloud.
 
         """
-        self.mask = np.asarray(mask, np.bool)
+        self.mask = np.asarray(mask, np.bool_)
         self.ts = ts
         if len(self.mask.shape) < 2:
             raise ValueError(f"mask must be 2D or more, not {len(self.mask.shape)}D")
@@ -90,7 +90,7 @@ class Cloud:
         ).astype(bool)
 
         # Points where a cloud will disappear before the last time step
-        m_will_disappear = m_last_cloud[::-1].cumsum(axis=0)[::-1].astype(np.bool)
+        m_will_disappear = m_last_cloud[::-1].cumsum(axis=0)[::-1].astype(np.bool_)
 
         # Set points where a cloud will disappear to the time until it's gone
         arr[:] = np.where(
@@ -134,7 +134,7 @@ class Cloud:
         ).astype(bool)
 
         # Points where first cloud will appear before the last time step
-        m_will_appear = m_first_cloud[::-1].cumsum(axis=0)[::-1].astype(np.bool)
+        m_will_appear = m_first_cloud[::-1].cumsum(axis=0)[::-1].astype(np.bool_)
 
         # Set points where first cloud will appear to the time until it's there
         arr[:] = np.where(
@@ -169,7 +169,7 @@ class EnsembleCloud(Cloud):
             ts (optional): Time step duration.
 
         """
-        mask = np.asarray(mask, np.bool)
+        mask = np.asarray(mask, np.bool_)
         if len(mask.shape) < 3:
             raise ValueError(f"mask must be 3D or more, not {len(mask.shape)}D")
         mask = np.count_nonzero(mask, axis=0) >= mem_min
