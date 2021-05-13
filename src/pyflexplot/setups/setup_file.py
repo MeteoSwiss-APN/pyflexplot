@@ -30,6 +30,7 @@ from .layout_setup import is_layout_setup_param
 from .layout_setup import LayoutSetup
 from .model_setup import is_model_setup_param
 from .model_setup import ModelSetup
+from .plot_panel_setup import is_ensemble_params_param
 from .plot_panel_setup import is_plot_panel_setup_param
 from .plot_panel_setup import PlotPanelSetup
 from .plot_setup import is_plot_setup_param
@@ -137,32 +138,34 @@ class SetupFile:
             for param, value in raw_params_i.items():
                 param = cls.prepare_raw_param_name(param)
                 value = cls.preproc_raw_param_value(value)
+                if param == "multipanel_param":
+                    value = cls.prepare_raw_param_name(value)
                 if is_plot_setup_param(param):
                     params[param] = value
                 elif is_files_setup_param(param):
-                    param = param.replace("files.", "")
                     if "files" not in params:
                         params["files"] = {}
+                    param = param.replace("files.", "")
                     params["files"][param] = value
                 elif is_layout_setup_param(param):
-                    param = param.replace("layout.", "")
                     if "layout" not in params:
                         params["layout"] = {}
+                    param = param.replace("layout.", "")
                     params["layout"][param] = value
                 elif is_model_setup_param(param):
-                    param = param.replace("model.", "")
                     if "model" not in params:
                         params["model"] = {}
+                    param = param.replace("model.", "")
                     params["model"][param] = value
                 elif is_plot_panel_setup_param(param):
                     panels[param] = value
                 elif is_dimensions_param(param):
-                    param = param.replace("dimensions.", "")
                     if "dimensions" not in panels:
                         panels["dimensions"] = {}
+                    param = param.replace("dimensions.", "")
                     panels["dimensions"][param] = value
-                elif param.startswith("ens_param_"):
-                    param = param.replace("ens_param_", "")
+                elif is_ensemble_params_param(param):
+                    param = param.replace("ens_params.", "")
                     ens_params[param] = value
                 else:
                     raise InvalidParameterNameError(param)
@@ -175,6 +178,8 @@ class SetupFile:
 
     @classmethod
     def prepare_raw_param_name(cls, raw_name: str) -> str:
+        if raw_name.startswith("ens_param_"):
+            return f"ens_params.{raw_name.replace('ens_param_', '')}"
         return {
             "infile": "files.input",
             "layout_type": "layout.type",

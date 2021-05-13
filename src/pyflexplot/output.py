@@ -88,14 +88,22 @@ class FilePathFormatter:
                 plot_variable += "-integr"
 
         def prepare_ens_variable(ens_variable: str) -> str:
+            plot_type = setup.layout.plot_type
+            multipanel_param = setup.layout.multipanel_param
             if ens_variable == "percentile":
-                ens_variable += f"-{setup.panels.collect_equal('ens_params').pctl:g}"
+                if plot_type == "multipanel" and multipanel_param == "ens_params.pctl":
+                    s_pctl = "+".join(
+                        map("{:g}".format, setup.panels.collect("ens_params.pctl"))
+                    )
+                else:
+                    s_pctl = f"{setup.panels.collect_equal('ens_params.pctl'):g}"
+                ens_variable += f"-{s_pctl}"
             elif ens_variable == "probability":
-                if setup.panels.collect_equal("ens_params").thr_type == "lower":
+                if setup.panels.collect_equal("ens_params.thr_type") == "lower":
                     ens_variable += "-gt"
-                elif setup.panels.collect_equal("ens_params").thr_type == "upper":
+                elif setup.panels.collect_equal("ens_params.thr_type") == "upper":
                     ens_variable += "-lt"
-                ens_variable += f"-{setup.panels.collect_equal('ens_params').thr:g}"
+                ens_variable += f"-{setup.panels.collect_equal('ens_params.thr'):g}"
             return ens_variable
 
         # Prepare Prepare ens variable

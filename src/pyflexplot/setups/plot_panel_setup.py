@@ -448,7 +448,7 @@ class PlotPanelSetupGroup:
         if not values:
             return None
         if not all(value == values[0] for value in values[1:]):
-            raise UnequalSetupParamValuesError(param, values)
+            raise UnequalSetupParamValuesError(f"{param}: {values}")
         return next(iter(values))
 
     @overload
@@ -678,6 +678,8 @@ class PlotPanelSetupGroup:
             params_lst = handle_sub_params(multipanel_param, params, "ens_params")
         elif is_dimensions_param(multipanel_param):
             params_lst = handle_sub_params(multipanel_param, params, "dimensions")
+        elif is_ensemble_params_param(multipanel_param):
+            raise NotImplementedError("ensemble params param")
         elif is_plot_panel_setup_param(multipanel_param):
             params = dict(params)
             try:
@@ -689,9 +691,8 @@ class PlotPanelSetupGroup:
                 ) from e
             if not (isinstance(values, Sequence) and not isinstance(values, str)):
                 raise ValueError(
-                    f"value ({sfmt(values)}) of multipanel_param"
-                    f" '{multipanel_param}' is a {type(values).__name__}, not a"
-                    " sequence"
+                    f"value ({sfmt(values)}) of multipanel_param '{multipanel_param}'"
+                    f" is a {type(values).__name__}, not a sequence"
                 )
             params_lst = [{**params, multipanel_param: value} for value in values]
         else:

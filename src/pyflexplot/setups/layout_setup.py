@@ -33,7 +33,7 @@ class LayoutSetup(BaseSetup):
 
         # Check multipanel_param
         if self.multipanel_param is not None:
-            multipanel_param_choices = ["ens_variable"]
+            multipanel_param_choices = ["ens_variable", "ens_params.pctl"]
             if self.multipanel_param not in multipanel_param_choices:
                 raise NotImplementedError(
                     f"unknown multipanel_param '{self.multipanel_param}'"

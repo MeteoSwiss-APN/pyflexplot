@@ -653,9 +653,9 @@ def create_plot_config(
         setup.layout.plot_type == "multipanel"
         and setup.layout.multipanel_param == "ens_variable"
     ):
-        ens_variable = "+".join(setup.panels.collect("ens_variable"))
+        ens_variable_fmtd = "+".join(setup.panels.collect("ens_variable"))
     else:
-        ens_variable = setup.panels.collect_equal("ens_variable")
+        ens_variable_fmtd = setup.panels.collect_equal("ens_variable")
     # SR_TMP >
 
     plot_config_dct: Dict[str, Any] = {
@@ -681,11 +681,13 @@ def create_plot_config(
         levels_config_dct["n"] = 8
     elif plot_variable.endswith("deposition"):
         levels_config_dct["n"] = 9
-    if plot_variable == "affected_area" and ens_variable != "probability":
+    if plot_variable == "affected_area" and ens_variable_fmtd != "probability":
         levels_config_dct["extend"] = "none"
         levels_config_dct["levels"] = np.array([0.0, np.inf])
         levels_config_dct["scale"] = "lin"
-    elif setup.model.simulation_type == "ensemble" and ens_variable == "probability":
+    elif (
+        setup.model.simulation_type == "ensemble" and ens_variable_fmtd == "probability"
+    ):
         levels_config_dct["extend"] = "max"
         levels_config_dct["scale"] = "lin"
         levels_config_dct["levels"] = np.arange(5, 95.1, 15)
@@ -695,7 +697,7 @@ def create_plot_config(
     elif plot_variable in [
         "cloud_arrival_time",
         "cloud_departure_time",
-    ] or ens_variable in [
+    ] or ens_variable_fmtd in [
         "cloud_arrival_time",
         "cloud_departure_time",
     ]:
@@ -711,25 +713,32 @@ def create_plot_config(
         levels_config_dct["levels"] = cloud_levels
         if (
             plot_variable == "cloud_arrival_time"
-            or ens_variable == "cloud_arrival_time"
+            or ens_variable_fmtd == "cloud_arrival_time"
         ):
             levels_config_dct["extend"] = "min"
         elif (
             plot_variable == "cloud_departure_time"
-            or ens_variable == "cloud_departure_time"
+            or ens_variable_fmtd == "cloud_departure_time"
         ):
             levels_config_dct["extend"] = "max"
     # SR_TMP < TODO proper multipanel support
     if setup.layout.plot_type == "multipanel":
         if setup.layout.multipanel_param == "ens_variable":
-            print(
-                "warning: create_plot_config: selecting ens_variable of first of"
-                " multiple panels"
-            )
-            ens_variable = next(iter(setup.panels)).ens_variable
+            # SR_TMP <
+            _ens_variable_lst = setup.panels.collect("ens_variable")
+            if len(set(_ens_variable_lst)) > 1:
+                print("warning: create_plot_config: using ens_variable from panel #1")
+            # SR_TMP >
             levels_config_dct["levels"] = levels_from_time_stats(
                 simulation_type=setup.model.simulation_type,
-                ens_variable=ens_variable,
+                ens_variable=next(iter(_ens_variable_lst)),
+                time_stats=time_stats,
+                levels_config_dct=levels_config_dct,
+            )
+        elif setup.layout.multipanel_param == "ens_params.pctl":
+            levels_config_dct["levels"] = levels_from_time_stats(
+                simulation_type=setup.model.simulation_type,
+                ens_variable=setup.panels.collect_equal("ens_variable"),
                 time_stats=time_stats,
                 levels_config_dct=levels_config_dct,
             )
@@ -762,43 +771,58 @@ def create_plot_config(
     cmap: Union[str, Colormap] = "flexplot"
     color_under: Optional[str] = None
     color_over: Optional[str] = None
-    if plot_variable == "affected_area" and ens_variable != "probability":
+    if plot_variable == "affected_area" and ens_variable_fmtd != "probability":
         cmap = "mono"
-    elif setup.model.simulation_type == "ensemble" and ens_variable == "probability":
+    elif (
+        setup.model.simulation_type == "ensemble" and ens_variable_fmtd == "probability"
+    ):
         # cmap = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
         cmap = truncate_cmap("terrain_r", 0.075)
     elif (
         setup.model.simulation_type == "ensemble"
-        and ens_variable == "percentile"
+        and ens_variable_fmtd == "percentile"
         and setup.layout.color_style == "mono"
     ):
         # SR_TMP < TODO Move cmap from plot to panel scope
-        pctl = setup.panels.collect_equal("ens_params.pctl")
-        if pctl <= 25:
+        if (
+            setup.layout.plot_type == "multipanel"
+            and setup.layout.multipanel_param == "ens_params.pctl"
+        ):
+            # SR_TMP <
+            _ens_param_pctl_lst = setup.panels.collect("ens_params.pctl")
+            if len(set(_ens_param_pctl_lst)) > 1:
+                print(
+                    "warning: create_plot_config: using ens_params.pctl from panel #1"
+                )
+            ens_param_pctl = next(iter(_ens_param_pctl_lst))
+            # SR_TMP >
+        else:
+            ens_param_pctl = setup.panels.collect_equal("ens_params.pctl")
+        # SR_TMP >
+        if ens_param_pctl <= 25:
             # cmap = "Oranges"
             cmap = linear_cmap("browns", "saddlebrown")
             print(type(cmap))
-        elif pctl <= 45:
+        elif ens_param_pctl <= 45:
             # cmap = "Greens"
             cmap = linear_cmap("greens", "darkgreen")
-        elif pctl <= 65:
+        elif ens_param_pctl <= 65:
             # cmap = "Blues"
             cmap = linear_cmap("blues", "darkblue")
-        elif pctl <= 85:
+        elif ens_param_pctl <= 85:
             # cmap = "Purples"
             cmap = linear_cmap("purples", "indigo")
         else:
             # cmap = "Greys"
             cmap = linear_cmap("grays", "black")
-        # SR_TMP >
     elif plot_variable == "cloud_arrival_time" or (
-        ens_variable == "cloud_arrival_time"
+        ens_variable_fmtd == "cloud_arrival_time"
     ):
         cmap = "viridis"
         color_under = "slategray"
         color_over = "lightgray"
     elif plot_variable == "cloud_departure_time" or (
-        ens_variable == "cloud_departure_time"
+        ens_variable_fmtd == "cloud_departure_time"
     ):
         cmap = "viridis_r"
         color_under = "lightgray"
@@ -839,7 +863,7 @@ def create_plot_config(
             markers_config_dct["mark_field_max"] = True
     elif setup.model.simulation_type == "ensemble":
         markers_config_dct["mark_field_max"] = False
-        if ens_variable in [
+        if ens_variable_fmtd in [
             "minimum",
             "maximum",
             "median",
@@ -886,17 +910,22 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     symbols = SYMBOLS
     words.set_active_lang(setup.panels.collect_equal("lang"))
 
-    ens_params = setup.panels.collect_equal("ens_params")
-    plot_variable = setup.panels.collect_equal("plot_variable")
     # SR_TMP <
-    if (
-        setup.layout.plot_type == "multipanel"
-        and setup.layout.multipanel_param == "ens_variable"
-    ):
+    plot_type = setup.layout.plot_type
+    multipanel_param = setup.layout.multipanel_param
+    if plot_type == "multipanel" and multipanel_param == "ens_variable":
         ens_variable = "+".join(setup.panels.collect("ens_variable"))
     else:
         ens_variable = setup.panels.collect_equal("ens_variable")
+    if plot_type == "multipanel" and multipanel_param == "ens_params.thr":
+        ens_param_thr = "+".join(setup.panels.collect("ens_params.thr"))
+    else:
+        ens_param_thr = setup.panels.collect_equal("ens_params.thr")
     # SR_TMP >
+
+    ens_param_thr_type = setup.panels.collect_equal("ens_params.thr_type")
+    ens_param_mem_min = setup.panels.collect_equal("ens_params.mem_min")
+    plot_variable = setup.panels.collect_equal("plot_variable")
 
     # Format variable name in various ways
     names = format_names_etc(setup, words, mdata)
@@ -949,9 +978,9 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
         )
     if setup.model.simulation_type == "ensemble":
         if ens_variable == "probability":
-            op = {"lower": "gt", "upper": "lt"}[ens_params.thr_type]
+            op = {"lower": "gt", "upper": "lt"}[ens_param_thr_type]
             labels["data_info"]["lines"].append(
-                f"{words['selection']}:\t{symbols[op]} {ens_params.thr}"
+                f"{words['selection']}:\t{symbols[op]} {ens_param_thr}"
                 f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
             )
         elif ens_variable in [
@@ -961,10 +990,10 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
             labels["data_info"]["lines"].append(
                 # f"{words['cloud_density']}:\t{words['minimum', 'abbr']}"
                 # f"{words['threshold']}:\t"
-                f"{words['cloud_threshold', 'abbr']}:\t {ens_params.thr}"
+                f"{words['cloud_threshold', 'abbr']}:\t {ens_param_thr}"
                 f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
             )
-            n_min = ens_params.mem_min or 0
+            n_min = ens_param_mem_min or 0
             n_tot = len((setup.model.ens_member_id or []))
             labels["data_info"]["lines"].append(
                 # f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
@@ -1126,18 +1155,23 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
 def format_names_etc(
     setup: PlotSetup, words: TranslatedWords, mdata: MetaData
 ) -> Dict[str, str]:
-    ens_params = setup.panels.collect_equal("ens_params")
-    plot_variable = setup.panels.collect_equal("plot_variable")
-    integrate = setup.panels.collect_equal("integrate")
     # SR_TMP <
-    if (
-        setup.layout.plot_type == "multipanel"
-        and setup.layout.multipanel_param == "ens_variable"
-    ):
+    plot_type = setup.layout.plot_type
+    multipanel_param = setup.layout.multipanel_param
+    if plot_type == "multipanel" and multipanel_param == "ens_variable":
         ens_variable = "+".join(setup.panels.collect("ens_variable"))
     else:
         ens_variable = setup.panels.collect_equal("ens_variable")
+    if plot_type == "multipanel" and multipanel_param == "ens_params.pctl":
+        ens_param_pctl = "+".join(
+            map("{:g}".format, setup.panels.collect("ens_params.pctl"))
+        )
+    else:
+        ens_param_pctl = setup.panels.collect_equal("ens_params.pctl")
     # SR_TMP >
+
+    plot_variable = setup.panels.collect_equal("plot_variable")
+    integrate = setup.panels.collect_equal("integrate")
 
     long_name = ""
     short_name = ""
@@ -1220,13 +1254,12 @@ def format_names_etc(
                 f"{words['ensemble_median_absolute_deviation', 'abbr']} {var_name_rel}"
             )
         elif ens_variable == "percentile":
-            assert ens_params.pctl is not None  # mypy
-            pctl = ens_params.pctl
-            th = {1: "st", 2: "nd", 3: "rd"}.get(pctl, "th")  # type: ignore
+            th = {1: "st", 2: "nd", 3: "rd"}.get(ens_param_pctl, "th")  # type: ignore
             long_name = (
-                f"{pctl:g}{words['th', th]}" f" {words['percentile']} {var_name_rel}"
+                f"{ens_param_pctl}{words['th', th]}"
+                f" {words['percentile']} {var_name_rel}"
             )
-            ens_var_name = f"{pctl:g}{words['th', th]} {words['percentile']}"
+            ens_var_name = f"{ens_param_pctl}{words['th', th]} {words['percentile']}"
         elif ens_variable == "probability":
             short_name = words["probability"].s
             long_name = f"{words['probability']} {var_name_rel}"
