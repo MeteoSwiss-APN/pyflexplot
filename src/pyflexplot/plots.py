@@ -72,7 +72,6 @@ from .utils.formatting import escape_format_keys
 from .utils.formatting import format_level_ranges
 from .utils.logging import log
 from .utils.typing import ColorType
-from .utils.typing import RectType
 from .words import SYMBOLS
 from .words import TranslatedWords
 from .words import WORDS
@@ -151,39 +150,11 @@ def create_plot(
         )
         for field in field_group
     ]
+    domains: List[Domain] = []
+    for field, map_config in zip(field_group, map_configs):
+        domains.append(get_domain(field, map_config.aspect))
     plot = BoxedPlot(plot_config)
-    # SR_TMP <
-    if len(field_group) == 1:
-        field = next(iter(field_group))
-        map_config = next(iter(map_configs))
-        rect = plot.config.layout.get_rect("center")
-        domain = get_domain(field, map_config.aspect)
-        plot.add_map_plot("map", field, domain, map_config, rect)
-    elif len(field_group) != 4:
-        raise NotImplementedError(f"{len(field_group)} number of panels")
-    else:
-        # SR_TODO Define sub-rects in layout (new layout type with four panels)
-        def derive_sub_rects(
-            rect: RectType,
-        ) -> Tuple[RectType, RectType, RectType, RectType]:
-            x0, y0, w, h = rect
-            rel_pad = 0.025
-            w_pad = rel_pad * w
-            h_pad = w_pad  # SR_TMP
-            w = 0.5 * w - 0.5 * w_pad
-            h = 0.5 * h - 0.5 * h_pad
-            x1 = x0 + w + w_pad
-            y1 = y0 + h + h_pad
-            return ((x0, y1, w, h), (x1, y1, w, h), (x0, y0, w, h), (x1, y0, w, h))
-
-        sub_rects = derive_sub_rects(plot.config.layout.get_rect("center"))
-        for idx, (field, map_config, sub_rect) in enumerate(
-            zip(field_group, map_configs, sub_rects)
-        ):
-            name = f"map{idx}"
-            domain = get_domain(field, map_config.aspect)
-            plot.add_map_plot(name, field, domain, map_config, sub_rect)
-    # SR_TMP >
+    plot.add_map_plot_panels(field_group, domains, map_configs)
 
     plot_add_text_boxes(plot, field_group, plot.config.layout, show_version)
     for file_path in file_paths:

@@ -22,6 +22,7 @@ from pyflexplot.plotting.domain import Domain
 
 # Local
 from ..input.field import Field
+from ..input.field import FieldGroup
 from ..plot_layouts import BoxedPlotLayout
 from ..setups.plot_panel_setup import PlotPanelSetup
 from ..setups.plot_setup import PlotSetup
@@ -147,6 +148,49 @@ class BoxedPlot:
     def clean(self) -> None:
         plt.close(self.fig)
 
+    def add_map_plot_panels(
+        self,
+        field_group: FieldGroup,
+        domains: Sequence[Domain],
+        map_configs: List[MapAxesConfig],
+    ) -> None:
+        n_panels = len(field_group)
+        # SR_TMP < TODO proper check
+        assert n_panels == len(domains) == len(map_configs) == len(self.config.panels)
+        # SR_TMP >
+        if n_panels == 1:
+            field = next(iter(field_group))
+            panel_config = next(iter(self.config.panels))
+            domain = next(iter(domains))
+            map_config = next(iter(map_configs))
+            rect = self.config.layout.get_rect("center")
+            self.add_map_plot("map", field, domain, map_config, rect, panel_config)
+        elif n_panels == 4:
+            # SR_TODO Define sub-rects in layout (new layout type with four panels)
+            def derive_sub_rects(
+                rect: RectType,
+            ) -> Tuple[RectType, RectType, RectType, RectType]:
+                x0, y0, w, h = rect
+                rel_pad = 0.025
+                w_pad = rel_pad * w
+                h_pad = w_pad  # SR_TMP
+                w = 0.5 * w - 0.5 * w_pad
+                h = 0.5 * h - 0.5 * h_pad
+                x1 = x0 + w + w_pad
+                y1 = y0 + h + h_pad
+                return ((x0, y1, w, h), (x1, y1, w, h), (x0, y0, w, h), (x1, y0, w, h))
+
+            sub_rects = derive_sub_rects(self.config.layout.get_rect("center"))
+            for idx, (field, panel_config, domain, map_config, sub_rect) in enumerate(
+                zip(field_group, self.config.panels, domains, map_configs, sub_rects)
+            ):
+                name = f"map{idx}"
+                self.add_map_plot(
+                    name, field, domain, map_config, sub_rect, panel_config
+                )
+        else:
+            raise NotImplementedError(f"{n_panels} number of panels")
+
     # pylint: disable=R0913  # too-many-arguments (>5)
     def add_map_plot(
         self,
@@ -155,6 +199,7 @@ class BoxedPlot:
         domain: Domain,
         map_config: MapAxesConfig,
         rect: RectType,
+        panel_config: BoxedPlotPanelConfig,
     ) -> MapAxes:
         ax = MapAxes(
             config=map_config,
@@ -163,7 +208,6 @@ class BoxedPlot:
             fig=self.fig,
             rect=rect,
         )
-        panel_config = next(iter(self.config.panels))  # SR_TMP TODO multipanel
         assert panel_config.colors is not None  # SR_TMP
         _draw_colors_contours(
             ax,
