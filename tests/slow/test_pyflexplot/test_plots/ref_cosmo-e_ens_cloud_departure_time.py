@@ -254,6 +254,7 @@ field_summary = {
             "output_time_format": "%Y%m%d%H%M",
         },
         "layout": {
+            "color_style": "auto",
             "plot_type": "auto",
             "multipanel_param": None,
             "scale_fact": 1.0,
@@ -319,6 +320,7 @@ plot_summary = {
                 "output_time_format": "%Y%m%d%H%M",
             },
             "layout": {
+                "color_style": "auto",
                 "plot_type": "auto",
                 "multipanel_param": None,
                 "scale_fact": 1.0,

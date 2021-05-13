@@ -18,6 +18,7 @@ def is_layout_setup_param(param: str) -> bool:
 # SR_TMP TODO pull common base class out of LayoutSetup, ModelSetup etc.
 @dc.dataclass
 class LayoutSetup(BaseSetup):
+    color_style: str = "auto"
     plot_type: str = "auto"
     multipanel_param: Optional[str] = None
     scale_fact: float = 1.0

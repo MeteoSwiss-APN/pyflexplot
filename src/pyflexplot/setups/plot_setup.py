@@ -405,6 +405,8 @@ class PlotSetup(BaseSetup):
             base_time: Start of the model simulation on which the dispersion
                 simulation is based.
 
+            color_style: Color style of the plot type. Defaults to "auto".
+
             combine_levels: Sum up over multiple vertical levels. Otherwise,
                 each is plotted separately.
 

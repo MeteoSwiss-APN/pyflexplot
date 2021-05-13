@@ -31,6 +31,7 @@ OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
         "output_time_format": "%Y%m%d%H%M",
     },
     "layout": {
+        "color_style": "auto",
         "multipanel_param": None,
         "plot_type": "auto",
         "scale_fact": 1.0,
