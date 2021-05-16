@@ -233,8 +233,10 @@ def get_domain(field: Field, aspect: float) -> Domain:
     mask_nz = field.time_props.mask_nz
     domain: Optional[Domain] = None
     if domain_type == "full":
-        if model_name in ["COSMO-1", "COSMO-1E", "COSMO-2E", "COSMO-2", "COSMO-E"]:
+        if model_name in ["COSMO-1", "COSMO-1E", "COSMO-2", "COSMO-E"]:
             domain = Domain(lat, lon, config={"zoom_fact": 1.01})
+        elif model_name in ["COSMO-2E"]:
+            domain = Domain(lat, lon, config={"zoom_fact": 1.025})
         else:
             domain = Domain(lat, lon)
     elif domain_type == "release_site":
