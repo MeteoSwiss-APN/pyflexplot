@@ -95,7 +95,7 @@ class MarkersConfig:
 class BoxedPlotPanelConfig:
     setup: PlotPanelSetup  # SR_TODO consider removing this
     # ---
-    colors: Optional[Sequence[ColorType]] = None
+    colors: Sequence[ColorType] = dc.field(default_factory=list)
     levels: ContourLevelsConfig = dc.field(default_factory=ContourLevelsConfig)
     markers: MarkersConfig = dc.field(default_factory=MarkersConfig)
 
@@ -208,7 +208,6 @@ class BoxedPlot:
             fig=self.fig,
             rect=rect,
         )
-        assert panel_config.colors is not None  # SR_TMP
         _draw_colors_contours(
             ax,
             field,

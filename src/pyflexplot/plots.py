@@ -50,7 +50,6 @@ from words import Word
 from . import __version__
 from .input.field import Field
 from .input.field import FieldGroup
-from .input.field import FieldStats
 from .input.meta_data import format_meta_datum
 from .input.meta_data import MetaData
 from .output import FilePathFormatter
@@ -136,12 +135,10 @@ def create_plot(
             raise NotImplementedError(
                 f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
             )
-    if len(field_group) > 1:
-        print("warning: using time_props of first panel of multipanel plot")
-    time_stats = next(iter(field_group)).time_props.stats
     # SR_TMP >  SR_MULTIPANEL
+    val_max = max(field.time_props.stats.max for field in field_group)
     labels = create_box_labels(plot_setup, mdata)
-    plot_config = create_plot_config(plot_setup, mdata, time_stats, labels)
+    plot_config = create_plot_config(plot_setup, mdata, labels, val_max)
     map_configs: List[MapAxesConfig] = [
         create_map_config(
             field_group.plot_setup,
@@ -317,10 +314,9 @@ def plot_add_text_boxes(
                 size=size,
             )
 
-    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot, field: Field) -> None:
+    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot, mdata: MetaData) -> None:
         """Fill the secondary title box of the deterministic plot layout."""
         font_size = plot.config.font.sizes.content_large
-        mdata = field.mdata
         box.text(
             capitalize(format_meta_datum(mdata.species.name)),
             loc="tc",
@@ -350,15 +346,27 @@ def plot_add_text_boxes(
     # pylint: disable=R0913  # too-many-arguments
     # pylint: disable=R0914  # too-many-locals
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot, field: Field) -> None:
+    def fill_box_legend(
+        box: TextBoxAxes, plot: BoxedPlot, mdata: MetaData, max_vals: Sequence[float]
+    ) -> None:
         """Fill the box containing the plot legend."""
-        # SR_TMP TODO multipanel
-        if len(plot.config.panels) > 1:
-            print("warning: fill_box_legend: defaulting to first panel")
-        panel_config = next(iter(plot.config.panels))
-        # SR_TMP >
         labels = plot.config.labels["legend"]
-        mdata = field.mdata
+
+        # SR_TMP TODO multipanel
+        legend_labels: Sequence[str] = next(
+            iter(plot.config.panels)
+        ).levels.legend.labels
+        colors: Sequence[ColorType] = next(iter(plot.config.panels)).colors
+        markers: MarkersConfig = next(iter(plot.config.panels)).markers
+        if len(plot.config.panels) > 1:
+            for panel_config in plot.config.panels[1:]:
+                if panel_config.levels.legend.labels != legend_labels:
+                    raise NotImplementedError("legend labels differ")
+                if panel_config.colors != colors:
+                    raise NotImplementedError("colors differ")
+                if panel_config.markers != markers:
+                    raise NotImplementedError("markers differ")
+        # SR_TMP >
 
         # Box title
         box.text(
@@ -381,9 +389,6 @@ def plot_add_text_boxes(
         dy0_labels = -5.0
         dy0_boxes = dy0_labels - 0.8 * h_legend_box
 
-        # Format level ranges (contour plot legend)
-        legend_labels = panel_config.levels.legend.labels
-
         # Legend labels (level ranges)
         box.text_block(
             legend_labels[::-1],
@@ -398,8 +403,6 @@ def plot_add_text_boxes(
         )
 
         # Legend color boxes
-        colors = panel_config.colors
-        assert colors is not None  # SR_TMP
         dy = dy0_boxes
         for color in colors[::-1]:
             box.color_rect(
@@ -419,19 +422,19 @@ def plot_add_text_boxes(
         dy0_marker = dy0_markers
 
         # Field maximum marker
-        if panel_config.markers.mark_field_max:
+        if markers.mark_field_max:
             dy_marker_label_max = dy0_marker
             dy0_marker -= dy_line
             dy_max_marker = dy_marker_label_max - 0.7
-            assert panel_config.markers.markers is not None  # mypy
+            assert markers.markers is not None  # mypy
             box.marker(
                 loc="tc",
                 dx=dx_marker,
                 dy=dy_max_marker,
-                **panel_config.markers.markers["max"],
+                **markers.markers["max"],
             )
             box.text(
-                s=format_max_marker_label(labels, field.fld),
+                s=format_max_marker_label(labels, max_vals),
                 loc="tc",
                 dx=dx_marker_label,
                 dy=dy_marker_label_max,
@@ -441,16 +444,16 @@ def plot_add_text_boxes(
             )
 
         # Release site marker
-        if panel_config.markers.mark_release_site:
+        if markers.mark_release_site:
             dy_site_label = dy0_marker
             dy0_marker -= dy_line
             dy_site_marker = dy_site_label - 0.7
-            assert panel_config.markers.markers is not None  # mypy
+            assert markers.markers is not None  # mypy
             box.marker(
                 loc="tc",
                 dx=dx_marker,
                 dy=dy_site_marker,
-                **panel_config.markers.markers["site"],
+                **markers.markers["site"],
             )
             box.text(
                 s=f"{labels['site']}: {format_meta_datum(mdata.release.site_name)}",
@@ -517,19 +520,21 @@ def plot_add_text_boxes(
         )
 
     # SR_TMP <
-    if len(fields) > 1:
-        print(
-            "warning: plot_add_text_boxes: selecting field of first of multiple panels"
-        )
-    field = next(iter(fields))
+    mdata = next(iter(fields)).mdata
+    for field in fields:
+        if field.mdata != mdata:
+            raise NotImplementedError(
+                f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
+            )
     # SR_TMP >
+    max_vals = [np.nanmax(field.fld) for field in fields]
 
     plot.add_text_box("top", layout.get_rect("top"), fill_box_title)
     if layout.name == "post_vintage":
         plot.add_text_box(
             "right_top",
             layout.get_rect("right_top"),
-            lambda box, plot: fill_box_2nd_title(box, plot, field),
+            lambda box, plot: fill_box_2nd_title(box, plot, mdata),
         )
     elif layout.name == "post_vintage_ens":
         plot.add_text_box(
@@ -546,7 +551,7 @@ def plot_add_text_boxes(
     plot.add_text_box(
         "right_middle",
         layout.get_rect("right_middle"),
-        lambda box, plot: fill_box_legend(box, plot, field),
+        lambda box, plot: fill_box_legend(box, plot, mdata, max_vals),
     )
     plot.add_text_box(
         "right_bottom", layout.get_rect("right_bottom"), fill_box_release_info
@@ -621,15 +626,15 @@ def create_map_config(
 def create_plot_config(
     setup: PlotSetup,
     mdata: MetaData,
-    time_stats: FieldStats,
     labels: Dict[str, Dict[str, Any]],
+    val_max: float,
 ) -> BoxedPlotConfig:
     fig_size = (12.5 * setup.layout.scale_fact, 8.0 * setup.layout.scale_fact)
     fig_aspect = np.divide(*fig_size)
     layout = BoxedPlotLayout.create(setup.layout.type, aspect=fig_aspect)
     font_config = FontConfig(sizes=FontSizes().scale(setup.layout.scale_fact))
     panels_config = [
-        create_panel_config(panel_setup, setup.layout, setup.model, mdata, time_stats)
+        create_panel_config(panel_setup, setup.layout, setup.model, mdata, val_max)
         for panel_setup in setup.panels
     ]
     return BoxedPlotConfig(
@@ -649,7 +654,7 @@ def create_panel_config(
     layout_setup: LayoutSetup,
     model_setup: ModelSetup,
     mdata: MetaData,
-    time_stats: FieldStats,
+    val_max: float,
 ) -> BoxedPlotPanelConfig:
     plot_variable = panel_setup.plot_variable
     ens_variable = panel_setup.ens_variable
@@ -702,12 +707,18 @@ def create_panel_config(
             or ens_variable == "cloud_departure_time"
         ):
             levels_config_dct["extend"] = "max"
-    levels_config_dct["levels"] = levels_from_time_stats(
-        simulation_type=model_setup.simulation_type,
-        ens_variable=ens_variable,
-        time_stats=time_stats,
-        levels_config_dct=levels_config_dct,
-    )
+    # n_levels = levels_config_dct.get("n")
+    # if (
+    #     model_setup.simulation_type != "ensemble"
+    #     or not (
+    #         ens_variable.endswith("probability")
+    #         or ens_variable in ["cloud_arrival_time", "cloud_departure_time"]
+    #     )
+    # ) and n_levels is not None:
+    if "levels" not in levels_config_dct:
+        n_levels = levels_config_dct["n"]
+        levels = levels_from_time_stats(n_levels=n_levels, val_max=val_max)
+        levels_config_dct["levels"] = levels
     legend_config_dct["labels"] = format_level_ranges(
         levels=levels_config_dct["levels"],
         style=legend_config_dct.get("range_style", "base"),
@@ -1251,29 +1262,29 @@ def capitalize(s: Union[str, Word]) -> str:
         raise ValueError(f"string not capitalizable: '{s}'") from e
 
 
-def format_max_marker_label(labels: Dict[str, Any], fld: np.ndarray) -> str:
-    if np.isnan(fld).all():
-        s_val = "NaN"
-    else:
-        fld_max = np.nanmax(fld)
-        if 0.001 <= fld_max < 0.01:
-            s_val = f"{fld_max:.5f}"
-        elif 0.01 <= fld_max < 0.1:
-            s_val = f"{fld_max:.4f}"
-        elif 0.1 <= fld_max < 1:
-            s_val = f"{fld_max:.3f}"
-        elif 1 <= fld_max < 10:
-            s_val = f"{fld_max:.2f}"
-        elif 10 <= fld_max < 100:
-            s_val = f"{fld_max:.1f}"
-        elif 100 <= fld_max < 1000:
-            s_val = f"{fld_max:.0f}"
+def format_max_marker_label(labels: Dict[str, Any], max_vals: Sequence[float]) -> str:
+    s_vals: List[str] = []
+    for max_val in max_vals:
+        if np.isnan(max_val):
+            s_val = "NaN"
         else:
-            s_val = f"{fld_max:.2E}"
-        # s_val += r"$\,$" + labels["unit"]
-    return f"{labels['max']}: {s_val}"
-    # return f"{labels['max']} ({s_val})"
-    # return f"{labels['maximum']}:\n({s_val})"
+            if 0.001 <= max_val < 0.01:
+                s_val = f"{max_val:.5f}"
+            elif 0.01 <= max_val < 0.1:
+                s_val = f"{max_val:.4f}"
+            elif 0.1 <= max_val < 1:
+                s_val = f"{max_val:.3f}"
+            elif 1 <= max_val < 10:
+                s_val = f"{max_val:.2f}"
+            elif 10 <= max_val < 100:
+                s_val = f"{max_val:.1f}"
+            elif 100 <= max_val < 1000:
+                s_val = f"{max_val:.0f}"
+            else:
+                s_val = f"{max_val:.2E}"
+            # s_val += r"$\,$" + labels["unit"]
+            s_vals.append(s_val)
+    return f"{labels['max']}: {'/'.join(s_vals)}"
 
 
 def format_release_site_coords_labels(
@@ -1488,32 +1499,15 @@ def colors_from_cmap(cmap, n_levels, extend):
     return colors
 
 
-def levels_from_time_stats(
-    simulation_type: str,
-    ens_variable: Optional[str],
-    time_stats: FieldStats,
-    levels_config_dct: Dict[str, Any],
-) -> np.ndarray:
-    def _auto_levels_log10(n_levels: int, val_max: float) -> List[float]:
-        if not np.isfinite(val_max):
-            raise ValueError("val_max not finite", val_max)
-        # SR_TMP <
-        if val_max == 0.0:
-            val_max = 1e-6
-        # SR_TMP >
-        log10_max = int(np.floor(np.log10(val_max)))
-        log10_d = 1
-        return 10 ** np.arange(
-            log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d
-        )
-
-    if simulation_type == "ensemble":
-        assert ens_variable is not None  # mypy
-        if ens_variable.endswith("probability") or ens_variable in [
-            "cloud_arrival_time",
-            "cloud_departure_time",
-        ]:
-            return levels_config_dct["levels"]
-    if levels_config_dct.get("n"):
-        return _auto_levels_log10(levels_config_dct["n"], val_max=time_stats.max)
-    return levels_config_dct["levels"]
+def levels_from_time_stats(n_levels: int, val_max: float) -> np.ndarray:
+    if not np.isfinite(val_max):
+        raise ValueError("val_max not finite", val_max)
+    # SR_TMP <
+    if val_max == 0.0:
+        val_max = 1e-6
+    # SR_TMP >
+    log10_max = int(np.floor(np.log10(val_max)))
+    log10_d = 1
+    return 10 ** np.arange(
+        log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d
+    )
