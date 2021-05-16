@@ -518,6 +518,7 @@ plot_summary = {
                     "type": "RefDistIndConfig",
                     "dist": 100,
                     "font_size": 11.0,
+                    "h_box": 0.06,
                     "min_w_box": 0.075,
                     "line_width": 2.0,
                     "pos": "bl",

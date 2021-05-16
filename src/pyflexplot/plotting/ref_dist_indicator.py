@@ -27,6 +27,8 @@ class RefDistIndConfig:
 
         font_size: Font size of distance label.
 
+        h_box: Height of the box.
+
         min_w_box: Minimum width of the box.
 
         line_width: Line width of distance indicator.
@@ -41,6 +43,7 @@ class RefDistIndConfig:
 
     dist: int = 100
     font_size: float = 11.0
+    h_box: float = 0.06
     min_w_box: float = 0.075
     line_width: float = 2.0
     pos: str = "bl"
@@ -79,9 +82,8 @@ class ReferenceDistanceIndicator:
         self.pos_y: str = config.pos[0]
         self.pos_x: str = config.pos[1]
 
-        self.h_box: float = 0.06
-        self.xpad_box: float = 0.2 * self.h_box
-        self.ypad_box: float = 0.2 * self.h_box
+        self.xpad_box: float = 0.2 * self.config.h_box
+        self.ypad_box: float = 0.2 * self.config.h_box
 
         self._calc_box_y_params()
         self._calc_box_x_params(axes_to_geo)
@@ -112,7 +114,7 @@ class ReferenceDistanceIndicator:
             mpl.patches.Rectangle(
                 xy=(self.x0_box, self.y0_box),
                 width=self.w_box,
-                height=self.h_box,
+                height=self.config.h_box,
                 transform=ax.transAxes,
                 zorder=zorder,
                 fill=True,
@@ -148,10 +150,10 @@ class ReferenceDistanceIndicator:
     def _calc_box_y_params(self) -> None:
         if self.pos_y == "t":
             self.y1_box = 1.0
-            self.y0_box = self.y1_box - self.h_box
+            self.y0_box = self.y1_box - self.config.h_box
         elif self.pos_y == "b":
             self.y0_box = 0.0
-            self.y1_box = self.y0_box + self.h_box
+            self.y1_box = self.y0_box + self.config.h_box
         else:
             raise ValueError(f"invalid y-position '{self.pos_y}'")
         self.y_line = self.y0_box + self.ypad_box

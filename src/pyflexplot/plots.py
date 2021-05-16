@@ -589,7 +589,22 @@ def create_map_config(
     scale_fact = plot_setup.layout.scale_fact
     domain_type = panel_setup.domain
     lang = panel_setup.lang
+    n_panels = len(plot_setup.panels)
 
+    if n_panels == 1:
+        ref_dist_config = {
+            "font_size": 11.0,
+            "h_box": 0.06,
+            "min_w_box": 0.075,
+        }
+    elif n_panels == 4:
+        ref_dist_config = {
+            "font_size": 9.0,
+            "h_box": 0.09,
+            "min_w_box": 0.12,
+        }
+    else:
+        raise NotImplementedError(f"{n_panels} panels")
     config_dct: Dict[str, Any] = {
         "aspect": aspect,
         "lang": lang,
@@ -600,21 +615,30 @@ def create_map_config(
         "geo_res_cities": "110m",
         "geo_res_rivers": "110m",
         "min_city_pop": 1_000_000,
-        "ref_dist_config": {"dist": 250},
+        "ref_dist_config": {
+            **ref_dist_config,
+            "dist": 250,
+        },
     }
     conf_regional_scale: Dict[str, Any] = {
         "geo_res": "50m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
         "min_city_pop": 300_000,
-        "ref_dist_config": {"dist": 100},
+        "ref_dist_config": {
+            **ref_dist_config,
+            "dist": 100,
+        },
     }
     conf_country_scale: Dict[str, Any] = {
         "geo_res": "10m",
         "geo_res_cities": "10m",
         "geo_res_rivers": "10m",
         "min_city_pop": 0,
-        "ref_dist_config": {"dist": 25},
+        "ref_dist_config": {
+            **ref_dist_config,
+            "dist": 25,
+        },
     }
     if domain_type == "full":
         if model_name.startswith("COSMO"):
