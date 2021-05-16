@@ -17,9 +17,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 
-# First-party
-from pyflexplot.plotting.domain import Domain
-
 # Local
 from ..input.field import Field
 from ..input.field import FieldGroup
@@ -31,6 +28,7 @@ from ..utils.summarize import summarizable
 from ..utils.typing import ColorType
 from ..utils.typing import FontSizeType
 from ..utils.typing import RectType
+from .domain import Domain
 from .map_axes import MapAxes
 from .map_axes import MapAxesConfig
 from .text_box_axes import TextBoxAxes

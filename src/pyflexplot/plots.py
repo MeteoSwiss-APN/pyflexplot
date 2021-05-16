@@ -35,10 +35,6 @@ import numpy as np
 from matplotlib.colors import Colormap
 
 # First-party
-from pyflexplot.plotting.domain import CloudDomain
-from pyflexplot.plotting.domain import Domain
-from pyflexplot.plotting.domain import ReleaseSiteDomain
-from pyflexplot.setups.layout_setup import LayoutSetup
 from srutils.datetime import init_datetime
 from srutils.format import format_numbers_range
 from srutils.geo import Degrees
@@ -62,8 +58,12 @@ from .plotting.boxed_plot import ContourLevelsLegendConfig
 from .plotting.boxed_plot import FontConfig
 from .plotting.boxed_plot import FontSizes
 from .plotting.boxed_plot import MarkersConfig
+from .plotting.domain import CloudDomain
+from .plotting.domain import Domain
+from .plotting.domain import ReleaseSiteDomain
 from .plotting.map_axes import MapAxesConfig
 from .plotting.text_box_axes import TextBoxAxes
+from .setups.layout_setup import LayoutSetup
 from .setups.model_setup import ModelSetup
 from .setups.plot_panel_setup import PlotPanelSetup
 from .setups.plot_setup import PlotSetup
