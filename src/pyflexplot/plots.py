@@ -356,14 +356,14 @@ def plot_add_text_boxes(
         legend_labels: Sequence[str] = next(
             iter(plot.config.panels)
         ).levels.legend.labels
-        colors: Sequence[ColorType] = next(iter(plot.config.panels)).colors
+        colors_lst: Sequence[Sequence[ColorType]] = [
+            panel.colors for panel in plot.config.panels
+        ]
         markers: MarkersConfig = next(iter(plot.config.panels)).markers
         if len(plot.config.panels) > 1:
             for panel_config in plot.config.panels[1:]:
                 if panel_config.levels.legend.labels != legend_labels:
                     raise NotImplementedError("legend labels differ")
-                if panel_config.colors != colors:
-                    raise NotImplementedError("colors differ")
                 if panel_config.markers != markers:
                     raise NotImplementedError("markers differ")
         # SR_TMP >
@@ -403,20 +403,30 @@ def plot_add_text_boxes(
         )
 
         # Legend color boxes
-        dy = dy0_boxes
-        for color in colors[::-1]:
-            box.color_rect(
-                loc="tc",
-                x_anker="left",
-                dx=dx_legend_box,
-                dy=dy,
-                w=w_legend_box,
-                h=h_legend_box,
-                fc=color,
-                ec="black",
-                lw=1.0,
-            )
-            dy -= dy_line
+        def add_color_rects(colors: Sequence[ColorType], dx: float, w: float) -> None:
+            dy = dy0_boxes
+            for color in colors[::-1]:
+                box.color_rect(
+                    loc="tc",
+                    x_anker="left",
+                    dx=dx,
+                    dy=dy,
+                    w=w,
+                    h=h_legend_box,
+                    fc=color,
+                    ec="black",
+                    lw=1.0,
+                )
+                dy -= dy_line
+
+        if all(colors == colors_lst[0] for colors in colors_lst[1:]):
+            add_color_rects(next(iter(colors_lst)), dx_legend_box, w_legend_box)
+        else:
+            w = w_legend_box / len(colors_lst) * 2
+            dx = dx_legend_box - w
+            for colors in colors_lst:
+                add_color_rects(colors, dx, w)
+                dx += w
 
         dy0_markers = dy0_boxes - dy_line * (len(legend_labels) - 0.3)
         dy0_marker = dy0_markers
