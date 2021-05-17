@@ -418,6 +418,7 @@ plot_summary = {
                 "colors": [
                     [0.7843137254901961, 0.7843137254901961, 0.7843137254901961]
                 ],
+                "label": None,
                 "levels": {
                     "type": "ContourLevelsConfig",
                     "extend": "none",

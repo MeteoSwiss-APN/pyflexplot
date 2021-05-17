@@ -414,6 +414,7 @@ plot_summary = {
                     [0.267004, 0.004874, 0.329415, 1.0],
                     "slategray",
                 ],
+                "label": None,
                 "levels": {
                     "type": "ContourLevelsConfig",
                     "extend": "max",

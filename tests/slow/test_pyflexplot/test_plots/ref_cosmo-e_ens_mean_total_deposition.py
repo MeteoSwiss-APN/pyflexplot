@@ -413,6 +413,7 @@ plot_summary = {
                     "yellow",
                     "lightgray",
                 ],
+                "label": None,
                 "levels": {
                     "type": "ContourLevelsConfig",
                     "extend": "max",

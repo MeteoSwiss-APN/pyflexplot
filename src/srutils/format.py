@@ -85,17 +85,24 @@ def titlecase(s, preserve=True):
     return " ".join(words_title)
 
 
-def ordinal(i: Union[int, str]) -> str:
+def ordinal(i: Union[int, float, str], fmt: str = "", lang: str = "en") -> str:
     """Format an integer as an ordinal number."""
-    i = int(i)
-    if abs(i) % 10 == 1:
-        sfx = {11: "th"}.get(abs(i) % 100, "st")
-    elif abs(i) % 10 == 2:
-        sfx = {12: "th"}.get(abs(i) % 100, "nd")
-    elif abs(i) % 10 == 3:
-        sfx = {13: "th"}.get(abs(i) % 100, "rd")
+    if lang == "de":
+        sfx = "."
+    elif lang == "en":
+        ii = int(i)
+        if abs(ii) % 10 == 1:
+            sfx = {11: "th"}.get(abs(ii) % 100, "st")
+        elif abs(ii) % 10 == 2:
+            sfx = {12: "th"}.get(abs(ii) % 100, "nd")
+        elif abs(ii) % 10 == 3:
+            sfx = {13: "th"}.get(abs(ii) % 100, "rd")
+        else:
+            sfx = "th"
     else:
-        sfx = "th"
+        raise ValueError(f"lang='{lang}' (choices: 'en', 'de')")
+    if fmt:
+        return f"{{i:{fmt}}}{{sfx}}".format(i=i, sfx=sfx)
     return f"{i}{sfx}"
 
 

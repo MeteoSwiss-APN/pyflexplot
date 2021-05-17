@@ -66,7 +66,7 @@ def is_ensemble_params_param(param: str, recursive: bool = False) -> bool:
     return param in EnsembleParams.get_params()
 
 
-@dc.dataclass
+@dc.dataclass(repr=False)
 class EnsembleParams(BaseSetup):
     mem_min: Optional[int] = None
     pctl: Optional[float] = None
@@ -75,7 +75,7 @@ class EnsembleParams(BaseSetup):
 
 
 # pylint: disable=R0902  # too-many-instance-attributes (>7)
-@dc.dataclass
+@dc.dataclass(repr=False)
 class PlotPanelSetup(BaseSetup):
     """Setup of an individual panel of a plot.
 

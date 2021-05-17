@@ -272,7 +272,10 @@ WORDS.add(en={"*": "number of", "abbr": "no."}, de={"*": "Anzahl", "abbr": "Anz.
 # WORDS.add(en="of", de={"*": "von", "fg": "der", "ng": "des"})
 # P
 WORDS.add(en="percent", de="Prozent")
-WORDS.add(en="percentile", de="Perzentil")
+WORDS.add(
+    en={"*": "percentile", "pl": "percentiles"},
+    de={"*": "Perzentil", "pl": "Perzentile"},
+)
 WORDS.add(en="probability", de="Wahrscheinlichkeit")
 # Q
 # R

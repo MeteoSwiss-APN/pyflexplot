@@ -1276,6 +1276,7 @@ plot_summary = {
                     "yellow",
                     "lightgray",
                 ],
+                "label": "minimum",
                 "levels": {
                     "type": "ContourLevelsConfig",
                     "extend": "max",
@@ -1360,6 +1361,7 @@ plot_summary = {
                     "yellow",
                     "lightgray",
                 ],
+                "label": "maximum",
                 "levels": {
                     "type": "ContourLevelsConfig",
                     "extend": "max",
@@ -1444,6 +1446,7 @@ plot_summary = {
                     "yellow",
                     "lightgray",
                 ],
+                "label": "median",
                 "levels": {
                     "type": "ContourLevelsConfig",
                     "extend": "max",
@@ -1528,6 +1531,7 @@ plot_summary = {
                     "yellow",
                     "lightgray",
                 ],
+                "label": "mean",
                 "levels": {
                     "type": "ContourLevelsConfig",
                     "extend": "max",

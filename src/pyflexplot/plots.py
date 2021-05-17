@@ -37,6 +37,7 @@ from matplotlib.colors import Colormap
 # First-party
 from srutils.datetime import init_datetime
 from srutils.format import format_numbers_range
+from srutils.format import ordinal
 from srutils.geo import Degrees
 from srutils.plotting import linear_cmap
 from srutils.plotting import truncate_cmap
@@ -695,6 +696,22 @@ def create_panel_config(
     plot_variable = panel_setup.plot_variable
     ens_variable = panel_setup.ens_variable
 
+    # Label
+    if layout_setup.plot_type != "multipanel":
+        label = None
+    elif layout_setup.multipanel_param == "ens_variable":
+        label = panel_setup.ens_variable
+    elif layout_setup.multipanel_param == "ens_params.pctl":
+        assert panel_setup.ens_params.pctl is not None  # mypy
+        label = ordinal(panel_setup.ens_params.pctl, "g")
+    elif layout_setup.multipanel_param == "ens_params.thr":
+        assert panel_setup.ens_params.thr is not None  # mypy
+        label = ordinal(panel_setup.ens_params.thr, "g")
+    else:
+        raise NotImplementedError(
+            f"label for multipanel_param '{layout_setup.multipanel_param}'"
+        )
+
     # Levels and legend
     levels_config_dct: Dict[str, Any] = {
         "include_lower": False,
@@ -743,14 +760,6 @@ def create_panel_config(
             or ens_variable == "cloud_departure_time"
         ):
             levels_config_dct["extend"] = "max"
-    # n_levels = levels_config_dct.get("n")
-    # if (
-    #     model_setup.simulation_type != "ensemble"
-    #     or not (
-    #         ens_variable.endswith("probability")
-    #         or ens_variable in ["cloud_arrival_time", "cloud_departure_time"]
-    #     )
-    # ) and n_levels is not None:
     if "levels" not in levels_config_dct:
         n_levels = levels_config_dct["n"]
         levels = levels_from_time_stats(n_levels=n_levels, val_max=val_max)
@@ -878,6 +887,7 @@ def create_panel_config(
     return BoxedPlotPanelConfig(
         setup=panel_setup,
         colors=colors,
+        label=label,
         levels=levels_config,
         markers=markers_config,
     )
@@ -899,7 +909,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     else:
         ens_variable = setup.panels.collect_equal("ens_variable")
     if plot_type == "multipanel" and multipanel_param == "ens_params.thr":
-        ens_param_thr = "+".join(setup.panels.collect("ens_params.thr"))
+        ens_param_thrs = setup.panels.collect("ens_params.thr")
     else:
         ens_param_thr = setup.panels.collect_equal("ens_params.thr")
     # SR_TMP >
@@ -960,10 +970,19 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     if setup.model.simulation_type == "ensemble":
         if ens_variable == "probability":
             op = {"lower": "gt", "upper": "lt"}[ens_param_thr_type]
-            labels["data_info"]["lines"].append(
-                f"{words['selection']}:\t{symbols[op]} {ens_param_thr}"
-                f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
-            )
+            if plot_type == "multipanel" and multipanel_param == "ens_params.thr":
+                labels["data_info"]["lines"].append(
+                    f"{words['selection']}:\t{symbols[op]}"
+                    f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
+                )
+                labels["data_info"]["lines"].append(
+                    f"\t({', '.join(map(str, ens_param_thrs))})"
+                )
+            else:
+                labels["data_info"]["lines"].append(
+                    f"{words['selection']}:\t{symbols[op]} {ens_param_thr}"
+                    f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
+                )
         elif ens_variable in [
             "cloud_arrival_time",
             "cloud_departure_time",
@@ -1144,11 +1163,10 @@ def format_names_etc(
     else:
         ens_variable = setup.panels.collect_equal("ens_variable")
     if plot_type == "multipanel" and multipanel_param == "ens_params.pctl":
-        ens_param_pctl = "+".join(
-            map("{:g}".format, setup.panels.collect("ens_params.pctl"))
-        )
+        ens_param_pctls = setup.panels.collect("ens_params.pctl")
     else:
         ens_param_pctl = setup.panels.collect_equal("ens_params.pctl")
+    lang = setup.panels.collect_equal("lang")
     # SR_TMP >
 
     plot_variable = setup.panels.collect_equal("plot_variable")
@@ -1235,12 +1253,13 @@ def format_names_etc(
                 f"{words['ensemble_median_absolute_deviation', 'abbr']} {var_name_rel}"
             )
         elif ens_variable == "percentile":
-            th = {1: "st", 2: "nd", 3: "rd"}.get(ens_param_pctl, "th")  # type: ignore
-            long_name = (
-                f"{ens_param_pctl}{words['th', th]}"
-                f" {words['percentile']} {var_name_rel}"
-            )
-            ens_var_name = f"{ens_param_pctl}{words['th', th]} {words['percentile']}"
+            if plot_type == "multipanel" and multipanel_param == "ens_params.pctl":
+                ens_var_name = f"{words['percentile', 'pl']}"
+            else:
+                ens_var_name = (
+                    f"{ordinal(ens_param_pctl, 'g', lang)} {words['percentile']}"
+                )
+            long_name = f"{ens_var_name} {var_name_rel}"
         elif ens_variable == "probability":
             short_name = words["probability"].s
             long_name = f"{words['probability']} {var_name_rel}"

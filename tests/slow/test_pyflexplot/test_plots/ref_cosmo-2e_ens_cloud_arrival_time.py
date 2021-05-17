@@ -418,6 +418,7 @@ plot_summary = {
                     [0.626579, 0.854645, 0.223353, 1.0],
                     [0.993248, 0.906157, 0.143936, 1.0],
                 ],
+                "label": None,
                 "levels": {
                     "type": "ContourLevelsConfig",
                     "extend": "min",

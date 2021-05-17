@@ -94,6 +94,7 @@ class BoxedPlotPanelConfig:
     setup: PlotPanelSetup  # SR_TODO consider removing this
     # ---
     colors: Sequence[ColorType] = dc.field(default_factory=list)
+    label: Optional[str] = None
     levels: ContourLevelsConfig = dc.field(default_factory=ContourLevelsConfig)
     markers: MarkersConfig = dc.field(default_factory=MarkersConfig)
 
