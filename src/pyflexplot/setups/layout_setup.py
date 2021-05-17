@@ -6,7 +6,6 @@ from typing import Mapping
 from typing import Optional
 
 # Local
-from ..plot_layouts import BoxedPlotLayout
 from .base_setup import BaseSetup
 
 
@@ -39,12 +38,6 @@ class LayoutSetup(BaseSetup):
                     f"unknown multipanel_param '{self.multipanel_param}'"
                     f"; choices: {', '.join(multipanel_param_choices)}"
                 )
-
-        # Check type
-        try:
-            BoxedPlotLayout.create(self.type)
-        except ValueError as e:
-            raise ValueError(f"invalid type '{self.type}'") from e
 
     # pylint: disable=W0221  # arguments-differ (simulation_type)
     @classmethod

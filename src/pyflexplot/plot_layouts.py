@@ -1,23 +1,22 @@
 """Plot layouts."""
 # Standard library
+import dataclasses as dc
 from typing import Dict
 from typing import Mapping
 from typing import Tuple
 
 # Local
+from .setups.layout_setup import LayoutSetup
 from .utils.summarize import summarizable
 from .utils.typing import RectType
 
 
-@summarizable(attrs=["name", "aspects", "rects"])
+@summarizable
+@dc.dataclass
 class BoxedPlotLayout:
-    def __init__(
-        self, name: str, aspects: Mapping[str, float], rects: Mapping[str, RectType]
-    ) -> None:
-        """Create an instance of ``BoxerdPlotLayout``."""
-        self.name: str = name
-        self.aspects: Dict[str, float] = dict(aspects)
-        self.rects: Dict[str, RectType] = dict(rects)
+    setup: LayoutSetup
+    aspects: Mapping[str, float]
+    rects: Mapping[str, RectType]
 
     def get_aspect(self, name: str = "tot") -> float:
         return self.aspects[name]
@@ -26,19 +25,19 @@ class BoxedPlotLayout:
         return self.rects[name]
 
     @classmethod
-    def create(cls, name: str, aspect: float = 1.0) -> "BoxedPlotLayout":
+    def create(cls, setup: LayoutSetup, aspect: float = 1.0) -> "BoxedPlotLayout":
         """Create the predefined plot layout ``name`` with ``aspect``."""
-        if name == "vintage":
+        if setup.type == "vintage":
             aspects, rects = create_layout_vintage(aspect)
-        elif name == "post_vintage":
+        elif setup.type == "post_vintage":
             aspects, rects = create_layout_post_vintage(aspect)
-        elif name == "post_vintage_ens":
+        elif setup.type == "post_vintage_ens":
             aspects, rects = create_layout_post_vintage_ens(aspect)
-        elif name == "standalone_details":
+        elif setup.type == "standalone_details":
             aspects, rects = create_layout_standalone_details(aspect)
         else:
-            raise ValueError(f"invalid name '{name}'")
-        return cls(name, aspects=aspects, rects=rects)
+            raise ValueError(f"invalid layout type '{setup.type}'")
+        return cls(setup, aspects=aspects, rects=rects)
 
 
 # pylint: disable=R0914  # too-many-locals (>15)

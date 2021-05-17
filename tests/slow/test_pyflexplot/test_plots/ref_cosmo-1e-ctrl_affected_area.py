@@ -360,7 +360,13 @@ plot_summary = {
         },
         "layout": {
             "type": "BoxedPlotLayout",
-            "name": "post_vintage",
+            "setup": {
+                "color_style": "auto",
+                "plot_type": "auto",
+                "multipanel_param": None,
+                "scale_fact": 1.0,
+                "type": "post_vintage",
+            },
             "aspects": {"tot": 1.5625, "center": 1.447058823529412},
             "rects": {
                 "top": [0.0, 0.92, 0.7872, 0.08],

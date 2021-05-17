@@ -1225,7 +1225,13 @@ plot_summary = {
         },
         "layout": {
             "type": "BoxedPlotLayout",
-            "name": "post_vintage_ens",
+            "setup": {
+                "color_style": "auto",
+                "plot_type": "multipanel",
+                "multipanel_param": "ens_variable",
+                "scale_fact": 1.0,
+                "type": "post_vintage_ens",
+            },
             "aspects": {"tot": 1.5625, "center": 1.447058823529412},
             "rects": {
                 "top": [0.0, 0.92, 0.7872, 0.08],
@@ -1276,7 +1282,7 @@ plot_summary = {
                     "yellow",
                     "lightgray",
                 ],
-                "label": "minimum",
+                "label": "Minimum",
                 "levels": {
                     "type": "ContourLevelsConfig",
                     "extend": "max",
@@ -1361,7 +1367,7 @@ plot_summary = {
                     "yellow",
                     "lightgray",
                 ],
-                "label": "maximum",
+                "label": "Maximum",
                 "levels": {
                     "type": "ContourLevelsConfig",
                     "extend": "max",
@@ -1446,7 +1452,7 @@ plot_summary = {
                     "yellow",
                     "lightgray",
                 ],
-                "label": "median",
+                "label": "Median",
                 "levels": {
                     "type": "ContourLevelsConfig",
                     "extend": "max",
@@ -1531,7 +1537,7 @@ plot_summary = {
                     "yellow",
                     "lightgray",
                 ],
-                "label": "mean",
+                "label": "Mittel",
                 "levels": {
                     "type": "ContourLevelsConfig",
                     "extend": "max",

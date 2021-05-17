@@ -13,6 +13,7 @@ from typing import Tuple
 from typing import Union
 
 # Third-party
+import matplotlib as mpl
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
@@ -207,6 +208,8 @@ class BoxedPlot:
             fig=self.fig,
             rect=rect,
         )
+        if panel_config.label:
+            _add_panel_label(ax, panel_config, self.config.layout)
         _draw_colors_contours(
             ax,
             field,
@@ -231,6 +234,43 @@ class BoxedPlot:
         box.draw()
         self.axes[name] = box
         return box
+
+
+def _add_panel_label(
+    ax: MapAxes, panel_config: BoxedPlotPanelConfig, layout: BoxedPlotLayout
+) -> None:
+    multipanel_param = layout.setup.multipanel_param
+    height = 0.10
+    if multipanel_param == "ens_params.pctl":
+        width = 0.10
+    elif multipanel_param == "ens_variable":
+        width = 0.20
+    else:
+        raise NotImplementedError(f"label for multipanel param '{multipanel_param}'")
+    zorder = ax.zorder["frames"]
+    ax.ax.add_patch(
+        mpl.patches.Rectangle(
+            xy=(0.0, 1.0 - height),
+            width=width,
+            height=height,
+            transform=ax.ax.transAxes,
+            zorder=zorder,
+            fill=True,
+            facecolor="white",
+            edgecolor="black",
+            linewidth=1,
+        )
+    )
+    ax.ax.text(
+        x=0.5 * width,
+        y=1.0 - 0.55 * height,
+        s=panel_config.label,
+        transform=ax.ax.transAxes,
+        zorder=zorder,
+        ha="center",
+        va="center",
+        fontsize=12,
+    )
 
 
 # pylint: disable=R0912  # too-many-branches

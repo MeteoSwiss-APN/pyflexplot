@@ -179,7 +179,9 @@ def write_standalone_release_info(plot_path: str, plot_config: BoxedPlotConfig) 
     path = Path(plot_path).with_suffix(f".release_info{Path(plot_path).suffix}")
     log(inf=f"write standalone release info to {path}")
     layout = BoxedPlotLayout(
-        "standalone_release_info", aspects={"tot": 1.5}, rects={"tot": (0, 0, 1, 1)}
+        plot_config.setup.layout.derive({"type": "standalone_release_info"}),
+        aspects={"tot": 1.5},
+        rects={"tot": (0, 0, 1, 1)},
     )
     species_id = plot_config.setup.panels.collect_equal("dimensions.species_id")
     n_species = 1 if isinstance(species_id, int) else len(species_id)
@@ -543,19 +545,19 @@ def plot_add_text_boxes(
     max_vals = [np.nanmax(field.fld) for field in fields]
 
     plot.add_text_box("top", layout.get_rect("top"), fill_box_title)
-    if layout.name == "post_vintage":
+    if layout.setup.type == "post_vintage":
         plot.add_text_box(
             "right_top",
             layout.get_rect("right_top"),
             lambda box, plot: fill_box_2nd_title(box, plot, mdata),
         )
-    elif layout.name == "post_vintage_ens":
+    elif layout.setup.type == "post_vintage_ens":
         plot.add_text_box(
             "right_top",
             layout.get_rect("right_top"),
             fill_box_data_info,
         )
-    elif layout.name == "standalone_details":
+    elif layout.setup.type == "standalone_details":
         plot.add_text_box(
             "right_top",
             layout.get_rect("right_top"),
@@ -668,7 +670,7 @@ def create_plot_config(
 ) -> BoxedPlotConfig:
     fig_size = (12.5 * setup.layout.scale_fact, 8.0 * setup.layout.scale_fact)
     fig_aspect = np.divide(*fig_size)
-    layout = BoxedPlotLayout.create(setup.layout.type, aspect=fig_aspect)
+    layout = BoxedPlotLayout.create(setup.layout, aspect=fig_aspect)
     font_config = FontConfig(sizes=FontSizes().scale(setup.layout.scale_fact))
     panels_config = [
         create_panel_config(panel_setup, setup.layout, setup.model, mdata, val_max)
@@ -700,13 +702,13 @@ def create_panel_config(
     if layout_setup.plot_type != "multipanel":
         label = None
     elif layout_setup.multipanel_param == "ens_variable":
-        label = panel_setup.ens_variable
+        label = capitalize(WORDS[panel_setup.ens_variable])
     elif layout_setup.multipanel_param == "ens_params.pctl":
         assert panel_setup.ens_params.pctl is not None  # mypy
-        label = ordinal(panel_setup.ens_params.pctl, "g")
+        label = ordinal(panel_setup.ens_params.pctl, "g", panel_setup.lang)
     elif layout_setup.multipanel_param == "ens_params.thr":
         assert panel_setup.ens_params.thr is not None  # mypy
-        label = ordinal(panel_setup.ens_params.thr, "g")
+        label = f"{panel_setup.ens_params.thr:g}"
     else:
         raise NotImplementedError(
             f"label for multipanel_param '{layout_setup.multipanel_param}'"
@@ -1163,7 +1165,7 @@ def format_names_etc(
     else:
         ens_variable = setup.panels.collect_equal("ens_variable")
     if plot_type == "multipanel" and multipanel_param == "ens_params.pctl":
-        ens_param_pctls = setup.panels.collect("ens_params.pctl")
+        pass
     else:
         ens_param_pctl = setup.panels.collect_equal("ens_params.pctl")
     lang = setup.panels.collect_equal("lang")
