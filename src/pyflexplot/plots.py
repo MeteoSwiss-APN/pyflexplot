@@ -810,6 +810,7 @@ def create_panel_config(
         else:
             # cmap = "Greys"
             cmap = linear_cmap("grays", "black")
+        cmap = truncate_cmap(cmap, 0.1)
     elif plot_variable == "cloud_arrival_time" or (
         ens_variable == "cloud_arrival_time"
     ):
