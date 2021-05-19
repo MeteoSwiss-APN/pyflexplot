@@ -4,6 +4,7 @@ from typing import List
 from typing import Sequence
 
 # Third-party
+from pkg_resources import parse_requirements
 from setuptools import find_packages
 from setuptools import setup
 
@@ -49,20 +50,9 @@ metadata = {
 
 python = ">= 3.7"
 
-# Runtime dependencies (unpinned: only critical version restrictions)
-requirements = [
-    "cartopy>=0.18",
-    "click>=6.0",
-    "geopy",
-    "matplotlib",
-    "netcdf4",
-    "numpy",
-    "pillow>=8.1.1",
-    "pypdf2",
-    "scipy",
-    "toml",
-    "typing-extensions",
-]
+# Runtime dependencies: top-level and unpinned (only critical version restrictions)
+with open("requirements/requirements.in") as f:
+    requirements = list(map(str, parse_requirements(f.readlines())))
 
 scripts = [
     "pyflexplot=pyflexplot.cli.cli:cli",

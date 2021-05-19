@@ -65,7 +65,7 @@ Ready to contribute? Here's how to set up `pyflexplot` for local development.
 
     $ cd pyflexplot/
     $ mkvirtualenv flexplot-dev
-    $ pip install -r requirements_dev_frozen.txt
+    $ pip install -r requirements/dev-requirements.txt
 
     $ python setup.py develop # or
     $ pip install -e .
@@ -76,14 +76,12 @@ Ready to contribute? Here's how to set up `pyflexplot` for local development.
 
    Now you can make your changes locally.
 
-5. When you're done making changes, format them with yapf, check that your changes pass the static code analyses with flake8 and the tests with pytest, including testing other Python versions with tox::
+5. When you're done making changes, format them with black, check that your changes pass the static code analyses with flake8 and the tests with pytest, including testing other Python versions with tox::
 
-    $ yapf -ir src
-    $ flake8 src tests
-    $ pytest
-    $ tox  # optional, currently only flake8 and Python 3.7 configured and thus not necessary
+    $ black src
+    $ tox  # runs pytest, pylint, flake8
 
-   To get yapf, flake8 and tox, just pip install them into your virtualenv (``pipenv install --dev``).
+   To get black, flake8, tox etc., just install them into your virtualenv (``pip install -r requirements/dev-requirements.txt``).
 
 6. Commit your changes and push your branch to GitHub::
 
@@ -131,20 +129,16 @@ Project Structure
    :widths: 25 75
    :header-rows: 1
 
-   * - File / Directory
+   * - File or directory
      - Description
-   * - docs
-     - Directory containing the documentation.
-   * - tests
-     - Directory containing the tests.
-       The directory structure in this folder is the same as in the source folder (src).
-       For each file in the source folder, there is a file with the same name, but, with the prefix ``text_``.
-   * - src
-     - Source folder.
    * - AUTHORS.rst
      - Contains information about the lead developer and contributors.
+   * - .bumpversion.cfg
+     - Configuration file of bumpversion.
    * - CONTRIBUTION.rst
      - Contains all the information you need when you contribute to this project.
+   * - .gitignore
+     - Files and directories ignored by git.
    * - HISTORY.rst
      - Lists the releases and their new features.
    * - LICENSE
@@ -152,58 +146,81 @@ Project Structure
    * - MANIFEST.in
      - Specifies the files and directories which will be added to the Pip package.
    * - Makefile
-     - Build file for cleaning, creating and releasing packages, for testing and linting code, and for creating the documentation.
-   * - Pipefile
-     - Contains all development dependencies (pip packages used for development) in the section ``[dev-packages]`` (as few version restrictions as possible), and the application/library itself as the only entry in the section ``[packages]`` (e.g., ``pyflexplot = {editable=true, path="."}``).
-       Production dependencies (pip packages imported in the source code) are listed in ``setup.py``, which is invoked when installing the current spplication.
-       The file is used and managed by pipenv, but can also be edited manually.
-   * - Pipfile.lock
-     - Contains all recursive dependencies with pinned version numbers to create reproducible virtual environments across users and machines.
-       The file is managed automatically by pipenv and must not be edited manually.
+     - Build file for cleaning, installing the tool and its dependencies, for testing, formatting and linting code, and much more.
+       Type ``make help`` to see all available commands.
+   * - mypy.ini
+     - Configuration file of mypy.
+   * - .pre-commit-config.yaml
+     - Configuration file of pre-commit, which, among other things, runs the formatters black and isort.
+   * - pyproject.toml
+     - Project specification file as defined by PEP 518.
    * - README.rst
      - Short documentation about the package.
        It lists features and contains a quick start.
-   * - setup.cfg
-     - Configuration file for different build tools such as bumpversion, bdist, flake8, pytest, and yapf.
    * - setup.py
      - Script used to build the package.
-       It specifies most requirements of the library/application (as few version restrictions as possible):
-
-       * production dependencies (variable ``requirements``),
-       * setup dependencies (variable ``setup_requirements``), and
-       * testing dependencies (variable ``test_requirements``).
-
-       (Only the development dependencies are listed in ``Pipfile`` instead.)
-       In addition, the compatible Python verions are specified (should be the same as in the file ``tox.ini``).
-       The requirements and Python versions are usually the only things to adapt in this file.
+       It reads the unpinned top-level requirements from ``requirements/requirements.in`` into the variable ``requirements``.
    * - tox.ini
      - A configuration file for tox carring out the test for different Python verions.
        The listed versions should be the same as in the file ``setup.py``.
+   * - USAGE.txt
+     - Instructions on using pyflexplot.
+   * - VERSION
+     - Text file containing the current package version.
+       Handled by bumpversion.
+   * - docs/
+     - Directory containing the documentation.
+   * - requirements/
+     - Directory containing requirements files with various types of dependencies.
+   * - requirements/dev-requirements.in
+     - A text file containing top-level unpinned development dependencies (critical version restrictions only).
+       It is managed manually.
+   * - requirements/dev-requirements.txt
+     - A text file containing recursive pinned development and runtime dependencies (all versions specified), a superset of those in ``requirements/requirements.txt``.
+       It is created automatically with ``pip freeze`` or the pip-tools command ``pip-compile``.
+   * - requirements/requirements.in
+     - A text file containing top-level unpinned runtime dependencies (critical version restrictions only).
+       It is managed manually and read in ``setup.py``.
+   * - requirements/requirements.txt
+     - A text file containing recursive pinned runtime dependencies (all versions specified).
+       It is created automatically with ``pip freeze`` or the pip-tools command ``pip-compile``.
+   * - requirements/tox-requirements.in
+     - A text file containing top-level unpinned testing dependencies (critical version restrictions only) used by tox as specified in ``tox.ini``.
+       It is managed manually.
+   * - requirements/tox-requirements.txt
+     - A text file containing recursive pinned testing dependencies (critical version restrictions only) used by tox.
+       It is created automatically with ``pip freeze`` or the pip-tools command ``pip-compile``.
+   * - scripts/
+     - Directory containing some small helper scripts.
+   * - src/
+     - Source directory.
+   * - tests/
+     - Directory containing the tests.
+       The directory structure in this folder follows that in the source folder (src).
+       For each file in the source folder, there is a file with the same name, but with the prefix ``text_``.
+   * - various/
+     - Directory containing various files.
 
 Managing dependencies
 ---------------------
 
 Generally, projects make use of other libraries, be it as (production) dependencies (e.g., ``import numpy`` in source code)
-Which libraries -- and, but only if necessary, restrictions regarding their versions -- have to be listed in different places in the project:
+Which libraries -- and any critical restrictions of their versions -- have to be listed in different places in the project:
 
-* Production dependencies, without which the application/library does not work, belong in ``setup.py`` (``setup(..., installl_requires=[<packages>], ...)``), with as few version restrictions as possible.
-* Development dependencies, required for development, belong in ``Pipfile`` (under ``[dev-packages]``), with as few version restrictions as possible.
-* Setup and test dependencies, required during setup/testing, belong in ``setup.py`` (``setup(..., setup_requires=[<packages>], tests_require=[<packages>], ...)``), with as few version restrictions as possible.
-* Pinned dependencies (all recursively required packages with pinned version numbers) are automatically written to ``Pipfile.lock`` (which must not be edited manually).
-* Should a ``requirements.txt`` ever be needed (see `pip requirements file`), pipenv can export pinned dependencies in the respective format (``pipenv freeze > requirements.txt``).
+* Unpinned top-level runtime dependencies, which are required to run the application/library, belong in ``requirements/requirements.in`` (from which they are read in ``setup.py``).
+  The versions of unpinned dependencies are only restricted as necessary, e.g., if a minimum version is required for a certain feature or bugfix.
+* Unpinned top-level development dependencies, which are additional packages required during development, belong in ``requirements/dev-requirements.in``.
+* Unpinned top-level testing dependencies, which are packages required by the testing framework ``tox`` to run unit tests, linters etc. as specified in ``tox.ini``, belong in ``requirements/tox-requirements.in``.
+* Pinned runtime, development and testing dependencies belong in ``requirements/requirements.txt``, ``requirements/dev-requirements.txt`` and ``requirements/tox-requirements.txt``, respectively.
+  Pinned dependencies are recursive, i.e., include all dependencies of dependencies, and restricted to a specific version.
+  This ensures a reproducible environment that is guaranteed to work.
 
-Ensure that the needed libraries and their versions listend in the 3 files are the same.
-If at all necessary, it is best practice is to list the minimal compatible version of a package (``>=``), rather than a fixed version (``==``).
-Fixed versions should be avoided if possible, as they impede keeping dependencies up-to-date.
-
-.. _`pip requirements file`: https://pip.readthedocs.io/en/1.1/requirements.html
-.. _`example Pipefile`: https://pipenv.readthedocs.io/en/latest/basics/#example-pipfile-pipfile-lock
 How to provide executable scripts
 ---------------------------------
 
 By default, a single executable script called pyflexplot is provided.
 It is created when the package is installed.
-When you call it the main function in ``src/pyflexplot/cli.py`` is called.
+When you call it, the main function (``cli``) in ``src/pyflexplot/cli/cli.py`` is called.
 
 How many scripts that are created, their names and which functions are called can be configured in the
 ``setup.py`` file.
@@ -214,9 +231,9 @@ For Example::
 
     entry_points={
         'console_scripts': [
-            'pyflexplot=pyflexplot.cli:main',
+            'pyflexplot=pyflexplot.cli.cli:cli',
     ],
 
 When the package is installed, a executable script is created in the Python's bin folder with the name ``pyflexplot``.
-If a user calls this script, the function ``main`` in the file ``src/pyflexplot/cli.py`` is called.
+If a user calls this script, the function ``cli`` in the file ``src/pyflexplot/cli/cli.py`` is called.
 If more scripts should be created, add further entries to array ``console_scripts``.

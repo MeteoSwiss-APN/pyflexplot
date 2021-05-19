@@ -242,15 +242,15 @@ endif
 install: ${_VENV}
 	@echo -e "\n[make install] installing the package"
 	# SR_NOTE Pinned deps fail on tsa, probably due to cartopy/shapely vs. geos/proj
-	# ${PREFIX}python -m pip install -r requirements/run-pinned.txt ${PIP_OPTS}
+	# ${PREFIX}python -m pip install -r requirements/requirements.txt ${PIP_OPTS}
 	${PREFIX}python -m pip install . ${PIP_OPTS}
 
 .PHONY: install-dev #CMD Install the package as editable with pinned runtime and\ndevelopment dependencies.
 install-dev: ${_VENV}
 	@echo -e "\n[make install-dev] installing the package as editable with development dependencies"
 	# SR_NOTE Pinned deps fail on tsa, probably due to cartopy/shapely vs. geos/proj
-	# ${PREFIX}python -m pip install -r requirements/dev-pinned.txt ${PIP_OPTS}
-	${PREFIX}python -m pip install -r requirements/dev-unpinned.txt ${PIP_OPTS}
+	# ${PREFIX}python -m pip install -r requirements/dev-requirements.txt ${PIP_OPTS}
+	${PREFIX}python -m pip install -r requirements/dev-requirements.in ${PIP_OPTS}
 	${PREFIX}python -m pip install -e . ${PIP_OPTS}
 	${PREFIX}pre-commit install
 
@@ -260,25 +260,25 @@ install-dev: ${_VENV}
 
 .PHONY: update-run-deps #CMD Update pinned runtime dependencies based on setup.py;\nshould be followed by update-dev-deps (consider update-run-dev-deps)
 update-run-deps: git
-	@echo -e "\n[make update-run-deps] updating pinned runtime dependencies in requirements/run-pinned.txt"
-	\rm -f requirements/run-pinned.txt
+	@echo -e "\n[make update-run-deps] updating pinned runtime dependencies in requirements/requirements.txt"
+	\rm -f requirements/requirements.txt
 	@echo -e "temporary virtual environment: ${_TMP_VENV}-run"
 	python -m venv ${_TMP_VENV}-run
 	${_TMP_VENV}-run/bin/python -m pip install -U pip
 	${_TMP_VENV}-run/bin/python -m pip install . ${PIP_OPTS}
-	${_TMP_VENV}-run/bin/python -m pip freeze | \grep -v '\<file:' > requirements/run-pinned.txt
+	${_TMP_VENV}-run/bin/python -m pip freeze | \grep -v '\<file:' > requirements/requirements.txt
 	\rm -rf ${_TMP_VENV}-run
 
-.PHONY: update-dev-deps #CMD Update pinned development dependencies based on\nrequirements/dev-unpinned.txt; includes runtime dependencies in\nrequirements/run-pinned.txt
+.PHONY: update-dev-deps #CMD Update pinned development dependencies based on\nrequirements/dev-requirements.in; includes runtime dependencies in\nrequirements/requirements.txt
 update-dev-deps: git
-	@echo -e "\n[make update-dev-deps] updating pinned development dependencies in requirements/dev-pinned.txt"
-	\rm -f requirements/dev-pinned.txt
+	@echo -e "\n[make update-dev-deps] updating pinned development dependencies in requirements/requirements.txt"
+	\rm -f requirements/requirements.txt
 	@echo -e "temporary virtual environment: ${_TMP_VENV}-dev"
 	python -m venv ${_TMP_VENV}-dev
 	${_TMP_VENV}-dev/bin/python -m pip install -U pip
-	${_TMP_VENV}-dev/bin/python -m pip install -r requirements/dev-unpinned.txt ${PIP_OPTS}
-	${_TMP_VENV}-dev/bin/python -m pip install -r requirements/run-pinned.txt --no-deps ${PIP_OPTS}
-	${_TMP_VENV}-dev/bin/python -m pip freeze > requirements/dev-pinned.txt
+	${_TMP_VENV}-dev/bin/python -m pip install -r requirements/dev-requirements.in ${PIP_OPTS}
+	${_TMP_VENV}-dev/bin/python -m pip install -r requirements/requirements.txt --no-deps ${PIP_OPTS}
+	${_TMP_VENV}-dev/bin/python -m pip freeze > requirements/dev-requirements.txt
 	\rm -rf ${_TMP_VENV}-dev
 
 # Note: Updating run and dev deps MUST be done in sequence
@@ -287,15 +287,15 @@ update-run-dev-deps:
 	$(MAKE) update-run-deps
 	$(MAKE) update-dev-deps
 
-.PHONY: update-tox-deps #CMD Update pinned tox testing dependencies based on\nrequirements/tox-unpinned.txt
+.PHONY: update-tox-deps #CMD Update pinned tox testing dependencies based on\nrequirements/tox-requirements.in
 update-tox-deps: git
-	\rm -f requirements/tox-pinned.txt
-	@echo -e "\n[make update-tox-deps] updating pinned tox testing dependencies in requirements/tox-pinned.txt"
+	\rm -f requirements/tox-requirements.in
+	@echo -e "\n[make update-tox-deps] updating pinned tox testing dependencies in requirements/tox-requirements.txt"
 	@echo -e "temporary virtual environment: ${_TMP_VENV}-tox"
 	python -m venv ${_TMP_VENV}-tox
 	${_TMP_VENV}-tox/bin/python -m pip install -U pip
-	${_TMP_VENV}-tox/bin/python -m pip install -r requirements/tox-unpinned.txt ${PIP_OPTS}
-	${_TMP_VENV}-tox/bin/python -m pip freeze > requirements/tox-pinned.txt
+	${_TMP_VENV}-tox/bin/python -m pip install -r requirements/tox-requirements.in ${PIP_OPTS}
+	${_TMP_VENV}-tox/bin/python -m pip freeze > requirements/tox-requirements.txt
 	\rm -rf ${_TMP_VENV}-tox
 
 .PHONY: update-precommit-deps #CMD Update pinned pre-commit dependencies specified in\n.pre-commit-config.yaml
