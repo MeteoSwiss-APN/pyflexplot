@@ -272,7 +272,7 @@ update-run-deps: git
 .PHONY: update-dev-deps #CMD Update pinned development dependencies based on\nrequirements/dev-requirements.in; includes runtime dependencies in\nrequirements/requirements.txt
 update-dev-deps: git
 	@echo -e "\n[make update-dev-deps] updating pinned development dependencies in requirements/requirements.txt"
-	\rm -f requirements/requirements.txt
+	\rm -f requirements/dev-requirements.txt
 	@echo -e "temporary virtual environment: ${_TMP_VENV}-dev"
 	python -m venv ${_TMP_VENV}-dev
 	${_TMP_VENV}-dev/bin/python -m pip install -U pip
@@ -289,7 +289,7 @@ update-run-dev-deps:
 
 .PHONY: update-tox-deps #CMD Update pinned tox testing dependencies based on\nrequirements/tox-requirements.in
 update-tox-deps: git
-	\rm -f requirements/tox-requirements.in
+	\rm -f requirements/tox-requirements.txt
 	@echo -e "\n[make update-tox-deps] updating pinned tox testing dependencies in requirements/tox-requirements.txt"
 	@echo -e "temporary virtual environment: ${_TMP_VENV}-tox"
 	python -m venv ${_TMP_VENV}-tox
