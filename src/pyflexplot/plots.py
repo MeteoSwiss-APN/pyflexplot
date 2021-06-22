@@ -796,17 +796,14 @@ def create_panel_config(
         ens_param_pctl = panel_setup.ens_params.pctl
         assert ens_param_pctl is not None  # mypy
         if ens_param_pctl <= 25:
-            # cmap = "Oranges"
-            cmap = linear_cmap("browns", "saddlebrown")
+            # cmap = linear_cmap("greens", "darkgreen")
+            cmap = linear_cmap("browns", "olive")
         elif ens_param_pctl <= 45:
-            # cmap = "Greens"
-            cmap = linear_cmap("greens", "darkgreen")
+            cmap = linear_cmap("browns", "saddlebrown")
         elif ens_param_pctl <= 65:
-            # cmap = "Blues"
-            cmap = linear_cmap("blues", "darkblue")
-        elif ens_param_pctl <= 85:
-            # cmap = "Purples"
             cmap = linear_cmap("purples", "indigo")
+        elif ens_param_pctl <= 85:
+            cmap = linear_cmap("blues", "darkblue")
         else:
             # cmap = "Greys"
             cmap = linear_cmap("grays", "black")
