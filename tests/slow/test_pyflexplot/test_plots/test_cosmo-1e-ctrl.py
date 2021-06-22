@@ -70,3 +70,33 @@ class Test_AffectedArea(_TestBase):
             }
         ],
     }
+
+
+# class Test_Concentration_MultiPanelTime(_TestBase):
+class Test_Concentration_MultiPanelTime(_TestCreateReference):
+    reference = "ref_cosmo-1e-ctrl_concentration_multipanel_time"
+    setup_dct = {
+        "files": {
+            "input": INFILE_1,
+            "output": f"{reference}.png",
+        },
+        "layout": {
+            "plot_type": "multipanel",
+            "multipanel_param": "time",
+        },
+        "model": {
+            "name": "COSMO-1E",
+        },
+        "panels": [
+            {
+                "plot_variable": "concentration",
+                "integrate": True,
+                "lang": "de",
+                "domain": "full",
+                "dimensions": {
+                    "species_id": 1,
+                    "time": [2, 4, 8, 12],
+                },
+            }
+        ],
+    }

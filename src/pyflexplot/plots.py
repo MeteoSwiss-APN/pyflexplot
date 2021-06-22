@@ -1018,35 +1018,25 @@ def create_box_labels(
             simulation_mdata.reduction_start
         )
         simulation_now_fmtd = format_meta_datum(simulation_mdata.now)
-        simulation_lead_time_fmtd = format_meta_datum(simulation_mdata.lead_time)
+        simulation_lead_time_fmtd = f"+{format_meta_datum(simulation_mdata.lead_time)}"
         time_since_release_start_fmtd = format_meta_datum(
             simulation_mdata.now_rel - release_mdata.start_rel
         )
     else:
         # Simulation meta data differ for multipanel plots with multiple time steps
         simulation_integr_period_lst = []
-        simulation_reduction_start_lst = []
-        simulation_now_lst = []
         simulation_lead_time_lst = []
         time_since_release_start_lst = []
         for simulation_mdata in simulation_mdata_lst:
             simulation_integr_period_lst.append(
                 simulation_mdata.now - simulation_mdata.reduction_start
             )
-            simulation_reduction_start_lst.append(simulation_mdata.reduction_start)
-            simulation_now_lst.append(simulation_mdata.now)
             simulation_lead_time_lst.append(simulation_mdata.lead_time)
             time_since_release_start_lst.append(
                 simulation_mdata.now_rel - release_mdata.start_rel
             )
         if len(set(simulation_integr_period_lst)) == 1:
             simulation_integr_period_lst = [next(iter(simulation_integr_period_lst))]
-        if len(set(simulation_reduction_start_lst)) == 1:
-            simulation_reduction_start_lst = [
-                next(iter(simulation_reduction_start_lst))
-            ]
-        if len(set(simulation_now_lst)) == 1:
-            simulation_now_lst = [next(iter(simulation_now_lst))]
         if len(set(simulation_lead_time_lst)) == 1:
             simulation_lead_time_lst = [next(iter(simulation_lead_time_lst))]
         if len(set(time_since_release_start_lst)) == 1:
@@ -1057,78 +1047,56 @@ def create_box_labels(
                 for simulation_integr_period in simulation_integr_period_lst
             ]
         )
-        # SR_TMP <
-        simulation_reduction_start_fmtd_lst = [
-            format_meta_datum(simulation_reduction_start)
-            for simulation_reduction_start in simulation_reduction_start_lst
-        ]
-        simulation_reduction_start_fmtd = ""
-        suffix = " UTC"
-        for i, s in enumerate(simulation_reduction_start_fmtd_lst):
-            assert s.endswith(suffix), s
-            s = s[: -len(suffix)]
-            if i == 0:
-                simulation_reduction_start_fmtd += s
-            else:
-                s_prev = simulation_reduction_start_fmtd_lst[i - 1]
-                if s.split(" ", 1)[0] == s_prev.split(" ", 1)[0]:
-                    s = s.split(" ", 1)[1]
-                simulation_reduction_start_fmtd += f" / {s}"
-        simulation_reduction_start_fmtd += suffix
-        # SR_TMP >
-        # SR_TMP <
-        simulation_now_fmtd_lst = [
-            format_meta_datum(simulation_now) for simulation_now in simulation_now_lst
-        ]
-        simulation_now_fmtd = ""
-        suffix = " UTC"
-        for i, s in enumerate(simulation_now_fmtd_lst):
-            assert s.endswith(suffix), s
-            s = s[: -len(suffix)]
-            if i == 0:
-                simulation_now_fmtd += s
-            else:
-                s_prev = simulation_now_fmtd_lst[i - 1]
-                if s.split(" ", 1)[0] == s_prev.split(" ", 1)[0]:
-                    s = s.split(" ", 1)[1]
-                simulation_now_fmtd += f" / {s}"
-        simulation_now_fmtd += suffix
-        # SR_TMP >
+        integr_period_fmtd = (
+            f"{integr_period_fmtd[::-1].split(' ', 1)[1][::-1]} previous"
+            f" {integr_period_fmtd[::-1].split(' ', 1)[0][::-1]}"
+        )
+        simulation_reduction_start_fmtd = None
+        simulation_now_fmtd = None
         # SR_TMP <
         simulation_lead_time_fmtd = ""
-        suffix = r":00$\,$h"
+        suffix = r"$\,$h"
         for i, simulation_lead_time in enumerate(simulation_lead_time_lst):
-            s = format_meta_datum(simulation_lead_time)
+            s = f"+{format_meta_datum(simulation_lead_time)}"
             assert s.endswith(suffix), s
             s = s[: -len(suffix)]
-            simulation_lead_time_fmtd += s if i == 0 else f"/{s}"
+            if i > 0:
+                simulation_lead_time_fmtd += r"$\,$/$\,$"
+            simulation_lead_time_fmtd += s
         simulation_lead_time_fmtd += suffix
         # SR_TMP >
         # SR_TMP <
-        suffix = r":00$\,$h"
+        suffix = r"$\,$h"
         time_since_release_start_fmtd = ""
         for i, time_since_release_start in enumerate(time_since_release_start_lst):
             s = format_meta_datum(time_since_release_start)
             assert s.endswith(suffix), s
             s = s[: -len(suffix)]
-            time_since_release_start_fmtd += s if i == 0 else f"/{s}"
+            if i > 0:
+                time_since_release_start_fmtd += r"$\,$/$\,$"
+            time_since_release_start_fmtd += s
         time_since_release_start_fmtd += suffix
         # SR_TMP <
-    labels["title"] = {
-        "tl": capitalize(format_names_etc(setup, words, variable_mdata)["long"]),
-        "bl": capitalize(
-            f"{integr_period_fmtd}"
-            f" ({words['since']} {simulation_reduction_start_fmtd})"
-        ),
-        "tr": capitalize(
-            f"{simulation_now_fmtd}"
-            f" ({words['lead_time']} +{simulation_lead_time_fmtd})"
-        ),
-        "br": capitalize(
-            f"{time_since_release_start_fmtd}"
-            f" {words['after']} {words['release_start']}"
-        ),
-    }
+    labels["title"] = {}
+    labels["title"]["tl"] = capitalize(
+        format_names_etc(setup, words, variable_mdata)["long"]
+    )
+    labels["title"]["bl"] = capitalize(f"{integr_period_fmtd}")
+    if simulation_reduction_start_fmtd is not None:
+        labels["title"][
+            "bl"
+        ] += f" ({words['since']} {simulation_reduction_start_fmtd})"
+    if simulation_now_fmtd is not None:
+        labels["title"]["tr"] = capitalize(
+            f"{simulation_now_fmtd} ({words['lead_time']} {simulation_lead_time_fmtd})"
+        )
+    else:
+        labels["title"]["tr"] = capitalize(
+            f"{words['lead_time']} {simulation_lead_time_fmtd}"
+        )
+    labels["title"]["br"] = capitalize(
+        f"{time_since_release_start_fmtd}" f" {words['after']} {words['release_start']}"
+    )
 
     # Data info box
     labels["data_info"] = {

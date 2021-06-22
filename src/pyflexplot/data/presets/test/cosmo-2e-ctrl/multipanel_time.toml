@@ -7,7 +7,7 @@ outfile = "{model}_{plot_variable}_species-{species_id}_{domain}_{lang}_ts-{time
 model = "COSMO-2E"
 plot_type = "multipanel"
 multipanel_param = "time"
-time = [2, 4, 6, 8]
+time = [2, 4, 8, 12]
 species_id = "*"
 combine_species = true
 
