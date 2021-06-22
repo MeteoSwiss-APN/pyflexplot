@@ -49,6 +49,10 @@ from .input.field import Field
 from .input.field import FieldGroup
 from .input.meta_data import format_meta_datum
 from .input.meta_data import MetaData
+from .input.meta_data import ReleaseMetaData
+from .input.meta_data import SimulationMetaData
+from .input.meta_data import SpeciesMetaData
+from .input.meta_data import VariableMetaData
 from .output import FilePathFormatter
 from .plot_layouts import BoxedPlotLayout
 from .plotting.boxed_plot import BoxedPlot
@@ -82,16 +86,34 @@ def format_out_file_paths(
     field_group: FieldGroup, prev_paths: List[str], dest_dir: Optional[str] = None
 ) -> List[str]:
     plot_setup = field_group.plot_setup
-    # SR_TMP <
-    mdata = next(iter(field_group)).mdata
-    for field in field_group:
-        if field.mdata != mdata:
+    _mdata = next(iter(field_group)).mdata
+    release_site_name = _mdata.release.raw_site_name
+    release_start_rel = _mdata.release.start_rel
+    simulation_start = _mdata.simulation.start
+    simulation_time_steps = _mdata.simulation.time_steps
+    for idx, field in enumerate(field_group):
+        if idx == 0:
+            continue
+        if release_site_name != field.mdata.release.raw_site_name:
             raise NotImplementedError(
-                f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
+                "release site name differs between fields:"
+                f"\n{release_site_name}\n!=\n{field.mdata.release.raw_site_name}"
             )
-    release_mdata = mdata.release
-    simulation_mdata = mdata.simulation
-    # SR_TMP >
+        if release_start_rel != field.mdata.release.start_rel:
+            raise NotImplementedError(
+                "rel. release start differs between fields:"
+                f"\n{release_start_rel}\n!=\n{field.mdata.release.start_rel}"
+            )
+        if simulation_start != field.mdata.simulation.start:
+            raise NotImplementedError(
+                "simulation start differs between fields:"
+                f"\n{simulation_start}\n!=\n{field.mdata.simulation.start}"
+            )
+        if simulation_time_steps != field.mdata.simulation.time_steps:
+            raise NotImplementedError(
+                "simulation time steps differ between fields:"
+                f"\n{simulation_time_steps}\n!=\n{field.mdata.simulation.time_steps}"
+            )
     out_file_templates: Sequence[str] = (
         [plot_setup.files.output]
         if isinstance(plot_setup.files.output, str)
@@ -111,9 +133,9 @@ def format_out_file_paths(
         out_file_path = FilePathFormatter(prev_paths).format(
             out_file_template,
             plot_setup,
-            release_site=release_mdata.raw_site_name,
-            release_start=simulation_mdata.start + release_mdata.start_rel,
-            time_steps=tuple(simulation_mdata.time_steps),
+            release_site=release_site_name,
+            release_start=simulation_start + release_start_rel,
+            time_steps=tuple(simulation_time_steps),
         )
         log(dbg=f"preparing plot '{out_file_path}'")
         out_file_paths.append(out_file_path)
@@ -130,16 +152,24 @@ def create_plot(
 ) -> BoxedPlot:
     plot_setup = field_group.plot_setup
     # SR_TMP <  SR_MULTIPANEL
-    mdata = next(iter(field_group)).mdata
-    for field in field_group:
-        if field.mdata != mdata:
-            raise NotImplementedError(
-                f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
-            )
+    _mdata = next(iter(field_group)).mdata
+    release_mdata = _mdata.release
+    species_mdata = _mdata.species
+    variable_mdata = _mdata.variable
+    simulation_mdata_lst = [field.mdata for field in field_group]
+    simulation_duration_hours_lst = [
+        int(field.mdata.simulation.get_duration("hours")) for field in field_group
+    ]
+    assert len(set(simulation_duration_hours_lst)) == 1
+    simulation_duration_hours = next(iter(simulation_duration_hours_lst))
     # SR_TMP >  SR_MULTIPANEL
     val_max = max(field.time_props.stats.max for field in field_group)
-    labels = create_box_labels(plot_setup, mdata)
-    plot_config = create_plot_config(plot_setup, mdata, labels, val_max)
+    labels = create_box_labels(
+        plot_setup, release_mdata, species_mdata, variable_mdata, simulation_mdata_lst
+    )
+    plot_config = create_plot_config(
+        plot_setup, labels, simulation_duration_hours, val_max
+    )
     map_configs: List[MapAxesConfig] = [
         create_map_config(
             field_group.plot_setup,
@@ -319,17 +349,22 @@ def plot_add_text_boxes(
                 size=size,
             )
 
-    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot, mdata: MetaData) -> None:
+    def fill_box_2nd_title(
+        box: TextBoxAxes,
+        plot: BoxedPlot,
+        release_mdata: ReleaseMetaData,
+        species_mdata: SpeciesMetaData,
+    ) -> None:
         """Fill the secondary title box of the deterministic plot layout."""
         font_size = plot.config.font.sizes.content_large
         box.text(
-            capitalize(format_meta_datum(mdata.species.name)),
+            capitalize(format_meta_datum(species_mdata.name)),
             loc="tc",
             fontname=plot.config.font.name,
             size=font_size,
         )
         box.text(
-            capitalize(format_meta_datum(mdata.release.site_name)),
+            capitalize(format_meta_datum(release_mdata.site_name)),
             loc="bc",
             fontname=plot.config.font.name,
             size=font_size,
@@ -352,7 +387,10 @@ def plot_add_text_boxes(
     # pylint: disable=R0914  # too-many-locals
     # pylint: disable=R0915  # too-many-statements
     def fill_box_legend(
-        box: TextBoxAxes, plot: BoxedPlot, mdata: MetaData, max_vals: Sequence[float]
+        box: TextBoxAxes,
+        plot: BoxedPlot,
+        release_mdata: ReleaseMetaData,
+        max_vals: Sequence[float],
     ) -> None:
         """Fill the box containing the plot legend."""
         labels = plot.config.labels["legend"]
@@ -448,8 +486,10 @@ def plot_add_text_boxes(
                 dy=dy_max_marker,
                 **markers.markers["max"],
             )
+            max_val = next(iter(max_vals)) if len(max_vals) == 1 else None
+            max_marker_label = format_max_marker_label(labels, max_val)
             box.text(
-                s=format_max_marker_label(labels, max_vals),
+                s=max_marker_label,
                 loc="tc",
                 dx=dx_marker_label,
                 dy=dy_marker_label_max,
@@ -471,7 +511,7 @@ def plot_add_text_boxes(
                 **markers.markers["site"],
             )
             box.text(
-                s=f"{labels['site']}: {format_meta_datum(mdata.release.site_name)}",
+                s=f"{labels['site']}: {format_meta_datum(release_mdata.site_name)}",
                 loc="tc",
                 dx=dx_marker_label,
                 dy=dy_site_label,
@@ -535,11 +575,18 @@ def plot_add_text_boxes(
         )
 
     # SR_TMP <
-    mdata = next(iter(fields)).mdata
+    release_mdata = next(iter(fields)).mdata.release
+    species_mdata = next(iter(fields)).mdata.species
     for field in fields:
-        if field.mdata != mdata:
+        if field.mdata.release != release_mdata:
             raise NotImplementedError(
-                f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
+                "release meta data differ between fields:"
+                f"\n{field.mdata.release}\n!=\n{release_mdata}"
+            )
+        if field.mdata.species != species_mdata:
+            raise NotImplementedError(
+                "species meta data differ between fields:"
+                f"\n{field.mdata.species}\n!=\n{species_mdata}"
             )
     # SR_TMP >
     max_vals = [np.nanmax(field.fld) for field in fields]
@@ -549,7 +596,9 @@ def plot_add_text_boxes(
         plot.add_text_box(
             "right_top",
             layout.get_rect("right_top"),
-            lambda box, plot: fill_box_2nd_title(box, plot, mdata),
+            lambda box, plot: fill_box_2nd_title(
+                box, plot, release_mdata, species_mdata
+            ),
         )
     elif layout.setup.type == "post_vintage_ens":
         plot.add_text_box(
@@ -566,7 +615,7 @@ def plot_add_text_boxes(
     plot.add_text_box(
         "right_middle",
         layout.get_rect("right_middle"),
-        lambda box, plot: fill_box_legend(box, plot, mdata, max_vals),
+        lambda box, plot: fill_box_legend(box, plot, release_mdata, max_vals),
     )
     plot.add_text_box(
         "right_bottom", layout.get_rect("right_bottom"), fill_box_release_info
@@ -664,8 +713,8 @@ def create_map_config(
 # SR_TODO Create dataclass with default values for text box setup
 def create_plot_config(
     setup: PlotSetup,
-    mdata: MetaData,
     labels: Dict[str, Dict[str, Any]],
+    simulation_duration_hours: int,
     val_max: float,
 ) -> BoxedPlotConfig:
     fig_size = (12.5 * setup.layout.scale_fact, 8.0 * setup.layout.scale_fact)
@@ -673,7 +722,9 @@ def create_plot_config(
     layout = BoxedPlotLayout.create(setup.layout, aspect=fig_aspect)
     font_config = FontConfig(sizes=FontSizes().scale(setup.layout.scale_fact))
     panels_config = [
-        create_panel_config(panel_setup, setup.layout, setup.model, mdata, val_max)
+        create_panel_config(
+            panel_setup, setup.layout, setup.model, simulation_duration_hours, val_max
+        )
         for panel_setup in setup.panels
     ]
     return BoxedPlotConfig(
@@ -692,7 +743,7 @@ def create_panel_config(
     panel_setup: PlotPanelSetup,
     layout_setup: LayoutSetup,
     model_setup: ModelSetup,
-    mdata: MetaData,
+    simulation_duration_hours: int,
     val_max: float,
 ) -> BoxedPlotPanelConfig:
     plot_variable = panel_setup.plot_variable
@@ -709,6 +760,8 @@ def create_panel_config(
     elif layout_setup.multipanel_param == "ens_params.thr":
         assert panel_setup.ens_params.thr is not None  # mypy
         label = f"{panel_setup.ens_params.thr:g}"
+    elif layout_setup.multipanel_param == "time":
+        label = f"{panel_setup.dimensions.time:g}"
     else:
         raise NotImplementedError(
             f"label for multipanel_param '{layout_setup.multipanel_param}'"
@@ -747,10 +800,11 @@ def create_panel_config(
         legend_config_dct["range_align"] = "right"
         legend_config_dct["range_widths"] = (4, 3, 4)
         legend_config_dct["rstrip_zeros"] = True
-        duration = int(mdata.simulation.get_duration("hours"))
-        cloud_levels = [0, 3, 6, 9, 12, 18] + list(range(24, duration, 12))
-        if cloud_levels[-1] != duration:
-            cloud_levels += [duration]
+        cloud_levels = [0, 3, 6, 9, 12, 18] + list(
+            range(24, simulation_duration_hours, 12)
+        )
+        if cloud_levels[-1] != simulation_duration_hours:
+            cloud_levels += [simulation_duration_hours]
         levels_config_dct["levels"] = cloud_levels
         if (
             plot_variable == "cloud_arrival_time"
@@ -896,7 +950,13 @@ def create_panel_config(
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0914  # too-many-locals
 # pylint: disable=R0915  # too-many-statements
-def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, Any]]:
+def create_box_labels(
+    setup: PlotSetup,
+    release_mdata: ReleaseMetaData,
+    species_mdata: SpeciesMetaData,
+    variable_mdata: VariableMetaData,
+    simulation_mdata_lst: Sequence[SimulationMetaData],
+) -> Dict[str, Dict[str, Any]]:
     words = WORDS
     symbols = SYMBOLS
     words.set_active_lang(setup.panels.collect_equal("lang"))
@@ -919,7 +979,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     plot_variable = setup.panels.collect_equal("plot_variable")
 
     # Format variable name in various ways
-    names = format_names_etc(setup, words, mdata)
+    names = format_names_etc(setup, words, variable_mdata)
     short_name = names["short"]
     var_name_abbr = names["var_abbr"]
     ens_var_name = names["ens_var"]
@@ -928,25 +988,43 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     labels: Dict[str, Dict[str, Any]] = {}
 
     # Title box
-    integr_period = format_integr_period(
-        mdata.simulation.reduction_start,
-        mdata.simulation.now,
-        setup,
-        words,
-        cap=True,
-    )
+    if all(
+        simulation_mdata == next(iter(simulation_mdata_lst))
+        for simulation_mdata in simulation_mdata_lst
+    ):
+        simulation_mdata = next(iter(simulation_mdata_lst)).simulation
+        simulation_now = simulation_mdata.now
+        simulation_reduction_start = simulation_mdata.reduction_start
+        simulation_integr_period = simulation_now - simulation_reduction_start
+        simulation_lead_time = simulation_mdata.lead_time
+        simulation_now_rel = simulation_mdata.now_rel
+        integr_period_fmtd = format_integr_period(
+            simulation_integr_period, setup, words, cap=True
+        )
+        simulation_reduction_start_fmtd = format_meta_datum(simulation_reduction_start)
+        simulation_now_fmtd = format_meta_datum(simulation_now)
+        simulation_lead_time_fmtd = format_meta_datum(simulation_lead_time)
+        time_since_release_start_fmtd = format_meta_datum(
+            simulation_now_rel - release_mdata.start_rel
+        )
+    else:
+        integr_period_fmtd = "TODO"  # SR_TMP
+        simulation_reduction_start_fmtd = "TODO"  # SR_TMP
+        simulation_now_fmtd = "TODO"  # SR_TMP
+        simulation_lead_time_fmtd = "TODO"  # SR_TMP
+        time_since_release_start_fmtd = "TODO"  # SR_TMP
     labels["title"] = {
-        "tl": capitalize(format_names_etc(setup, words, mdata)["long"]),
+        "tl": capitalize(format_names_etc(setup, words, variable_mdata)["long"]),
         "bl": capitalize(
-            f"{integr_period} ({words['since']}"
-            f" {format_meta_datum(mdata.simulation.reduction_start)})"
+            f"{integr_period_fmtd}"
+            f" ({words['since']} {simulation_reduction_start_fmtd})"
         ),
         "tr": capitalize(
-            f"{format_meta_datum(mdata.simulation.now)}"
-            f" ({words['lead_time']} +{format_meta_datum(mdata.simulation.lead_time)})"
+            f"{simulation_now_fmtd}"
+            f" ({words['lead_time']} +{simulation_lead_time_fmtd})"
         ),
         "br": capitalize(
-            f"{format_meta_datum(mdata.simulation.now_rel - mdata.release.start_rel)}"
+            f"{time_since_release_start_fmtd}"
             f" {words['after']} {words['release_start']}"
         ),
     }
@@ -957,7 +1035,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     }
     labels["data_info"]["lines"].append(
         f"{words['substance'].c}:"
-        f"\t{format_meta_datum(mdata.species.name, join_values=' / ')}",
+        f"\t{format_meta_datum(species_mdata.name, join_values=' / ')}",
     )
     labels["data_info"]["lines"].append(
         f"{words['input_variable'].c}:\t{capitalize(var_name_abbr)}"
@@ -965,7 +1043,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     if plot_variable == "concentration":
         labels["data_info"]["lines"].append(
             f"{words['height'].c}:"
-            f"\t{escape_format_keys(format_level_label(mdata, words))}"
+            f"\t{escape_format_keys(format_level_label(variable_mdata, words))}"
         )
     if setup.model.simulation_type == "ensemble":
         if ens_variable == "probability":
@@ -973,7 +1051,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
             if plot_type == "multipanel" and multipanel_param == "ens_params.thr":
                 labels["data_info"]["lines"].append(
                     f"{words['selection']}:\t{symbols[op]}"
-                    f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
+                    f" {format_meta_datum(unit=format_meta_datum(variable_mdata.unit))}"
                 )
                 labels["data_info"]["lines"].append(
                     f"\t({', '.join(map(str, ens_param_thrs))})"
@@ -981,7 +1059,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
             else:
                 labels["data_info"]["lines"].append(
                     f"{words['selection']}:\t{symbols[op]} {ens_param_thr}"
-                    f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
+                    f" {format_meta_datum(unit=format_meta_datum(variable_mdata.unit))}"
                 )
         elif ens_variable in [
             "cloud_arrival_time",
@@ -991,7 +1069,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
                 # f"{words['cloud_density']}:\t{words['minimum', 'abbr']}"
                 # f"{words['threshold']}:\t"
                 f"{words['cloud_threshold', 'abbr']}:\t {ens_param_thr}"
-                f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
+                f" {format_meta_datum(unit=format_meta_datum(variable_mdata.unit))}"
             )
             n_min = ens_param_mem_min or 0
             n_tot = len((setup.model.ens_member_id or []))
@@ -1018,7 +1096,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     if plot_variable == "concentration":
         labels["legend"]["tc"] = (
             f"{words['height']}:"
-            f" {escape_format_keys(format_level_label(mdata, words))}"
+            f" {escape_format_keys(format_level_label(variable_mdata, words))}"
         )
     # Legend box title
     if not unit:
@@ -1044,35 +1122,45 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     }
 
     # Release info
-    site_name = format_meta_datum(mdata.release.site_name)
-    site_lat_lon = format_release_site_coords_labels(words, symbols, mdata)
+    if all(
+        simulation_mdata == next(iter(simulation_mdata_lst))
+        for simulation_mdata in simulation_mdata_lst
+    ):
+        simulation_mdata = next(iter(simulation_mdata_lst)).simulation
+        simulation_start = simulation_mdata.start
+        release_start = cast(datetime, simulation_start) + cast(
+            timedelta, release_mdata.start_rel
+        )
+        release_end = cast(datetime, simulation_start) + cast(
+            timedelta, release_mdata.end_rel
+        )
+        release_start_fmtd = format_meta_datum(release_start)
+        release_end_fmtd = format_meta_datum(release_end)
+    else:
+        release_start_fmtd = "TODO"  # SR_TMP
+        release_end_fmtd = "TODO"  # SR_TMP
+    site_name = format_meta_datum(release_mdata.site_name)
+    site_lat_lon = format_release_site_coords_labels(words, symbols, release_mdata)
     release_height = format_meta_datum(
-        mdata.release.height, mdata.release.height_unit
+        release_mdata.height, release_mdata.height_unit
     ).replace("meters", r"$\,$" + words["m_agl"].s)
-    release_start = format_meta_datum(
-        cast(datetime, mdata.simulation.start)
-        + cast(timedelta, mdata.release.start_rel)
-    )
-    release_end = format_meta_datum(
-        cast(datetime, mdata.simulation.start) + cast(timedelta, mdata.release.end_rel)
-    )
-    release_rate = format_meta_datum(mdata.release.rate, mdata.release.rate_unit)
-    release_mass = format_meta_datum(mdata.release.mass, mdata.release.mass_unit)
-    substance = format_meta_datum(mdata.species.name, join_values=" / ")
-    half_life = format_meta_datum(mdata.species.half_life, mdata.species.half_life_unit)
+    release_rate = format_meta_datum(release_mdata.rate, release_mdata.rate_unit)
+    release_mass = format_meta_datum(release_mdata.mass, release_mdata.mass_unit)
+    substance = format_meta_datum(species_mdata.name, join_values=" / ")
+    half_life = format_meta_datum(species_mdata.half_life, species_mdata.half_life_unit)
     deposit_vel = format_meta_datum(
-        mdata.species.deposition_velocity,
-        mdata.species.deposition_velocity_unit,
+        species_mdata.deposition_velocity,
+        species_mdata.deposition_velocity_unit,
     )
     sediment_vel = format_meta_datum(
-        mdata.species.sedimentation_velocity,
-        mdata.species.sedimentation_velocity_unit,
+        species_mdata.sedimentation_velocity,
+        species_mdata.sedimentation_velocity_unit,
     )
     washout_coeff = format_meta_datum(
-        mdata.species.washout_coefficient,
-        mdata.species.washout_coefficient_unit,
+        species_mdata.washout_coefficient,
+        species_mdata.washout_coefficient_unit,
     )
-    washout_exponent = format_meta_datum(mdata.species.washout_exponent)
+    washout_exponent = format_meta_datum(species_mdata.washout_exponent)
     lines_parts: List[Optional[Tuple[Word, str]]]
     if setup.layout.type == "standalone_details":
         lines_parts = [
@@ -1080,8 +1168,8 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
             (words["latitude"], site_lat_lon[0]),
             (words["longitude"], site_lat_lon[1]),
             (words["height"], release_height),
-            (words["start"], release_start),
-            (words["end"], release_end),
+            (words["start"], release_start_fmtd),
+            (words["end"], release_end_fmtd),
         ]
     else:
         lines_parts = [
@@ -1090,8 +1178,8 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
             (words["longitude"], site_lat_lon[1]),
             (words["height"], release_height),
             None,
-            (words["start"], release_start),
-            (words["end"], release_end),
+            (words["start"], release_start_fmtd),
+            (words["end"], release_end_fmtd),
             (words["rate"], release_rate),
             (words["total_mass"], release_mass),
             None,
@@ -1123,8 +1211,8 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
             "title": capitalize(words["release"].t),
             "lines_str": format_lines_block(
                 [
-                    (words["start"], release_start),
-                    (words["end"], release_end),
+                    (words["start"], release_start_fmtd),
+                    (words["end"], release_end_fmtd),
                     (words["rate"], release_rate),
                     (words["total_mass"], release_mass),
                     None,
@@ -1153,7 +1241,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
 
 
 def format_names_etc(
-    setup: PlotSetup, words: TranslatedWords, mdata: MetaData
+    setup: PlotSetup, words: TranslatedWords, variable_mdata: VariableMetaData
 ) -> Dict[str, str]:
     # SR_TMP <
     plot_type = setup.layout.plot_type
@@ -1200,7 +1288,9 @@ def format_names_etc(
         return var_name, var_name_abbr, var_name_rel
 
     # pylint: disable=W0621  # redefined-outer-name
-    def _format_unit(setup: PlotSetup, words: TranslatedWords, mdata: MetaData) -> str:
+    def _format_unit(
+        setup: PlotSetup, words: TranslatedWords, variable_mdata: VariableMetaData
+    ) -> str:
         if setup.model.simulation_type == "ensemble":
             if ens_variable == "probability":
                 return "%"
@@ -1209,9 +1299,9 @@ def format_names_etc(
                 "cloud_departure_time",
             ]:
                 return f"{words['hour', 'pl']}"
-        return format_meta_datum(unit=format_meta_datum(mdata.variable.unit))
+        return format_meta_datum(unit=format_meta_datum(variable_mdata.unit))
 
-    unit = _format_unit(setup, words, mdata)
+    unit = _format_unit(setup, words, variable_mdata)
     var_name, var_name_abbr, var_name_rel = format_var_names(plot_variable, words)
 
     # Short/long names #1: By variable
@@ -1317,38 +1407,37 @@ def capitalize(s: Union[str, Word]) -> str:
         raise ValueError(f"string not capitalizable: '{s}'") from e
 
 
-def format_max_marker_label(labels: Dict[str, Any], max_vals: Sequence[float]) -> str:
-    s_vals: List[str] = []
-    for max_val in max_vals:
-        if np.isnan(max_val):
-            s_val = "NaN"
+def format_max_marker_label(labels: Dict[str, Any], max_val: Optional[float]) -> str:
+    if max_val is None:
+        return labels["max"]
+    if np.isnan(max_val):
+        s_val = "NaN"
+    else:
+        if 0.001 <= max_val < 0.01:
+            s_val = f"{max_val:.5f}"
+        elif 0.01 <= max_val < 0.1:
+            s_val = f"{max_val:.4f}"
+        elif 0.1 <= max_val < 1:
+            s_val = f"{max_val:.3f}"
+        elif 1 <= max_val < 10:
+            s_val = f"{max_val:.2f}"
+        elif 10 <= max_val < 100:
+            s_val = f"{max_val:.1f}"
+        elif 100 <= max_val < 1000:
+            s_val = f"{max_val:.0f}"
         else:
-            if 0.001 <= max_val < 0.01:
-                s_val = f"{max_val:.5f}"
-            elif 0.01 <= max_val < 0.1:
-                s_val = f"{max_val:.4f}"
-            elif 0.1 <= max_val < 1:
-                s_val = f"{max_val:.3f}"
-            elif 1 <= max_val < 10:
-                s_val = f"{max_val:.2f}"
-            elif 10 <= max_val < 100:
-                s_val = f"{max_val:.1f}"
-            elif 100 <= max_val < 1000:
-                s_val = f"{max_val:.0f}"
-            else:
-                s_val = f"{max_val:.2E}"
-            # s_val += r"$\,$" + labels["unit"]
-            s_vals.append(s_val)
-    return f"{labels['max']}: {'/'.join(s_vals)}"
+            s_val = f"{max_val:.2E}"
+        # s_val += r"$\,$" + labels["unit"]
+    return f"{labels['max']}: {s_val}"
 
 
 def format_release_site_coords_labels(
-    words: TranslatedWords, symbols: Words, mdata: MetaData
+    words: TranslatedWords, symbols: Words, release_mdata: ReleaseMetaData
 ) -> Tuple[str, str]:
     lat_deg_fmt = capitalize(format_coord_label("north", words, symbols))
     lon_deg_fmt = capitalize(format_coord_label("east", words, symbols))
-    lat = Degrees(mdata.release.lat)
-    lon = Degrees(mdata.release.lon)
+    lat = Degrees(release_mdata.lat)
+    lon = Degrees(release_mdata.lon)
     lat_deg = lat_deg_fmt.format(d=lat.degs(), m=lat.mins(), f=lat.frac())
     lon_deg = lon_deg_fmt.format(d=lon.degs(), m=lon.mins(), f=lon.frac())
     return (lat_deg, lon_deg)
@@ -1387,12 +1476,12 @@ def format_model_info(model_setup: ModelSetup, words: TranslatedWords) -> str:
     )
 
 
-def format_level_label(mdata: MetaData, words: TranslatedWords) -> str:
-    unit = mdata.variable.level_unit
+def format_level_label(variable_mdata: VariableMetaData, words: TranslatedWords) -> str:
+    unit = variable_mdata.level_unit
     if unit == "meters":
         unit = words["m_agl"].s
     level = format_vertical_level_range(
-        mdata.variable.bottom_level, mdata.variable.top_level, unit
+        variable_mdata.bottom_level, variable_mdata.top_level, unit
     )
     if not level:
         return ""
@@ -1442,8 +1531,7 @@ def format_vertical_level_range(
 
 
 def format_integr_period(
-    start: datetime,
-    now: datetime,
+    period: timedelta,
     setup: PlotSetup,
     words: TranslatedWords,
     cap: bool = False,
@@ -1466,7 +1554,6 @@ def format_integr_period(
             f"operation for {'' if integrate else 'non-'}integrated"
             f" input variable '{plot_variable}'"
         )
-    period = now - start
     hours = int(period.total_seconds() / 3600)
     minutes = int((period.total_seconds() / 60) % 60)
     s = f"{operation} {hours:d}:{minutes:02d}$\\,$h"
