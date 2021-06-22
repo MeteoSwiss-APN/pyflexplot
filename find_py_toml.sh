@@ -1,1 +1,1 @@
-tools/find_py_toml.sh
+scripts/find_py_toml.sh
