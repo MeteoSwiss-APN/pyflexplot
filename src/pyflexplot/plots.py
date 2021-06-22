@@ -19,6 +19,7 @@ import os
 from datetime import datetime
 from datetime import timedelta
 from pathlib import Path
+from pprint import pformat
 from typing import Any
 from typing import cast
 from typing import Collection
@@ -156,19 +157,24 @@ def create_plot(
     release_mdata = _mdata.release
     species_mdata = _mdata.species
     variable_mdata = _mdata.variable
-    simulation_mdata_lst = [field.mdata for field in field_group]
+    simulation_mdata_lst = [field.mdata.simulation for field in field_group]
     simulation_duration_hours_lst = [
         int(field.mdata.simulation.get_duration("hours")) for field in field_group
     ]
     assert len(set(simulation_duration_hours_lst)) == 1
     simulation_duration_hours = next(iter(simulation_duration_hours_lst))
+    simulation_time_steps_lst: List[Tuple[int, ...]] = [
+        tuple(field.mdata.simulation.time_steps) for field in field_group
+    ]
+    assert len(set(simulation_time_steps_lst)) == 1
+    simulation_time_steps: List[int] = list(next(iter(simulation_time_steps_lst)))
     # SR_TMP >  SR_MULTIPANEL
     val_max = max(field.time_props.stats.max for field in field_group)
     labels = create_box_labels(
         plot_setup, release_mdata, species_mdata, variable_mdata, simulation_mdata_lst
     )
     plot_config = create_plot_config(
-        plot_setup, labels, simulation_duration_hours, val_max
+        plot_setup, labels, simulation_duration_hours, simulation_time_steps, val_max
     )
     map_configs: List[MapAxesConfig] = [
         create_map_config(
@@ -715,6 +721,7 @@ def create_plot_config(
     setup: PlotSetup,
     labels: Dict[str, Dict[str, Any]],
     simulation_duration_hours: int,
+    simulation_time_steps: Sequence[int],
     val_max: float,
 ) -> BoxedPlotConfig:
     fig_size = (12.5 * setup.layout.scale_fact, 8.0 * setup.layout.scale_fact)
@@ -723,7 +730,12 @@ def create_plot_config(
     font_config = FontConfig(sizes=FontSizes().scale(setup.layout.scale_fact))
     panels_config = [
         create_panel_config(
-            panel_setup, setup.layout, setup.model, simulation_duration_hours, val_max
+            panel_setup,
+            setup.layout,
+            setup.model,
+            simulation_duration_hours,
+            simulation_time_steps,
+            val_max,
         )
         for panel_setup in setup.panels
     ]
@@ -744,6 +756,7 @@ def create_panel_config(
     layout_setup: LayoutSetup,
     model_setup: ModelSetup,
     simulation_duration_hours: int,
+    simulation_time_steps: Sequence[int],
     val_max: float,
 ) -> BoxedPlotPanelConfig:
     plot_variable = panel_setup.plot_variable
@@ -761,7 +774,9 @@ def create_panel_config(
         assert panel_setup.ens_params.thr is not None  # mypy
         label = f"{panel_setup.ens_params.thr:g}"
     elif layout_setup.multipanel_param == "time":
-        label = f"{panel_setup.dimensions.time:g}"
+        label = format_meta_datum(
+            init_datetime(simulation_time_steps[panel_setup.dimensions.time])
+        )
     else:
         raise NotImplementedError(
             f"label for multipanel_param '{layout_setup.multipanel_param}'"
@@ -992,27 +1007,113 @@ def create_box_labels(
         simulation_mdata == next(iter(simulation_mdata_lst))
         for simulation_mdata in simulation_mdata_lst
     ):
-        simulation_mdata = next(iter(simulation_mdata_lst)).simulation
-        simulation_now = simulation_mdata.now
-        simulation_reduction_start = simulation_mdata.reduction_start
-        simulation_integr_period = simulation_now - simulation_reduction_start
-        simulation_lead_time = simulation_mdata.lead_time
-        simulation_now_rel = simulation_mdata.now_rel
+        simulation_mdata = next(iter(simulation_mdata_lst))
+        simulation_integr_period = (
+            simulation_mdata.now - simulation_mdata.reduction_start
+        )
         integr_period_fmtd = format_integr_period(
             simulation_integr_period, setup, words, cap=True
         )
-        simulation_reduction_start_fmtd = format_meta_datum(simulation_reduction_start)
-        simulation_now_fmtd = format_meta_datum(simulation_now)
-        simulation_lead_time_fmtd = format_meta_datum(simulation_lead_time)
+        simulation_reduction_start_fmtd = format_meta_datum(
+            simulation_mdata.reduction_start
+        )
+        simulation_now_fmtd = format_meta_datum(simulation_mdata.now)
+        simulation_lead_time_fmtd = format_meta_datum(simulation_mdata.lead_time)
         time_since_release_start_fmtd = format_meta_datum(
-            simulation_now_rel - release_mdata.start_rel
+            simulation_mdata.now_rel - release_mdata.start_rel
         )
     else:
-        integr_period_fmtd = "TODO"  # SR_TMP
-        simulation_reduction_start_fmtd = "TODO"  # SR_TMP
-        simulation_now_fmtd = "TODO"  # SR_TMP
-        simulation_lead_time_fmtd = "TODO"  # SR_TMP
-        time_since_release_start_fmtd = "TODO"  # SR_TMP
+        # Simulation meta data differ for multipanel plots with multiple time steps
+        simulation_integr_period_lst = []
+        simulation_reduction_start_lst = []
+        simulation_now_lst = []
+        simulation_lead_time_lst = []
+        time_since_release_start_lst = []
+        for simulation_mdata in simulation_mdata_lst:
+            simulation_integr_period_lst.append(
+                simulation_mdata.now - simulation_mdata.reduction_start
+            )
+            simulation_reduction_start_lst.append(simulation_mdata.reduction_start)
+            simulation_now_lst.append(simulation_mdata.now)
+            simulation_lead_time_lst.append(simulation_mdata.lead_time)
+            time_since_release_start_lst.append(
+                simulation_mdata.now_rel - release_mdata.start_rel
+            )
+        if len(set(simulation_integr_period_lst)) == 1:
+            simulation_integr_period_lst = [next(iter(simulation_integr_period_lst))]
+        if len(set(simulation_reduction_start_lst)) == 1:
+            simulation_reduction_start_lst = [
+                next(iter(simulation_reduction_start_lst))
+            ]
+        if len(set(simulation_now_lst)) == 1:
+            simulation_now_lst = [next(iter(simulation_now_lst))]
+        if len(set(simulation_lead_time_lst)) == 1:
+            simulation_lead_time_lst = [next(iter(simulation_lead_time_lst))]
+        if len(set(time_since_release_start_lst)) == 1:
+            time_since_release_start_lst = [next(iter(time_since_release_start_lst))]
+        integr_period_fmtd = "/".join(
+            [
+                format_integr_period(simulation_integr_period, setup, words, cap=True)
+                for simulation_integr_period in simulation_integr_period_lst
+            ]
+        )
+        # SR_TMP <
+        simulation_reduction_start_fmtd_lst = [
+            format_meta_datum(simulation_reduction_start)
+            for simulation_reduction_start in simulation_reduction_start_lst
+        ]
+        simulation_reduction_start_fmtd = ""
+        suffix = " UTC"
+        for i, s in enumerate(simulation_reduction_start_fmtd_lst):
+            assert s.endswith(suffix), s
+            s = s[: -len(suffix)]
+            if i == 0:
+                simulation_reduction_start_fmtd += s
+            else:
+                s_prev = simulation_reduction_start_fmtd_lst[i - 1]
+                if s.split(" ", 1)[0] == s_prev.split(" ", 1)[0]:
+                    s = s.split(" ", 1)[1]
+                simulation_reduction_start_fmtd += f" / {s}"
+        simulation_reduction_start_fmtd += suffix
+        # SR_TMP >
+        # SR_TMP <
+        simulation_now_fmtd_lst = [
+            format_meta_datum(simulation_now) for simulation_now in simulation_now_lst
+        ]
+        simulation_now_fmtd = ""
+        suffix = " UTC"
+        for i, s in enumerate(simulation_now_fmtd_lst):
+            assert s.endswith(suffix), s
+            s = s[: -len(suffix)]
+            if i == 0:
+                simulation_now_fmtd += s
+            else:
+                s_prev = simulation_now_fmtd_lst[i - 1]
+                if s.split(" ", 1)[0] == s_prev.split(" ", 1)[0]:
+                    s = s.split(" ", 1)[1]
+                simulation_now_fmtd += f" / {s}"
+        simulation_now_fmtd += suffix
+        # SR_TMP >
+        # SR_TMP <
+        simulation_lead_time_fmtd = ""
+        suffix = r":00$\,$h"
+        for i, simulation_lead_time in enumerate(simulation_lead_time_lst):
+            s = format_meta_datum(simulation_lead_time)
+            assert s.endswith(suffix), s
+            s = s[: -len(suffix)]
+            simulation_lead_time_fmtd += s if i == 0 else f"/{s}"
+        simulation_lead_time_fmtd += suffix
+        # SR_TMP >
+        # SR_TMP <
+        suffix = r":00$\,$h"
+        time_since_release_start_fmtd = ""
+        for i, time_since_release_start in enumerate(time_since_release_start_lst):
+            s = format_meta_datum(time_since_release_start)
+            assert s.endswith(suffix), s
+            s = s[: -len(suffix)]
+            time_since_release_start_fmtd += s if i == 0 else f"/{s}"
+        time_since_release_start_fmtd += suffix
+        # SR_TMP <
     labels["title"] = {
         "tl": capitalize(format_names_etc(setup, words, variable_mdata)["long"]),
         "bl": capitalize(
@@ -1122,23 +1223,25 @@ def create_box_labels(
     }
 
     # Release info
-    if all(
-        simulation_mdata == next(iter(simulation_mdata_lst))
+    # SR_TMP <
+    if not all(
+        simulation_mdata.start == next(iter(simulation_mdata_lst)).start
         for simulation_mdata in simulation_mdata_lst
     ):
-        simulation_mdata = next(iter(simulation_mdata_lst)).simulation
-        simulation_start = simulation_mdata.start
-        release_start = cast(datetime, simulation_start) + cast(
-            timedelta, release_mdata.start_rel
+        raise NotImplementedError(
+            f"simulation starts differ:\n"
+            + "\n".join(map(pformat, simulation_mdata_lst))
         )
-        release_end = cast(datetime, simulation_start) + cast(
-            timedelta, release_mdata.end_rel
-        )
-        release_start_fmtd = format_meta_datum(release_start)
-        release_end_fmtd = format_meta_datum(release_end)
-    else:
-        release_start_fmtd = "TODO"  # SR_TMP
-        release_end_fmtd = "TODO"  # SR_TMP
+    simulation_start = next(iter(simulation_mdata_lst)).start
+    # SR_TMP >
+    release_start = cast(datetime, simulation_start) + cast(
+        timedelta, release_mdata.start_rel
+    )
+    release_end = cast(datetime, simulation_start) + cast(
+        timedelta, release_mdata.end_rel
+    )
+    release_start_fmtd = format_meta_datum(release_start)
+    release_end_fmtd = format_meta_datum(release_end)
     site_name = format_meta_datum(release_mdata.site_name)
     site_lat_lon = format_release_site_coords_labels(words, symbols, release_mdata)
     release_height = format_meta_datum(
