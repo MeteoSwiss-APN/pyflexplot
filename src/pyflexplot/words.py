@@ -277,6 +277,7 @@ WORDS.add(
     de={"*": "Perzentil", "pl": "Perzentile"},
 )
 WORDS.add(en="probability", de="Wahrscheinlichkeit")
+WORDS.add(en="previous", de="letzte")
 # Q
 # R
 WORDS.add(en="rate", de="Rate")

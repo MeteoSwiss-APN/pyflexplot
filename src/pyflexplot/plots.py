@@ -1041,16 +1041,30 @@ def create_box_labels(
             simulation_lead_time_lst = [next(iter(simulation_lead_time_lst))]
         if len(set(time_since_release_start_lst)) == 1:
             time_since_release_start_lst = [next(iter(time_since_release_start_lst))]
-        integr_period_fmtd = "/".join(
-            [
-                format_integr_period(simulation_integr_period, setup, words, cap=True)
-                for simulation_integr_period in simulation_integr_period_lst
-            ]
-        )
-        integr_period_fmtd = (
-            f"{integr_period_fmtd[::-1].split(' ', 1)[1][::-1]} previous"
-            f" {integr_period_fmtd[::-1].split(' ', 1)[0][::-1]}"
-        )
+        # SR_TMP <
+        integr_period_fmtd_lst = [
+            format_integr_period(simulation_integr_period, setup, words, cap=True)
+            for simulation_integr_period in simulation_integr_period_lst
+        ]
+        integr_period_fmtd = ""
+        suffix = f"$\,$h"
+        for i, s in enumerate(integr_period_fmtd_lst):
+            assert s.endswith(suffix), s
+            s = s[: -len(suffix)]
+            if i == 0:
+                integr_period_fmtd += (
+                    s[::-1].split(" ", 1)[1][::-1]
+                    + f" {words['previous']} "
+                    + s[::-1].split(" ", 1)[0][::-1]
+                )
+            else:
+                s_prev = integr_period_fmtd_lst[i - 1]
+                assert s_prev.endswith(suffix), s
+                s_prev = s_prev[: -len(suffix)]
+                assert s[::-1].split(" ", 1)[1] == s_prev[::-1].split(" ", 1)[1], s
+                integr_period_fmtd += r"$\,$/$\,$" + s[::-1].split(" ", 1)[0][::-1]
+        integr_period_fmtd += suffix
+        # SR_TMP >
         simulation_reduction_start_fmtd = None
         simulation_now_fmtd = None
         # SR_TMP <

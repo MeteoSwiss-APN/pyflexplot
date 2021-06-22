@@ -55,25 +55,22 @@ class Test_AffectedArea(_TestBase):
         "model": {
             "name": "COSMO-1E",
         },
-        "panels": [
-            {
-                "domain": "ch",
-                "plot_variable": "affected_area",
-                "integrate": True,
-                "lang": "en",
-                "dimensions": {
-                    "level": 0,
-                    "release": 5,
-                    "species_id": 1,
-                    "time": -1,
-                },
-            }
-        ],
+        "panels": {
+            "domain": "ch",
+            "plot_variable": "affected_area",
+            "integrate": True,
+            "lang": "en",
+            "dimensions": {
+                "level": 0,
+                "release": 5,
+                "species_id": 1,
+                "time": -1,
+            },
+        },
     }
 
 
-# class Test_Concentration_MultiPanelTime(_TestBase):
-class Test_Concentration_MultiPanelTime(_TestCreateReference):
+class Test_Concentration_MultiPanelTime(_TestBase):
     reference = "ref_cosmo-1e-ctrl_concentration_multipanel_time"
     setup_dct = {
         "files": {
@@ -87,16 +84,41 @@ class Test_Concentration_MultiPanelTime(_TestCreateReference):
         "model": {
             "name": "COSMO-1E",
         },
-        "panels": [
-            {
-                "plot_variable": "concentration",
-                "integrate": True,
-                "lang": "de",
-                "domain": "full",
-                "dimensions": {
-                    "species_id": 1,
-                    "time": [2, 4, 8, 12],
-                },
-            }
-        ],
+        "panels": {
+            "plot_variable": "concentration",
+            "integrate": False,
+            "lang": "de",
+            "domain": "full",
+            "dimensions": {
+                "species_id": 1,
+                "time": [2, 4, 6, 8],
+            },
+        },
+    }
+
+
+class Test_TotalDeposition_MultiPanelTime(_TestBase):
+    reference = "ref_cosmo-1e-ctrl_tot_deposition_multipanel_time"
+    setup_dct = {
+        "files": {
+            "input": INFILE_1,
+            "output": f"{reference}.png",
+        },
+        "layout": {
+            "plot_type": "multipanel",
+            "multipanel_param": "time",
+        },
+        "model": {
+            "name": "COSMO-1E",
+        },
+        "panels": {
+            "plot_variable": "tot_deposition",
+            "integrate": True,
+            "lang": "en",
+            "domain": "ch",
+            "dimensions": {
+                "species_id": 1,
+                "time": [2, 4, 6, 8],
+            },
+        },
     }
