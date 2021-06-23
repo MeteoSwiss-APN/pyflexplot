@@ -758,7 +758,6 @@ def create_plot_config(
         else:
             markers_config_dct["mark_field_max"] = True
     elif setup.model.simulation_type == "ensemble":
-        markers_config_dct["mark_field_max"] = False
         if ens_variable in [
             "minimum",
             "maximum",
@@ -768,7 +767,7 @@ def create_plot_config(
             "med_abs_dev",
             "percentile",
         ]:
-            pass
+            markers_config_dct["mark_field_max"] = True
         else:
             markers_config_dct["mark_field_max"] = False
     markers = {}
@@ -821,6 +820,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     # Format variable name in various ways
     names = format_names_etc(setup, words, mdata)
     short_name = names["short"]
+    long_name = names["long"]
     var_name_abbr = names["var_abbr"]
     ens_var_name = names["ens_var"]
     unit = names["unit"]
@@ -836,7 +836,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
         cap=True,
     )
     labels["title"] = {
-        "tl": capitalize(format_names_etc(setup, words, mdata)["long"]),
+        "tl": capitalize(long_name),
         "bl": capitalize(
             f"{integr_period} ({words['since']}"
             f" {format_meta_datum(mdata.simulation.reduction_start)})"
