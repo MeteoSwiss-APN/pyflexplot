@@ -934,7 +934,7 @@ def create_panel_config(
             "med_abs_dev",
             "percentile",
         ]:
-            pass
+            markers_config_dct["mark_field_max"] = True
         else:
             markers_config_dct["mark_field_max"] = False
     markers = {}
@@ -996,6 +996,7 @@ def create_box_labels(
     # Format variable name in various ways
     names = format_names_etc(setup, words, variable_mdata)
     short_name = names["short"]
+    long_name = names["long"]
     var_name_abbr = names["var_abbr"]
     ens_var_name = names["ens_var"]
     unit = names["unit"]
