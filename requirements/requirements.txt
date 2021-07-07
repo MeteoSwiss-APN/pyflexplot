@@ -4,12 +4,12 @@ click==8.0.1
 cycler==0.10.0
 geographiclib==1.52
 geopy==2.1.0
-importlib-metadata==4.5.0
+importlib-metadata==4.6.1
 kiwisolver==1.3.1
 matplotlib==3.4.2
 netCDF4==1.5.7
 numpy==1.21.0
-Pillow==8.2.0
+Pillow==8.3.1
 pyparsing==2.4.7
 PyPDF2==1.26.0
 pyshp==2.1.3
@@ -19,4 +19,4 @@ Shapely==1.7.1
 six==1.16.0
 toml==0.10.2
 typing-extensions==3.10.0.0
-zipp==3.4.1
+zipp==3.5.0
