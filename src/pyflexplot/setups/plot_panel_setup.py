@@ -502,8 +502,10 @@ class PlotPanelSetupGroup:
             ]
             return type(self)(sub_setups)
         if skip is None:
+            sub_setups: PlotPanelSetupGroup = self.decompress(select, internal=True)
             return [
-                type(self)([setup]) for setup in self.decompress(select, internal=True)
+                type(self)([setup])
+                for setup in sub_setups  # pylint: disable=E1133  # unpacking-non-sequence  # noqa
             ]
         setups_by_idx: Dict[int, List[PlotPanelSetup]] = {}
         for setup in self:

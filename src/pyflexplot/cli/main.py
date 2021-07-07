@@ -85,70 +85,20 @@ def main(
         only,
     )
 
-    pool = multiprocessing.Pool(processes=num_procs)
-
-    # Create plots input file(s) by input file(s)
-    log(vbs="read fields and create plots")
-    all_out_file_paths: List[str] = []
-    iter_state = SharedIterationState(n_input_files=len(setup_groups))
-    for iter_state.i_input_file, setup_group in enumerate(setup_groups, start=1):
-        if only and iter_state.n_field_groups_curr >= only:
-            log(
-                dbg=(
-                    f"[only:{only}] skip {ordinal(iter_state.n_field_groups_curr)}"
-                    " field group"
-                )
-            )
-            break
-        log(
-            vbs=(
-                f"[{iter_state.i_input_file + 1}/{iter_state.n_input_files}]"
-                f" read {setup_group.infile}"
-            )
-        )
-        # Group fields into one group per plot (with possibly multiple outfiles)
-        field_groups = read_fields(
-            setup_group,
-            config={
-                "add_ts0": True,
-                "missing_ok": True,
-                "dry_run": dry_run,
-                "cache_on": cache,
-            },
-            only=(None if not only else only - iter_state.n_field_groups_curr),
-        )
-        iter_state.n_field_groups_curr += len(field_groups)
-        iter_state.n_field_groups_i = len(field_groups)
-        # Format all outfile paths ahead of parallelized plotting loop to ensure
-        # correct order of derived paths (e.g., "a.pdf", "a.1.pdf", "a.2.pdf")
-        out_file_paths_lst: List[List[str]] = [
-            format_out_file_paths(
-                field_group,
-                prev_paths=all_out_file_paths,
-                dest_dir=tmp_dir,
-            )
-            for field_group in field_groups
-        ]
-        fct = partial(create_plots, dry_run, show_version, iter_state)
-        iter_args = zip(
-            range(1, iter_state.n_field_groups_i + 1),
-            out_file_paths_lst,
-            field_groups,
-        )
-        if num_procs > 1:
-            pool.starmap(fct, iter_args)
-        else:
-            for args in iter_args:
-                fct(*args)
-        log(dbg=f"done processing {setup_group.infile}")
-        n_input_files_todo = iter_state.n_input_files - iter_state.i_input_file
-        if only and iter_state.n_field_groups_curr >= only and n_input_files_todo:
-            log(vbs=f"[only:{only}] skip remaining {n_input_files_todo} input files")
-            break
-
-    # Sort output file paths with numbered duplicates are in the correct order
-    # The latter is necessary because parallel execution randomizes their order
-    all_out_file_paths = sorted_paths(all_out_file_paths, dup_sep=".")
+    fct = partial(
+        create_all_plots,
+        setup_groups,
+        cache,
+        dry_run,
+        only,
+        show_version,
+        tmp_dir,
+    )
+    if num_procs == 1:
+        all_out_file_paths = fct()
+    else:
+        with multiprocessing.Pool(processes=num_procs) as pool:
+            all_out_file_paths = fct(pool)
 
     if merge_pdfs:
         log(vbs="merge PDF plots")
@@ -204,6 +154,80 @@ def main(
         open_plots(open_cmd, all_out_file_paths, dry_run)
 
     return 0
+
+
+def create_all_plots(
+    setup_groups: Sequence[PlotSetupGroup],
+    cache: bool,
+    dry_run: bool,
+    only: Optional[int],
+    show_version: bool,
+    tmp_dir: Optional[str],
+    pool: Optional[multiprocessing.pool.Pool] = None,
+) -> List[str]:
+    """Create plots input file(s) by input file(s)."""
+    log(vbs="read fields and create plots")
+    all_out_file_paths: List[str] = []
+    iter_state = SharedIterationState(n_input_files=len(setup_groups))
+    for iter_state.i_input_file, setup_group in enumerate(setup_groups, start=1):
+        if only and iter_state.n_field_groups_curr >= only:
+            log(
+                dbg=(
+                    f"[only:{only}] skip {ordinal(iter_state.n_field_groups_curr)}"
+                    " field group"
+                )
+            )
+            break
+        log(
+            vbs=(
+                f"[{iter_state.i_input_file + 1}/{iter_state.n_input_files}]"
+                f" read {setup_group.infile}"
+            )
+        )
+        # Group fields into one group per plot (with possibly multiple outfiles)
+        field_groups = read_fields(
+            setup_group,
+            config={
+                "add_ts0": True,
+                "missing_ok": True,
+                "dry_run": dry_run,
+                "cache_on": cache,
+            },
+            only=(None if not only else only - iter_state.n_field_groups_curr),
+        )
+        iter_state.n_field_groups_curr += len(field_groups)
+        iter_state.n_field_groups_i = len(field_groups)
+        # Format all outfile paths ahead of parallelized plotting loop to ensure
+        # correct order of derived paths (e.g., "a.pdf", "a.1.pdf", "a.2.pdf")
+        out_file_paths_lst: List[List[str]] = [
+            format_out_file_paths(
+                field_group,
+                prev_paths=all_out_file_paths,
+                dest_dir=tmp_dir,
+            )
+            for field_group in field_groups
+        ]
+        fct = partial(create_plots_i, dry_run, show_version, iter_state)
+        iter_args = zip(
+            range(1, iter_state.n_field_groups_i + 1),
+            out_file_paths_lst,
+            field_groups,
+        )
+        if pool is not None:
+            pool.starmap(fct, iter_args)
+        else:
+            # Don't use pool in sequential run to facilitate debugging
+            for args in iter_args:
+                fct(*args)
+        log(dbg=f"done processing {setup_group.infile}")
+        n_input_files_todo = iter_state.n_input_files - iter_state.i_input_file
+        if only and iter_state.n_field_groups_curr >= only and n_input_files_todo:
+            log(vbs=f"[only:{only}] skip remaining {n_input_files_todo} input files")
+            break
+
+    # Sort output file paths with numbered duplicates are in the correct order
+    # The latter is necessary because parallel execution randomizes their order
+    return sorted_paths(all_out_file_paths, dup_sep=".")
 
 
 def prepare_setups(
@@ -372,7 +396,7 @@ class SharedIterationState:
 
 
 # pylint: disable=R0914  # too-many-locals (>15)
-def create_plots(
+def create_plots_i(
     dry_run: bool,
     show_version: bool,
     iter_state: SharedIterationState,

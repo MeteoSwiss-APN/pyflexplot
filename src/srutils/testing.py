@@ -220,7 +220,7 @@ def check_is_sub_element(
                     idx_dict=idx_dict,
                 )
             except CheckFailedError as error:
-                msg = str(error).split("\n")[0]
+                msg = str(error).split("\n", 1)[0]
                 raise exception(
                     f"iterable elements #{idx} differ: {msg}",
                     {

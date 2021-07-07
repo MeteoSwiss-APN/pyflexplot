@@ -62,6 +62,7 @@ class CoordinateTransformer:
 
     def axes_to_data(self, x, y):
         """Transform from axes to data coordinates."""
+        # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.axes_to_geo(x, y)
         return self.geo_to_data(x_geo, y_geo)
 
@@ -117,6 +118,7 @@ class CoordinateTransformer:
 
     def axes_to_map(self, x, y):
         """Transform from axes to map coordinates."""
+        # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.axes_to_geo(x, y)
         return self.geo_to_map(x_geo, y_geo)
 
@@ -132,6 +134,7 @@ class CoordinateTransformer:
 
     def data_to_axes(self, x, y):
         """Transform from data to axes coordinates."""
+        # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.data_to_geo(x, y)
         return self.geo_to_axes(x_geo, y_geo)
 
@@ -169,6 +172,7 @@ class CoordinateTransformer:
 
     def data_to_map(self, x, y):
         """Transform from data to map coordinates."""
+        # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.data_to_geo(x, y)
         return self.geo_to_map(x_geo, y_geo)
 
@@ -273,6 +277,7 @@ class CoordinateTransformer:
 
     def map_to_axes(self, x, y):
         """Transform from map to axes coordinates."""
+        # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.map_to_geo(x, y)
         return self.geo_to_axes(x_geo, y_geo)
 
@@ -288,6 +293,7 @@ class CoordinateTransformer:
 
     def map_to_data(self, x, y):
         """Transform from map to data coordinates."""
+        # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.map_to_geo(x, y)
         return self.geo_to_data(x_geo, y_geo)
 

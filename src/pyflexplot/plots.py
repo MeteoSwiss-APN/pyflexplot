@@ -49,7 +49,6 @@ from . import __version__
 from .input.field import Field
 from .input.field import FieldGroup
 from .input.meta_data import format_meta_datum
-from .input.meta_data import MetaData
 from .input.meta_data import ReleaseMetaData
 from .input.meta_data import SimulationMetaData
 from .input.meta_data import SpeciesMetaData
@@ -750,6 +749,7 @@ def create_plot_config(
 
 
 # pylint: disable=R0912  # too-many-branches
+# pylint: disable=R0913  # too-many-args (>5)
 # pylint: disable=R0914  # too-many-locals (>15)
 def create_panel_config(
     panel_setup: PlotPanelSetup,
@@ -996,7 +996,7 @@ def create_box_labels(
     # Format variable name in various ways
     names = format_names_etc(setup, words, variable_mdata)
     short_name = names["short"]
-    long_name = names["long"]
+    # long_name = names["long"]
     var_name_abbr = names["var_abbr"]
     ens_var_name = names["ens_var"]
     unit = names["unit"]
@@ -1004,6 +1004,8 @@ def create_box_labels(
     labels: Dict[str, Dict[str, Any]] = {}
 
     # Title box
+    simulation_reduction_start_fmtd: Optional[str]
+    simulation_now_fmtd: Optional[str]
     if all(
         simulation_mdata == next(iter(simulation_mdata_lst))
         for simulation_mdata in simulation_mdata_lst
@@ -1048,7 +1050,7 @@ def create_box_labels(
             for simulation_integr_period in simulation_integr_period_lst
         ]
         integr_period_fmtd = ""
-        suffix = f"$\,$h"
+        suffix = r"$\,$h"
         for i, s in enumerate(integr_period_fmtd_lst):
             assert s.endswith(suffix), s
             s = s[: -len(suffix)]
@@ -1212,7 +1214,7 @@ def create_box_labels(
         for simulation_mdata in simulation_mdata_lst
     ):
         raise NotImplementedError(
-            f"simulation starts differ:\n"
+            "simulation starts differ:\n"
             + "\n".join(map(pformat, simulation_mdata_lst))
         )
     simulation_start = next(iter(simulation_mdata_lst)).start
