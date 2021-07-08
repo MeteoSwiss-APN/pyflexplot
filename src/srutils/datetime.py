@@ -1,12 +1,11 @@
 """Datetime utilities."""
+from __future__ import annotations
+
 # Standard library
+import datetime as dt
 import time
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
 from itertools import starmap
 from typing import Callable
-from typing import List
 from typing import overload
 from typing import TypeVar
 from typing import Union
@@ -15,10 +14,10 @@ from typing import Union
 from typing_extensions import Literal
 
 
-def init_datetime(raw: Union[int, str]) -> datetime:
+def init_datetime(raw: Union[int, str]) -> dt.datetime:
     """Initialize a UTC datetime object by formatting an integer or string."""
     fmt = derive_datetime_fmt(raw)
-    return datetime(*time.strptime(str(raw), fmt)[:6], tzinfo=timezone.utc)
+    return dt.datetime(*time.strptime(str(raw), fmt)[:6], tzinfo=dt.timezone.utc)
 
 
 def derive_datetime_fmt(raw: Union[int, str]) -> str:
@@ -53,25 +52,25 @@ ConvertT = TypeVar("ConvertT", bound=Union[int, str])
 
 @overload
 def datetime_range(
-    start: Union[datetime, int, str],
-    end: Union[datetime, int, str],
-    step: Union[timedelta, int, str],
+    start: Union[dt.datetime, int, str],
+    end: Union[dt.datetime, int, str],
+    step: Union[dt.timedelta, int, str],
     *,
     convert: Literal[None] = None,
     fmt: str = ...,
-) -> List[datetime]:
+) -> list[dt.datetime]:
     ...
 
 
 @overload
 def datetime_range(
-    start: Union[datetime, int, str],
-    end: Union[datetime, int, str],
-    step: Union[timedelta, int, str],
+    start: Union[dt.datetime, int, str],
+    end: Union[dt.datetime, int, str],
+    step: Union[dt.timedelta, int, str],
     *,
     convert: Callable[[str], ConvertT],
     fmt: str = ...,
-) -> List[ConvertT]:
+) -> list[ConvertT]:
     ...
 
 
@@ -92,15 +91,15 @@ def datetime_range(start, end, step, *, convert=None, fmt="%Y%m%d%H%M%S"):
             relevant if ``convert`` is not None.
 
     """
-    if not isinstance(start, datetime):
+    if not isinstance(start, dt.datetime):
         start = init_datetime(str(start))
-    if not isinstance(end, datetime):
+    if not isinstance(end, dt.datetime):
         end = init_datetime(str(end))
     if start > end:
         raise ValueError(f"start after end: {start} > {end}")
-    if not isinstance(step, timedelta):
-        step = timedelta(seconds=int(step))
-    times: List[datetime] = [start]
+    if not isinstance(step, dt.timedelta):
+        step = dt.timedelta(seconds=int(step))
+    times: list[dt.datetime] = [start]
     while times[-1] + step <= end:
         times.append(times[-1] + step)
     if convert:

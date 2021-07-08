@@ -42,7 +42,7 @@ from srutils.format import ordinal
 from srutils.geo import Degrees
 from srutils.plotting import linear_cmap
 from srutils.plotting import truncate_cmap
-from words import Word
+from words import WordT
 
 # Local
 from . import __version__
@@ -1249,7 +1249,7 @@ def create_box_labels(
         species_mdata.washout_coefficient_unit,
     )
     washout_exponent = format_meta_datum(species_mdata.washout_exponent)
-    lines_parts: List[Optional[Tuple[Word, str]]]
+    lines_parts: List[Optional[Tuple[WordT, str]]]
     if setup.layout.type == "standalone_details":
         lines_parts = [
             (words["site"], site_name),
@@ -1279,7 +1279,7 @@ def create_box_labels(
             (words["washout_exponent"], washout_exponent),
         ]
 
-    def format_lines_block(parts: Sequence[Optional[Tuple[Word, str]]]) -> str:
+    def format_lines_block(parts: Sequence[Optional[Tuple[WordT, str]]]) -> str:
         block = ""
         for line_parts in parts:
             if line_parts is None:
@@ -1484,7 +1484,7 @@ def format_names_etc(
     }
 
 
-def capitalize(s: Union[str, Word]) -> str:
+def capitalize(s: Union[str, WordT]) -> str:
     """Capitalize the first letter while leaving all others as they are."""
     s = str(s)
     if not s:

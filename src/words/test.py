@@ -1,4 +1,10 @@
 """Wrappers for ``TranslatedWord[s]`` with testing-friendly interface."""
+from __future__ import annotations
+
+# Standard library
+from typing import Sequence
+from typing import Type
+
 # Local
 from .word import TranslatedWord
 from .words import TranslatedWords
@@ -11,12 +17,12 @@ class TranslatedTestWord(TranslatedWord):
 class TranslatedTestWords(TranslatedWords):
     """Testing wrapper for ``TranslatedWords``."""
 
-    cls_word = TranslatedTestWord
+    cls_word: Type[TranslatedWord] = TranslatedTestWord
 
-    def __init__(self, raw_words, langs=None):
+    def __init__(self, raw_words: Sequence[str], langs: Sequence[str]) -> None:
         """Create an instance of ``TranslatedTestWords``."""
-        if langs is None:
-            words_langs = {word: word for word in raw_words}
-        else:
-            words_langs = {word: {lang: word for lang in langs} for word in raw_words}
-        super().__init__(**words_langs)
+        words_langs: dict[str, dict[str, str]] = {
+            word: {lang: word for lang in langs} for word in raw_words
+        }
+        name = None
+        super().__init__(name, words_langs)

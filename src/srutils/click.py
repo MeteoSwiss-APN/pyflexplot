@@ -1,12 +1,23 @@
 """Click utilities."""
+from __future__ import annotations
+
 # Standard library
 import functools
+from typing import Any
+from typing import Callable
+from typing import Mapping
+from typing import Optional
+from typing import Sequence
+from typing import Type
+from typing import Union
 
 # Third-party
 import click
 
 
-def click_options(f_options):
+def click_options(
+    f_options: Callable[[], Sequence[click.Option]]
+) -> Callable[[Callable], Callable]:
     """Define a list of click options that can be shared by multiple commands.
 
     Args:
@@ -46,26 +57,35 @@ def click_options(f_options):
         https://stackoverflow.com/a/52147284
 
     """
-    return lambda f: functools.reduce(lambda x, opt: opt(x), f_options(), f)
+
+    def fct(f: Callable) -> Callable:
+        return functools.reduce(lambda x, opt: opt(x), f_options(), f)
+
+    return fct
 
 
 class CharSepList(click.ParamType):
     """List of elements of a given type separated by a given character."""
 
-    def __init__(self, type_, separator, *, name=None, unique=False):
+    def __init__(
+        self,
+        type_: Type[Any],
+        separator: str,
+        *,
+        name: Optional[str] = None,
+        unique: bool = False,
+    ) -> None:
         """Create an instance of ``CharSepList``.
 
         Args:
-            type_ (type): Type of list elements.
+            type_: Type of list elements.
 
-            separator (str): Separator of list elements.
+            separator: Separator of list elements.
 
-            name (str, optional): Name of the type. If omitted, the default
-                name is derived from ``type_`` and ``separator``. Defaults to
-                None.
+            name (optional): Name of the type. If omitted, the default name is
+                derived from ``type_`` and ``separator``.
 
-            unique (bool, optional): Whether the list elements must be unique.
-                Defaults to False.
+            unique (optional): Whether the list elements must be unique.
 
         Example:
             Create type for comma-separated list of (unique) integers:
@@ -73,24 +93,22 @@ class CharSepList(click.ParamType):
             > comma_separated_list_of_unique_ints = CharSepList(int, ',')
 
         """
-        if isinstance(type_, float) and separator == ".":
+        if issubclass(type_, float) and separator == ".":
             raise ValueError(
                 f"invalid separator '{separator}' for type " f"'{type_.__name__}'"
             )
 
-        self.type_ = type_
-        self.separator = separator
-        self.unique = unique
-        if name is not None:
-            self.name = name
-        else:
-            s = f"{type_.__name__}{separator}" * 2
-            self.name = f"{s}..."
+        self.type_: Type[Any] = type_
+        self.separator: str = separator
+        self.unique: bool = unique
+        self.name: str = name or f"{type_.__name__}{separator}" * 2 + "..."
 
-    def convert(self, value, param, ctx):
+    def convert(
+        self, value: str, param: click.Parameter, ctx: click.Context
+    ) -> list[Union[str, Type[Any]]]:
         """Convert a string to a list of ``type_`` elements."""
         values_str = value.split(self.separator)
-        values = []
+        values: list[Union[str, Type[Any]]] = []
         for i, value_str in enumerate(values_str):
             try:
                 value = self.type_(value_str)
@@ -116,27 +134,31 @@ class CharSepList(click.ParamType):
 class DerivChoice(click.ParamType):
     """Choices from which additional choices can be derived."""
 
-    name = "choice"
+    name: str = "choice"
 
-    def __init__(self, base_choices, derived_choices):
+    def __init__(
+        self, base_choices: Sequence[str], derived_choices: Mapping[str, Sequence[str]]
+    ) -> None:
         """Create instance of ``DerivChoice``.
 
         Args:
-            base_choices (list[str]): Base choices.
+            base_choices: Base choices.
 
             derived_choices (dict[str, list[str]]): Derived choices
                 constituting combinations of multiple base choices.
 
         """
-        self.base_choices = base_choices
-        self.derived_choices = derived_choices
+        self.base_choices: list[str] = list(base_choices)
+        self.derived_choices: dict[str, list[str]] = {
+            key: list(val) for key, val in derived_choices.items()
+        }
         self._check_derived_choices()
 
-    def get_metavar(self, param):
+    def get_metavar(self, param: click.Parameter) -> str:
         choices = list(self.base_choices) + list(self.derived_choices)
         return f"[{'|'.join(choices)}]"
 
-    def convert(self, value, param, ctx):
+    def convert(self, value: Any, param: click.Parameter, ctx: click.Context) -> Any:
         """Check that a string is among the given choices or combinations."""
         if value in self.base_choices:
             return value
@@ -148,13 +170,12 @@ class DerivChoice(click.ParamType):
             self.fail(f"wrong choice '{value}': must be one of {s_choices}")
         return value
 
-    def _check_derived_choices(self):
+    def _check_derived_choices(self) -> None:
         for name, derived_choice in self.derived_choices.items():
             if name in self.base_choices:
                 raise ValueError(
-                    "derived choice is already a base choice",
-                    name=name,
-                    base_choices=self.base_choices,
+                    f"derived choice '{name}' is already among base choices"
+                    f"{self.base_choices}"
                 )
             if isinstance(derived_choice, str):
                 derived_choice = [derived_choice]
@@ -162,17 +183,13 @@ class DerivChoice(click.ParamType):
                 it = iter(derived_choice)
             except TypeError as e:
                 raise ValueError(
-                    "derived choice is defined as non-iterable "
-                    f"{type(derived_choice).__name__} object",
-                    name=name,
-                    derived_choice=derived_choice,
+                    "derived choice '{name}' is defined as non-iterable "
+                    f"{type(derived_choice).__name__} object: {derived_choice}"
                 ) from e
             else:
                 for element in it:
                     if element not in self.base_choices:
                         raise ValueError(
-                            "derived choice element is not a base choice",
-                            name=name,
-                            element=element,
-                            base_choices=self.base_choices,
+                            f"element {element} of derived choice '{name}' element is"
+                            f"not among base choices {self.base_choices}"
                         )

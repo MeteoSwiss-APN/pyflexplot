@@ -1,20 +1,36 @@
 """Geometric/geographic utilities."""
+from __future__ import annotations
+
+# Standard library
+from typing import cast
+from typing import Tuple
+from typing import Union
+
+FracDegsT = float
+FullDegsT = int
+FullMinsT = int
+FullSecsT = int
+DegsT = Union[
+    FracDegsT,
+    Tuple[FullDegsT],
+    Tuple[FullDegsT, FullMinsT],
+    Tuple[FullDegsT, FullMinsT, FullSecsT],
+]
 
 
 class Degrees:
     """Degrees, useful for instance to convert between notations."""
 
-    def __init__(self, deg):
+    def __init__(self, deg: DegsT):
         """Create an instance of ``Degrees``.
 
         Args:
-            deg: Degrees in one of the following formats:
-                float: Fraction notation.
-                tuple[int*1]: Full degrees.
-                tuple[int*2]: Full degrees/minutes.
-                tuple[int*3]: Full degrees/minutes/seconds.
+            deg: Degrees in one of the following formats: fraction notation;
+                full degrees; full degrees/minutes; full degrees/minutes/seconds.
 
         """
+        self._frac: float
+
         # Check for fraction
         if isinstance(deg, (int, float)):
             self._frac = float(deg)
@@ -26,7 +42,7 @@ class Degrees:
 
         # Check for `(degs,)`
         try:
-            (degs,) = deg
+            (degs,) = cast(Tuple[FullDegsT], deg)
         except TypeError:
             pass
         else:
@@ -35,44 +51,44 @@ class Degrees:
 
         # Check for `(degs, mins)`
         try:
-            degs, mins = deg
+            degs, mins = cast(Tuple[FullDegsT, FullMinsT], deg)
         except TypeError:
             pass
         else:
-            self._frac = float(deg[0]) + deg[1] / 60.0
+            self._frac = float(degs) + mins / 60.0
             return None
 
         # Check for `(degs, mins, secs)`
         try:
-            degs, mins, secs = deg
+            degs, mins, secs = cast(Tuple[FullDegsT, FullMinsT, FullSecsT], deg)
         except TypeError:
             pass
         else:
             self._frac = float(degs) + mins / 60.0 + secs / 3600.0
 
         raise ValueError(
-            f"invalid deg='{deg}'; " f"must be `float` or `(degs, [mins, [secs, ]])`"
+            f"invalid deg='{deg}'; must be `float` or `(degs, [mins, [secs,]])`"
         )
 
-    def frac(self):
+    def frac(self) -> float:
         """Return degrees as a fraction."""
         return self._frac
 
-    def dms(self):
-        """Return full degrees, minutes, and seconds (int)."""
+    def dms(self) -> tuple[FullDegsT, FullMinsT, FullSecsT]:
+        """Return full degrees, minutes, and seconds."""
         degs = self._frac
         mins = degs % 1 * 60
         secs = mins % 1 * 60
         return int(degs), int(mins), int(secs)
 
-    def degs(self):
-        """Return full degrees (float)."""
+    def degs(self) -> FullDegsT:
+        """Return full degrees."""
         return self.dms()[0]
 
-    def mins(self):
-        """Return full minutes (int)."""
+    def mins(self) -> FullMinsT:
+        """Return full minutes."""
         return self.dms()[1]
 
-    def secs(self):
-        """Return full seconds (int)."""
+    def secs(self) -> FullSecsT:
+        """Return full seconds."""
         return self.dms()[2]

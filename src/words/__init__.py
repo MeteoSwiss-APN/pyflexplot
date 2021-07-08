@@ -10,7 +10,14 @@ from typing import List
 # Local
 from .word import TranslatedWord
 from .word import Word
+from .word import WordT
 from .words import TranslatedWords
 from .words import Words
 
-__all__: List[str] = ["Word", "TranslatedWord", "Words", "TranslatedWords"]
+__all__: List[str] = [
+    "TranslatedWord",
+    "TranslatedWords",
+    "Word",
+    "WordT",  # SR_TMP TODO Subclass ContextWord from Word and eliminate WordT
+    "Words",
+]

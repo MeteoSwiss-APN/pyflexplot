@@ -1,52 +1,67 @@
 """TranslatedWord."""
+from __future__ import annotations
+
+# Standard library
+from typing import Any
+from typing import Callable
+from typing import Mapping
+from typing import Optional
+from typing import overload
+from typing import Type
+from typing import Union
+
+# Third-party
+from typing_extensions import Literal
+
 # First-party
 from srutils.exceptions import InvalidVariableNameError
 from srutils.format import capitalize
 from srutils.format import titlecase
 from srutils.varname import VariableName
 
+# SR_TODO Subclass ContextWord from Word and eliminate WordT
+WordT = Union["Word", "ContextWord"]
+
 
 class Word:
     """An individual word."""
 
-    def __init__(self, s, lang, ctx=None):
+    def __init__(self, s: str, lang: str, ctx: Optional[str] = None) -> None:
         """Create an instance of ``Word``.
 
         Args:
-            s (str): The word as a string.
+            s: The word as a string.
 
-            lang (str): Language in which the word is given.
+            lang: Language in which the word is given.
 
-            ctx (str, optional): Context in which the word is valid.
+            ctx (optional): Context in which the word is valid.
 
         """
         if not isinstance(s, str):
             raise ValueError(f"type of s is {type(s).__name__}, not str")
-        self._s = s
-        self.lang = lang
-        self.ctx = ctx
+        self._s: str = s
+        self.lang: str = lang
+        self.ctx: Optional[str] = ctx
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return str(self) == str(other)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self._s
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(str(self))
 
-    def capital(self, *, all_=False, preserve=True):
+    def capital(self, *, all_: bool = False, preserve: bool = True) -> str:
         """Capitalize the first letter of the first or of each word.
 
         Already capitalized words are retained as such, in contrast to
         ``str.capitalize()``.
 
         Args:
-            all_ (bool, optional): Whether to capitalize all words. Defaults to
-                False.
+            all_ (optional): Whether to capitalize all words.
 
-            preserve (bool, optional): Whether to preserve capitalized letters.
-                Defaults to True.
+            preserve (optional): Whether to preserve capitalized letters.
 
         """
         s = str(self)
@@ -57,7 +72,7 @@ class Word:
         words = s.split(" ")
         return " ".join([capitalize(words[0])] + words[1:])
 
-    def title(self, *, preserve=True):
+    def title(self, *, preserve: bool = True) -> str:
         if self.lang == "en":
             return titlecase(str(self), preserve=preserve)
         elif self.lang == "de":
@@ -66,52 +81,57 @@ class Word:
             raise NotImplementedError(f"{type(self).__name__}.title", self.lang)
 
     @property
-    def s(self):
+    def s(self) -> str:
         return str(self)
 
     @property
-    def c(self):
+    def c(self) -> str:
         """Shorthand to capitalize the first word."""
         return self.capital(all_=False, preserve=True)
 
     @property
-    def C(self):  # pylint: disable=C0103  # invalid-name
+    # pylint: disable=C0103  # invalid-name
+    def C(self) -> str:
         return self.capital(all_=True, preserve=True)
 
     @property
-    def t(self):
+    def t(self) -> str:
         return self.title(preserve=True)
 
 
 class TranslatedWord:
     """A word in one or more languages."""
 
-    cls_word = Word
+    cls_word: Type[Word] = Word
 
     def __init__(
-        self, name=None, *, active_lang=None, active_lang_query=None, **translations
-    ):
+        self,
+        name: Optional[str] = None,
+        *,
+        active_lang: Optional[str] = None,
+        active_lang_query: Optional[Callable[[], str]] = None,
+        **translations: Union[WordT, str, Mapping[str, Union[WordT, str]]],
+    ) -> None:
         """Create an instance of ``TranslatedWord``.
 
         Args:
-            name (str, optional): Key to refer to the object in the code.
-                Defaults to the first word defined in ``**langs``. If
-                necessary, it is transformed into a valid Python variable name
-                by replacing all spaces and dashes by underscores and dropping
-                all other special characters.
+            name (optional): Key to refer to the object in the code. Defaults to
+                the first word defined in ``**langs``. If necessary, it is
+                transformed into a valid Python variable name by replacing all
+                spaces and dashes by underscores and dropping all other special
+                characters.
 
-            active_lang (str, optional): Active language. Overridden by
+            active_lang (optional): Active language. Overridden by
                 ``active_lang_query`` if the latter is not None. Defaults to the
                 first key in ``langs``.
 
-            active_lang_query (callable, optional): Function to query the active
-                language. Overrides ``active_lang``. Defaults to None.
+            active_lang_query (optional): Function to query the active language.
+                Overrides ``active_lang``.
 
-            **translations (dict of str: str or (dict of str: str)): The word
-                in different languages. The values are either strings for
-                simple words, or dicts with context-specific variants of the
-                word. In the latter case, the first entry is the default
-                context.
+            **translations: The word in different languages. The values are
+                either strings for simple words, or dicts with context-specific
+                variants of the word. In the latter case, the first entry is the
+                default context.
 
         Example:
             >>> w = TranslatedWord(en='high school', de='Mittelschule')
@@ -121,17 +141,19 @@ class TranslatedWord:
         """
         orig_name = name
         self.name = None
-        self._translations = {}
+        self._translations: dict[str, ContextWord] = {}
 
         self._check_langs(translations)
 
         # Set name of word (valid Python variable name)
         try:
             if name is None:
-                name = next(iter(translations.values()))
-                if isinstance(name, dict):
-                    name = next(iter(name.values()))
-                name = VariableName(name).format(lower=True)
+                tmp_name: Union[WordT, str, Mapping[str, Union[WordT, str]]] = next(
+                    iter(translations.values())
+                )
+                if isinstance(tmp_name, Mapping):
+                    tmp_name = next(iter(tmp_name.values()))
+                name = VariableName(str(tmp_name)).format(lower=True)
             else:
                 VariableName.check_valid(name)
         except InvalidVariableNameError as e:
@@ -144,9 +166,9 @@ class TranslatedWord:
         for lang, word in translations.items():
             if isinstance(word, str):
                 word = self.cls_word(word, lang=lang)
-            if isinstance(word, Word):
+            if isinstance(word, (Word, ContextWord)):
                 word = {"*": word}
-            elif isinstance(word, dict):
+            elif isinstance(word, Mapping):
                 if set(word.keys()) != set(ctxs) and "*" not in word:
                     raise ValueError(
                         f"word '{self.name}' in language '{lang}' must either "
@@ -162,7 +184,10 @@ class TranslatedWord:
 
         self.set_active_lang(lang=active_lang, query=active_lang_query)
 
-    def _check_langs(self, translations):
+    def _check_langs(
+        self,
+        translations: Mapping[str, Union[WordT, str, Mapping[str, Union[WordT, str]]]],
+    ) -> None:
         """Check validity of languages and words."""
         if not translations:
             raise ValueError("must pass the word in at least one language")
@@ -170,35 +195,37 @@ class TranslatedWord:
             if lang in self.__dict__:
                 # Name clash between language and class attribute
                 raise ValueError("invalid language specifier", lang)
-            if not isinstance(word, (Word, str, dict)):
+            if not isinstance(word, (Word, ContextWord, str, Mapping)):
                 # Wrong word type
-                raise ValueError("word must be of type str or dict", type(word), word)
+                raise ValueError(
+                    f"word not str or dict-like: {word} {type(word).__name__}"
+                )
             if not word:
                 # Undefined word
-                raise ValueError("empty word passed in language", word, lang)
+                raise ValueError(f"empty word passed in language '{lang}'")
 
     @staticmethod
-    def _collect_contexts(translations):
-        ctxs = []
+    def _collect_contexts(
+        translations: Mapping[str, Union[WordT, str, Mapping[str, Union[WordT, str]]]]
+    ) -> list[str]:
+        ctxs: list[str] = []
         for word in translations.values():
-            try:
-                {**word}
-            except TypeError:
-                pass
-            else:
+            if isinstance(word, Mapping):
                 ctxs += [ctx for ctx in word.keys() if ctx not in ctxs]
         return ctxs
 
-    def set_active_lang(self, lang=None, query=None):
+    def set_active_lang(
+        self, lang: Optional[str] = None, query: Callable[[], str] = None
+    ) -> None:
         """Set the active language, either hard-coded or queryable.
 
         Args:
-            lang (str, None): Default language. Overridden by ``query`` if the
+            lang (optional): Default language. Overridden by ``query`` if the
                 latter is not None. Defaults to the first key in
                 ``TranslatedWord.langs``.
 
-            query (callable, None): Function to query the active language.
-                Overrides ``default``. Defaults to None.
+            query (None): Function to query the active language. Overrides
+                ``default``.
 
         """
         if lang is None:
@@ -212,17 +239,17 @@ class TranslatedWord:
         self._active_lang_query = query
 
     @property
-    def active_lang(self):
+    def active_lang(self) -> str:
         """Get the active language."""
         if self._active_lang_query is not None:
             return self._active_lang_query()
         return self._active_lang
 
-    def get(self):
+    def get(self) -> ContextWord:
         """Get word in the active language."""
         return self.get_in(None)
 
-    def get_in(self, lang):
+    def get_in(self, lang: Optional[str]) -> ContextWord:
         """Get word in a certain language."""
         if lang is None:
             lang = self.active_lang
@@ -234,20 +261,28 @@ class TranslatedWord:
                 f"{self.langs}"
             ) from e
 
-    def ctx(self, *args, **kwargs):
-        return self.get_in(self.active_lang).ctx(*args, **kwargs)
+    @overload
+    def ctx(self, name: Optional[str], as_str: Literal[False] = False) -> Word:
+        ...
+
+    @overload
+    def ctx(self, name: Optional[str], as_str: Literal[True]) -> str:
+        ...
+
+    def ctx(self, name, as_str=False):
+        return self.get_in(self.active_lang).ctx(name, as_str)
 
     @property
-    def langs(self):
+    def langs(self) -> list[str]:
         """List of languages the word is defined in."""
         return list(self._translations.keys())
 
-    def __str__(self):
+    def __str__(self) -> str:
         w = self.get().get()
         assert isinstance(w, Word)  # SR_TMP
         return w.s
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s_langs = ", ".join(
             [f"{lang}={repr(word)}" for lang, word in self._translations.items()]
         )
@@ -255,38 +290,44 @@ class TranslatedWord:
             f"{type(self).__name__}({self.name}, {s_langs}, lang='{self.active_lang}')"
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return str(self) == str(other)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Optional[str]) -> ContextWord:
         lang = key
         if lang is None:
             lang = self.active_lang
         return self.get_in(lang)
 
 
+# SR_TODO Make a subclass of Word (requires same interface)
 class ContextWord:
     """One or more variants of a word in a specific language."""
 
-    cls_word = Word
+    cls_word: Type[Word] = Word
 
-    def __init__(self, lang, *, default_context=None, **variants):
+    def __init__(
+        self,
+        lang: str,
+        *,
+        default_context: Optional[str] = None,
+        **variants: Union[Word, str],
+    ) -> None:
         """Create an instance of ``ContextWord``.
 
         Args:
-            lang (str): Language. Argument name ends with underscore to avoid
+            lang: Language. Argument name ends with underscore to avoid
                 conflict with possible context specifier 'lang'.
 
-            default_context (str, optional): Default context specifier.
-                Defaults to the first key in ``variants``.
+            default_context (optional): Default context specifier. Defaults to
+                the first key in ``variants``.
 
-            **variants (dict of str: str): One or more variants of a word. The
-                keys constitute context specifiers, the values the respective
-                word.
+            **variants: One or more variants of a word. The keys constitute
+                context specifiers, the values the respective word.
 
         """
-        self.lang = lang
-        self._variants = {}
+        self.lang: str = lang
+        self._variants: dict[str, Word] = {}
         for ctx, word in variants.items():
             if not isinstance(word, (Word, str)):
                 raise ValueError(f"invalid word: {word}")
@@ -295,17 +336,17 @@ class ContextWord:
             self._variants[ctx] = word
         self.default_context = default_context or next(iter(self._variants))
 
-    def get(self):
+    def get(self) -> Word:
         """Return word in default context."""
         return self.ctx(None)
 
-    def ctx(self, name, as_str=False):
+    def ctx(self, name: Optional[str], as_str: bool = False) -> Word:
         """Return the variant of the word in a specific context.
 
         Args:
-            name (str): Name of the context (one of ``self.ctxs``).
+            name: Name of the context (one of ``self.ctxs``).
 
-            as_str (bool, optional): Return string. Defaults to False.
+            as_str (optional): Return string.
 
         """
         if name is None:
@@ -318,40 +359,41 @@ class ContextWord:
             return word
         return word
 
-    def ctxs(self):
+    def ctxs(self) -> list[str]:
         """List of contexts."""
         return list(self._variants.keys())
 
-    def __str__(self):
+    def __str__(self) -> str:
         w = self.ctx(self.default_context, as_str=True)
         assert isinstance(w, Word)  # SR_TMP
         return w.s
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s_variants = ", ".join([f"{k}={repr(v)}" for k, v in self._variants.items()])
         return f"{type(self).__name__}(lang='{self.lang}', {s_variants})"
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return str(self) == str(other)
 
     @property
-    def s(self):
+    def s(self) -> str:
         return str(self)
 
-    def capital(self, **kwargs):
+    def capital(self, **kwargs: Any) -> str:
         return self.get().capital(**kwargs)
 
-    def title(self, **kwargs):
+    def title(self, **kwargs: Any) -> str:
         return self.get().title(**kwargs)
 
     @property
-    def c(self):
+    def c(self) -> str:
         return self.get().c
 
     @property
-    def C(self):  # pylint: disable=C0103  # invalid-name
+    # pylint: disable=C0103  # invalid-name
+    def C(self) -> str:
         return self.get().C
 
     @property
-    def t(self):
+    def t(self) -> str:
         return self.get().t

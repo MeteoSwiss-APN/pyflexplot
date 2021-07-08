@@ -1,8 +1,10 @@
 """Work with PDF files."""
+from __future__ import annotations
+
 # Standard library
 import dataclasses as dc
 import os
-from typing import List
+from typing import Sequence
 
 # Third-party
 from PyPDF2 import PdfFileReader
@@ -15,7 +17,7 @@ from PyPDF2.utils import PdfReadError
 class MultiPagePDF:
     """A multi-page PDF file composed of multiple individual PDF files."""
 
-    pages: List[PageObject]
+    pages: list[PageObject]
 
     def write(self, path: str) -> None:
         """Write the file to disk."""
@@ -29,9 +31,9 @@ class MultiPagePDF:
             writer.write(fo)
 
     @staticmethod
-    def _read_pages(paths: List[str]) -> List[PageObject]:
+    def _read_pages(paths: Sequence[str]) -> list[PageObject]:
         """Read pages from disk."""
-        pages: List[PageObject] = []
+        pages: list[PageObject] = []
         for path_i in paths:
             try:
                 file = PdfFileReader(path_i)
@@ -43,6 +45,6 @@ class MultiPagePDF:
         return pages
 
     @classmethod
-    def from_files(cls, paths: List[str]) -> "MultiPagePDF":
+    def from_files(cls, paths: Sequence[str]) -> MultiPagePDF:
         pages = cls._read_pages(paths)
         return cls(pages)
