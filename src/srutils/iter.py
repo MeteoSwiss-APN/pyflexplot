@@ -61,9 +61,12 @@ def resolve_negative_indices(idcs: Sequence[int], n: int) -> Sequence[int]:
     """
     idcs_new = []
     for i in idcs:
+        i_in = i
         if i < 0:
             i += n
-        if not 0 <= i < n:
-            raise ValueError("invalid index: not 0 <= {i} < n")
+        if i < 0:
+            raise ValueError(f"invalid index {i_in}: {i} < 0")
+        if i >= n:
+            raise ValueError(f"invalid index {i_in}: {i} > {n}")
         idcs_new.append(i)
     return type(idcs)(idcs_new)  # type: ignore

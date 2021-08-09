@@ -5,6 +5,8 @@ The setup parameters that are exposed in the setup files are all described in
 the docstring of the class method ``Setup.create``.
 
 """
+from __future__ import annotations
+
 # Standard library
 import dataclasses as dc
 from pprint import pformat
@@ -217,7 +219,7 @@ class PlotPanelSetup(BaseSetup):
         self,
         select: Optional[Collection[str]] = None,
         skip: Optional[Collection[str]] = None,
-    ) -> "PlotPanelSetupGroup":
+    ) -> PlotPanelSetupGroup:
         """Create a setup object for each decompressed dimensions object.
 
         Args:
@@ -458,7 +460,7 @@ class PlotPanelSetupGroup:
         skip: Optional[Collection[str]] = ...,
         *,
         internal: Literal[True] = True,
-    ) -> "PlotPanelSetupGroup":
+    ) -> PlotPanelSetupGroup:
         ...
 
     @overload
@@ -468,7 +470,7 @@ class PlotPanelSetupGroup:
         skip: Optional[Collection[str]] = ...,
         *,
         internal: Literal[False],
-    ) -> List["PlotPanelSetupGroup"]:
+    ) -> List[PlotPanelSetupGroup]:
         ...
 
     def decompress(
@@ -502,8 +504,10 @@ class PlotPanelSetupGroup:
             ]
             return type(self)(sub_setups)
         if skip is None:
+            sub_setups: PlotPanelSetupGroup = self.decompress(select, internal=True)
             return [
-                type(self)([setup]) for setup in self.decompress(select, internal=True)
+                type(self)([setup])
+                for setup in sub_setups  # pylint: disable=E1133  # unpacking-non-sequence  # noqa
             ]
         setups_by_idx: Dict[int, List[PlotPanelSetup]] = {}
         for setup in self:
@@ -547,7 +551,7 @@ class PlotPanelSetupGroup:
         cls,
         params: Union[Sequence[Mapping[str, Any]], Mapping[str, Any]],
         multipanel_param: Optional[str] = None,
-    ) -> "PlotPanelSetupGroup":
+    ) -> PlotPanelSetupGroup:
         """Prepare and create an instance of ``PlotPanelSetupGroup``.
 
         Args:
@@ -577,7 +581,7 @@ class PlotPanelSetupGroup:
         cls,
         params: Sequence[Mapping[str, Any]],
         multipanel_param: Optional[str] = None,
-    ) -> "PlotPanelSetupGroup":
+    ) -> PlotPanelSetupGroup:
         def check_consistency(
             mp_param: Optional[str], params: Sequence[Mapping[str, Any]]
         ) -> None:
@@ -638,7 +642,7 @@ class PlotPanelSetupGroup:
         cls,
         params: Mapping[str, Any],
         multipanel_param: Optional[str] = None,
-    ) -> "PlotPanelSetupGroup":
+    ) -> PlotPanelSetupGroup:
         def handle_sub_params(
             mp_param: str, params: Mapping[str, Any], name: str = ""
         ) -> List[Dict[str, Any]]:

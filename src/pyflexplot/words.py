@@ -202,7 +202,7 @@ WORDS.add(
     de={
         "*": "inkrementelle nasse Bodendeposition",
         "abbr": "inkr. nasse Bodendep.",
-        "of": "der incrementellen nassen Bodendeposition",
+        "of": "der inkrementellen nassen Bodendeposition",
     },
 )
 WORDS.add(
@@ -277,6 +277,7 @@ WORDS.add(
     de={"*": "Perzentil", "pl": "Perzentile"},
 )
 WORDS.add(en="probability", de="Wahrscheinlichkeit")
+WORDS.add(en="previous", de="letzte")
 # Q
 # R
 WORDS.add(en="rate", de="Rate")

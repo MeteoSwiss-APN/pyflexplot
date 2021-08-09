@@ -967,3 +967,33 @@ class Test_Multipanel:
         assert_is_sub_element(
             name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
         )
+
+    def test_time(self, tmp_path):
+        """Declare multi-panel plot based on time steps."""
+        content = """\
+            [plot]
+            infile = "foo_000.nc"
+            outfile = "bar_multipanel_time.png"
+            model = "COSMO-2E"
+            plot_type = "multipanel"
+            multipanel_param = "time"
+            time = [2, 4, 6, 8]
+            """
+        sol = {
+            "layout": {
+                "plot_type": "multipanel",
+                "multipanel_param": "time",
+            },
+            "panels": [
+                {"dimensions": {"time": 2}},
+                {"dimensions": {"time": 4}},
+                {"dimensions": {"time": 6}},
+                {"dimensions": {"time": 8}},
+            ],
+        }
+        group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+        assert len(group) == 1
+        res = next(iter(group)).dict()
+        assert_is_sub_element(
+            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+        )

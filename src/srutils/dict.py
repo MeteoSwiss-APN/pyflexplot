@@ -1,4 +1,6 @@
 """Dictionary utilities."""
+from __future__ import annotations
+
 # Standard library
 import dataclasses as dc
 import itertools
@@ -9,14 +11,12 @@ from pprint import pformat
 from typing import Any
 from typing import Callable
 from typing import Collection
-from typing import Dict
-from typing import List
+from typing import Hashable
 from typing import Mapping
 from typing import MutableMapping
 from typing import Optional
 from typing import overload
 from typing import Sequence
-from typing import Tuple
 from typing import Type
 from typing import Union
 
@@ -28,17 +28,19 @@ from .exceptions import KeyConflictError
 from .exceptions import UnexpandableValueError
 
 
-def format_dictlike(obj, multiline=False, indent=1):
+def format_dictlike(
+    obj: Mapping[Any, Any], multiline: bool = False, indent: int = 1
+) -> str:
     """Format a dict-like object to a string."""
     if not multiline:
         indent = 0
     try:
-        obj = obj.dict()
+        obj = obj.dict()  # type: ignore
     except AttributeError:
         obj = dict(obj)
     try:
         # pylint: disable=E1123  # unexpected-keyword-arg (sort_dicts)
-        s = pformat(obj, indent=indent, sort_dicts=False)[1:-1]
+        s = pformat(obj, indent=indent, sort_dicts=False)[1:-1]  # type: ignore
     except TypeError:
         # Option 'sort_dicts' only available in Python3.8+
         s = pformat(dict(obj), indent=indent)[1:-1]
@@ -54,7 +56,7 @@ def merge_dicts(
     rec_seqs: bool = True,
     overwrite_seqs: bool = False,
     overwrite_seq_dicts: bool = False,
-) -> Dict[Any, Any]:
+) -> dict[Any, Any]:
     """Merge multiple dicts recursively.
 
     Args:
@@ -100,7 +102,7 @@ def merge_dicts(
                 + "\n".join(map(str, seqs))
             )
         seq_len = next(iter(seq_lens))
-        merged_seq: List[Any] = []
+        merged_seq: list[Any] = []
         for idx in range(seq_len):
             elements = [seq[idx] for seq in seqs]
             is_map_lst = [isinstance(seq[idx], Mapping) for seq in seqs]
@@ -124,8 +126,8 @@ def merge_dicts(
                 merged_seq.append(elements[-1])
         return cls(merged_seq)  # type: ignore
 
-    merged: Dict[Any, Any] = {}
-    seq_keys: List[str] = []
+    merged: dict[Any, Any] = {}
+    seq_keys: list[str] = []
     for dict_ in dicts:
         for key, val in dict_.items():
             if isinstance(val, Mapping):
@@ -151,13 +153,13 @@ def merge_dicts(
 # pylint: disable=R0912  # too-many-branches
 def compress_multival_dicts(
     dcts: Sequence[Mapping[str, Any]],
-    cls_seq: Type[Union[List[Any], Tuple[Any, ...]]] = list,
+    cls_seq: Type[Union[list[Any], tuple[Any, ...]]] = list,
     *,
     dedup: bool = True,
     skip_compr: bool = False,
     skip_compr_keys: Optional[Collection[str]] = None,
     expect_equal: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Compress multiple dicts with the same keys into one multi-value dict.
 
     For each key, if all values are the same, keep only that value. If the
@@ -239,7 +241,7 @@ def decompress_multival_dict(
     f_expand: Optional[Callable[[Any], bool]] = None,
     flatten: bool = False,
     unexpandable_ok: bool = True,
-) -> List[Mapping[str, Any]]:
+) -> list[Mapping[str, Any]]:
     """Combine dict with some nested list values into object-value dicts.
 
     Args:
@@ -317,7 +319,7 @@ def _dict_mult_vals_product(
     select: Optional[Collection[str]],
     skip: Optional[Collection[str]],
     unexpandable_ok: bool,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     def select_key(key: str) -> bool:
         """Check whether to select a key."""
         if select is None:
@@ -337,8 +339,8 @@ def _dict_mult_vals_product(
             return isinstance(val, cls_expand)
         return any(isinstance(val, t) for t in cls_expand)
 
-    keys: List[str] = []
-    vals: List[Any] = []
+    keys: list[str] = []
+    vals: list[Any] = []
     for key, val in dct.items():
         if (
             not unexpandable_ok
@@ -355,15 +357,17 @@ def _dict_mult_vals_product(
     return [dict(zip(keys, vals_i)) for vals_i in itertools.product(*vals)]
 
 
-def nested_dict_set(dct, keys, val):
+def nested_dict_set(
+    dct: MutableMapping[Any, Any], keys: Sequence[Hashable], val: Any
+) -> None:
     """Set a value in a nested dict, creating subdicts if necessary.
 
     Args:
-        dct (dict): Dictionary.
+        dct: Dictionary.
 
-        keys (list[<key>]): List of keys.
+        keys: List of keys.
 
-        val (object): Value.
+        val: Value.
 
     """
     parent = dct
@@ -377,30 +381,97 @@ def nested_dict_set(dct, keys, val):
             parent[key] = val
 
 
+@overload
+def flatten_nested_dict(
+    dct: Mapping[Hashable, Any],
+    *,
+    return_paths: Literal[False] = False,
+    return_depths: Literal[False] = False,
+    tie_breaker: Optional[Callable] = None,
+) -> dict[Hashable, Any]:
+    ...
+
+
+@overload
+def flatten_nested_dict(
+    dct: Mapping[Hashable, Any],
+    *,
+    return_paths: Literal[True],
+    return_depths: Literal[False] = False,
+    tie_breaker: Optional[Callable] = None,
+) -> tuple[dict[Hashable, Any], dict[Hashable, tuple[Hashable]]]:
+    ...
+
+
+@overload
+def flatten_nested_dict(
+    dct: Mapping[Hashable, Any],
+    *,
+    return_paths: Literal[False] = False,
+    return_depths: Literal[True],
+    tie_breaker: Optional[Callable] = None,
+) -> tuple[dict[Hashable, Any], dict[Hashable, int]]:
+    ...
+
+
+@overload
+def flatten_nested_dict(
+    dct: Mapping[Hashable, Any],
+    *,
+    return_paths: Literal[True],
+    return_depths: Literal[True],
+    tie_breaker: Optional[Callable] = None,
+) -> tuple[
+    dict[Hashable, Any],
+    dict[Hashable, tuple[Hashable, ...]],
+    dict[Hashable, int],
+]:
+    ...
+
+
 def flatten_nested_dict(
     dct, *, return_paths=False, return_depths=False, tie_breaker=None
 ):
     """Flatten a nested dict by updating inward-out.
 
     Args:
-        dct (dict): Nested dict.
+        dct: Nested dict.
 
-        return_paths (bool, optional): Whether to return the key path of each
-            value in the nested dicts. If true, the values and paths are
-            returned as separate dicts in a named tuple (as "values" and
-            "paths", respectively). Defaults to False.
+        return_paths (optional): Whether to return the key path of each value in
+            the nested dicts. If true, the values and paths are returned as
+            separate dicts in a named tuple as "values" and "paths",
+            respectively.
 
-        return_depths (bool, optional): Whether to return the nesting depth of
-            each value in the nested dicts. If true, the values and depths are
-            returned as separate dicts in a named tuple (as "values" and
-            "depths", respectively). Defaults to False.
+        return_depths (optional): Whether to return the nesting depth of each
+            value in the nested dicts. If true, the values and depths are
+            returned as separate dicts in a named tuple as "values" and
+            "depths", respectively.
 
-        tie_breaker (callable, optional): Function to determine which of two
-            values with the same key at the same nesting depth has precedence.
-            If omitted, an exception is raised in case of identical keys at the
-            same nesting depth. Defaults to None.
+        tie_breaker (optional): Function to determine which of two values with
+            the same key at the same nesting depth has precedence. If omitted,
+            an exception is raised in case of identical keys at the same nesting
+            depth. (This is currently not implemented!)
 
     """
+
+    def _merge_children(children, tie_breaker):
+        flat = {}
+        for child in children:
+            for key, val in child.items():
+                if key in flat:
+                    val_flat = flat[key]
+                    if val_flat["depth"] > val["depth"]:
+                        continue
+                    elif val_flat["depth"] == val["depth"]:
+                        if tie_breaker is None:
+                            raise KeyConflictError(
+                                f"key conflict at depth {val_flat['depth']}: {key}"
+                            )
+                        raise NotImplementedError(
+                            f"tie_breaker is not None: {tie_breaker}"
+                        )
+                flat[key] = val
+        return flat
 
     def run_rec(dct, *, curr_depth=0):
         def collect_children(dct):
@@ -420,38 +491,25 @@ def flatten_nested_dict(
 
     flat = run_rec(dct)
 
-    values, paths, depths = {}, {}, {}
+    values: dict[Hashable, Any] = {}
+    paths: dict[Hashable, tuple[Hashable, ...]] = {}
+    depths: dict[Hashable, int] = {}
     for key, val in flat.items():
         values[key] = val["value"]
         paths[key] = val["path"]
         depths[key] = val["depth"]
 
     if return_paths and return_depths:
-        return namedtuple("result", "values paths depths")(values, paths, depths)
+        result1 = namedtuple("result1", "values paths depths")
+        return result1(values, paths, depths)
     elif return_paths:
-        return namedtuple("result", "values paths")(values, paths)
+        result2 = namedtuple("result2", "values paths")
+        return result2(values, paths)
     elif return_depths:
-        return namedtuple("result", "values depths")(values, depths)
+        result3 = namedtuple("result3", "values depths")
+        return result3(values, depths)
     else:
         return values
-
-
-def _merge_children(children, tie_breaker):
-    flat = {}
-    for child in children:
-        for key, val in child.items():
-            if key in flat:
-                val_flat = flat[key]
-                if val_flat["depth"] > val["depth"]:
-                    continue
-                elif val_flat["depth"] == val["depth"]:
-                    if tie_breaker is None:
-                        raise KeyConflictError(
-                            f"key conflict at depth {val_flat['depth']}: {key}"
-                        )
-                    raise NotImplementedError(f"tie_breaker is not None: {tie_breaker}")
-            flat[key] = val
-    return flat
 
 
 def linearize_nested_dict(dct, branch_end_criterion=None):
@@ -512,8 +570,8 @@ class NestedDictLinearizer:
         return linearize_subdicts(*separate_subdicts(dct))
 
     def _apply_branch_end_criterion(
-        self, dcts: List[Dict[str, Any]], criterion: Callable[[str], bool]
-    ) -> List[Dict[str, Any]]:
+        self, dcts: list[dict[str, Any]], criterion: Callable[[str], bool]
+    ) -> list[dict[str, Any]]:
         """Create a sub-branch copy up to each subdict key matching the criterion.
 
         The criterion is given by ``criterion`` and may be a check whether
@@ -527,10 +585,10 @@ class NestedDictLinearizer:
 
         @dc.dataclass
         class _State:
-            subdct: Dict[str, Any]
+            subdct: dict[str, Any]
             curr_key: Optional[str] = None
-            active: Dict[str, Any] = dc.field(default_factory=dict)
-            head: Optional[Dict[str, Any]] = None
+            active: dict[str, Any] = dc.field(default_factory=dict)
+            head: Optional[dict[str, Any]] = None
 
             def __post_init__(self):
                 if self.head is None:
@@ -559,7 +617,7 @@ class NestedDictLinearizer:
                     state.subdct = val
                     _core_rec(result, dct, state)
 
-        result: List[Dict[str, Any]] = []
+        result: list[dict[str, Any]] = []
         for dct in dcts:
             _core_rec(result, dct)
 
@@ -647,7 +705,7 @@ def recursive_update(
     dct1: MutableMapping[Any, Any],
     dct2: Mapping[Any, Any],
     inplace: Literal[False] = False,
-) -> Dict[Any, Any]:
+) -> dict[Any, Any]:
     ...
 
 
@@ -673,33 +731,38 @@ def recursive_update(dct1, dct2, inplace=False):
     return dct1
 
 
-def nested_dict_resolve_single_star_wildcards(dct):
+def nested_dict_resolve_single_star_wildcards(
+    dct: Mapping[Hashable, Any]
+) -> dict[Hashable, Any]:
     """Update regular subdicts with single-star wildcard subdicts.
 
     Args:
         dct (Dict[str, Any]): Nested dict.
 
     """
-    dct = deepcopy(dct)
+    result = dict(deepcopy(dct))
 
     wildcards = {}
-    for key, val in dct.copy().items():
+    for key, val in result.copy().items():
         if key == "*":
-            wildcards[key] = dct.pop(key)
+            wildcards[key] = result.pop(key)
 
     for wild_val in wildcards.values():
-        for key, val in dct.items():
-            if isinstance(val, MutableMapping):
-                recursive_update(val, wild_val, inplace=True)
+        for key, val in result.items():
+            if isinstance(val, Mapping):
+                result[key] = dict(val)
+                recursive_update(result[key], wild_val, inplace=True)
 
-    for key, val in dct.items():
+    for key, val in result.items():
         if isinstance(val, Mapping):
-            dct[key] = nested_dict_resolve_single_star_wildcards(val)
+            result[key] = nested_dict_resolve_single_star_wildcards(dict(val))
 
-    return dct
+    return result
 
 
-def nested_dict_resolve_double_star_wildcards(dct, criterion=None):
+def nested_dict_resolve_double_star_wildcards(
+    dct: Mapping[Hashable, Any], criterion: Optional[Callable[[Hashable], bool]] = None
+) -> dict[Hashable, Any]:
     """Update regular subdicts with double-star wildcard subdicts.
 
     Args:
@@ -710,7 +773,7 @@ def nested_dict_resolve_double_star_wildcards(dct, criterion=None):
             and returns True or False.
 
     """
-    dct = deepcopy(dct)
+    result = dict(deepcopy(dct))
 
     def _apply_double_star(dct, wild_val, key=None):
         subdcts = {}
@@ -727,21 +790,23 @@ def nested_dict_resolve_double_star_wildcards(dct, criterion=None):
                 recursive_update(dct, wild_val, inplace=True)
 
     wildcards = {}
-    for key, val in dct.copy().items():
+    for key, val in result.copy().items():
         if key == "**":
-            wildcards[key] = dct.pop(key)
+            wildcards[key] = result.pop(key)
 
     for wild_val in wildcards.values():
-        _apply_double_star(dct, wild_val)
+        _apply_double_star(result, wild_val)
 
-    for key, val in dct.items():
+    for key, val in result.items():
         if isinstance(val, Mapping):
-            dct[key] = nested_dict_resolve_double_star_wildcards(val, criterion)
+            result[key] = nested_dict_resolve_double_star_wildcards(val, criterion)
 
-    return dct
+    return result
 
 
-def print_dict_skeleton(dct, s="  ", _depth=0):
+def print_dict_skeleton(
+    dct: Mapping[Hashable, Any], s: str = "  ", _depth: int = 0
+) -> None:
     for key, val in dct.items():
         if isinstance(val, Mapping):
             print(f"{s * _depth}{key}")

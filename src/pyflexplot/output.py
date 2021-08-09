@@ -64,6 +64,7 @@ class FilePathFormatter:
         log(dbg=f"formatted path '{path}'")
         return path
 
+    # pylint: disable=R0914  # tyy-many-locals (>15)
     def _format_template(
         self,
         template: str,
@@ -131,6 +132,20 @@ class FilePathFormatter:
         time_steps_fmtd: List[str] = self._format_time_steps(
             time_steps, setup.files.output_time_format
         )
+        time_idx: Optional[int] = None
+        time_step: Optional[str] = None
+        time_idx_seq: Optional[Sequence[int]] = None
+        time_step_seq: Optional[Sequence[str]] = None
+        if (
+            setup.layout.plot_type == "multipanel"
+            and setup.layout.multipanel_param == "time"
+        ):
+            time_idx_seq = setup.panels.collect("dimensions.time")
+            time_step_seq = [time_steps_fmtd[time_idx_i] for time_idx_i in time_idx_seq]
+        else:
+            time_idx = setup.panels.collect_equal("dimensions.time")
+            assert time_idx is not None  # mypy
+            time_step = time_steps_fmtd[time_idx]
 
         # Format the file path
         # Don't use str.format in order to handle multival elements
@@ -140,16 +155,16 @@ class FilePathFormatter:
             "ens_variable": ens_variable,
             "plot_variable": plot_variable,
             "lang": setup.panels.collect_equal("lang"),
-            "level": setup.panels.collect_equal("dimensions").level,
+            "level": setup.panels.collect_equal("dimensions.level"),
             "model": setup.model.name,
-            "nageclass": setup.panels.collect_equal("dimensions").nageclass,
+            "nageclass": setup.panels.collect_equal("dimensions.nageclass"),
             "plot_type": setup.layout.plot_type,
-            "release": setup.panels.collect_equal("dimensions").release,
+            "release": setup.panels.collect_equal("dimensions.release"),
             "release_site": release_site,
             "release_start": release_start_fmtd,
-            "species_id": setup.panels.collect_equal("dimensions").species_id,
-            "time_idx": setup.panels.collect_equal("dimensions").time,
-            "time_step": time_steps_fmtd[setup.panels.collect_equal("dimensions").time],
+            "species_id": setup.panels.collect_equal("dimensions.species_id"),
+            "time_idx": time_idx if time_idx is not None else time_idx_seq,
+            "time_step": time_step if time_step is not None else time_step_seq,
         }
         return self._replace_format_keys(template, kwargs)
 

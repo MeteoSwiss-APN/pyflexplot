@@ -202,6 +202,7 @@ class MapAxes:
         **kwargs,
     ) -> Sequence[Line2D]:
         """Add a marker at a location in natural coordinates."""
+        # pylint: disable=E0633  # unpacking-non-sequence
         p_lon, p_lat = self.trans.geo_to_data(p_lon, p_lat)
         if zorder is None:
             zorder = self.zorder["marker"]
@@ -413,6 +414,7 @@ class MapAxes:
             """Check if a point is inside the domain."""
             px_geo: float = city.geometry.x
             py_geo: float = city.geometry.y
+            # pylint: disable=E0633  # unpacking-non-sequence
             px_ax, py_ax = self.trans.geo_to_axes(px_geo, py_geo)
             in_domain = 0.0 <= px_ax <= 1.0 and 0.0 <= py_ax <= 1.0
             if not in_domain:

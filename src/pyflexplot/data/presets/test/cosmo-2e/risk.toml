@@ -1,0 +1,79 @@
+# PyFlexPlot setup file to create ensemble plots.
+
+[_base]
+# Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
+infile = "data/cosmo-2e/2021041100/{ens_member:03d}/grid_conc_20210411030000_MUE.nc"
+ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+# ens_member_id = [0, 4, 8, 12, 16, 20]
+outfile = "cosmo-2e_risk-like_{ens_variable}_{plot_variable}_{release_site}_{domain}_{lang}_ts-{time_idx:02d}_{time_step}.png"
+model = "COSMO-2E"
+combine_species = true
+species_id = 1
+time = -1
+
+[_base._concentration]
+plot_variable = "concentration"
+level = 0
+integrate = true
+
+[_base._deposition]
+integrate = true
+plot_variable = "tot_deposition"
+
+# [_base._concentration."_probability+"]
+# ens_variable = "probability"
+# ens_param_thr = 0
+
+# [_base._deposition."_probability+"]
+# ens_variable = "probability"
+# ens_param_thr = 0
+
+[_base._concentration._percentile]
+ens_variable = "percentile"
+color_style = "mono"
+
+[_base._deposition._percentile]
+ens_variable = "percentile"
+color_style = "mono"
+
+# [_base._concentration._percentile."_90+"]
+# ens_param_pctl = 90
+
+# [_base._deposition._percentile."_10+"]
+# ens_param_pctl = 10
+# [_base._deposition._percentile."_30+"]
+# ens_param_pctl = 30
+# [_base._deposition._percentile."_50+"]
+# ens_param_pctl = 50
+# [_base._deposition._percentile."_70+"]
+# ens_param_pctl = 70
+# [_base._deposition._percentile."_90+"]
+# ens_param_pctl = 90
+
+[_base._concentration._percentile."_multipanel+"]
+plot_type = "multipanel"
+multipanel_param = "ens_param_pctl"
+# ens_param_pctl = [10, 50, 70, 90]
+ens_param_pctl = [5, 50, 75, 95]
+
+[_base._deposition._percentile."_multipanel+"]
+plot_type = "multipanel"
+multipanel_param = "ens_param_pctl"
+# ens_param_pctl = [10, 50, 70, 90]
+ens_param_pctl = [5, 50, 75, 95]
+
+# ["**"._full.en]
+# domain = "full"
+# lang = "en"
+
+["**"._full.de]
+domain = "full"
+lang = "de"
+
+# ["**"._ch.en]
+# domain = "ch"
+# lang = "en"
+
+# ["**"._ch.de]
+# domain = "ch"
+# lang = "de"

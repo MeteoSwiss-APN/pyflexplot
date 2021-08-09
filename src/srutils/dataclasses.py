@@ -1,4 +1,6 @@
 """Dataclasses utilities."""
+from __future__ import annotations
+
 # Standard library
 import dataclasses as dc
 from datetime import datetime
@@ -6,13 +8,10 @@ from datetime import timedelta
 from typing import Any
 from typing import Callable
 from typing import Collection
-from typing import Dict
 from typing import get_type_hints
 from typing import Iterable
-from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
 from typing import Type
 from typing import TypeVar
 from typing import Union
@@ -29,7 +28,7 @@ from srutils.str import split_outside_parens
 DataclassT = TypeVar("DataclassT")
 
 
-def asdict(obj: Any, *, shallow: bool = False) -> Dict[str, Any]:
+def asdict(obj: Any, *, shallow: bool = False) -> dict[str, Any]:
     """Like ``dataclasses.asdict`` but with option for shallow copy."""
     if shallow:
         return asdict_shallow(obj)
@@ -46,7 +45,7 @@ def asdict(obj: Any, *, shallow: bool = False) -> Dict[str, Any]:
         ) from e
 
 
-def asdict_shallow(obj: Any) -> Dict[str, Any]:
+def asdict_shallow(obj: Any) -> dict[str, Any]:
     """Like ``dateclasses.asdict`` but with shallow instead of deep copy."""
     try:
         fields = obj.__dataclass_fields__
@@ -56,7 +55,7 @@ def asdict_shallow(obj: Any) -> Dict[str, Any]:
         return {name: getattr(obj, name) for name in fields.keys()}
 
 
-def get_dataclass_fields(obj: DataclassT) -> List[str]:
+def get_dataclass_fields(obj: DataclassT) -> list[str]:
     if not dc.is_dataclass(obj):
         raise ValueError(f"expected dataclass, not {type(obj).__name__}: {obj}")
     # Use getattr to prevent mypy from complaining
@@ -76,7 +75,7 @@ def dataclass_merge(
     for obj in objs1:
         if not isinstance(obj, cls):
             raise ValueError(f"classes differ: {cls.__name__} != {type(obj).__name__}")
-    kwargs: Dict[str, Any] = {}
+    kwargs: dict[str, Any] = {}
     for param in get_dataclass_fields(cls):
         if dc.is_dataclass(type(getattr(obj0, param))):
             kwargs[param] = dataclass_merge(
@@ -99,7 +98,7 @@ def dataclass_repr(
     fmt: Callable[[Any], str] = repr,
 ) -> str:
     """Create string representation with one argument per line."""
-    body: List[str] = []
+    body: list[str] = []
     for field in get_dataclass_fields(obj):
         value = getattr(obj, field)
         body.append(f"{field}={fmt(value)},")
@@ -151,7 +150,7 @@ def cast_value(
     *,
     auto_wrap: bool = False,
     bool_mode: str = "native",
-    datetime_fmt: Union[str, Tuple[str, ...]] = "auto",
+    datetime_fmt: Union[str, tuple[str, ...]] = "auto",
     timedelta_unit: str = "days",
     unpack_str: bool = True,
 ) -> Any:
@@ -201,7 +200,7 @@ def cast_value(
         )
 
     # Bundle keyword arguments to pass to recursive calls
-    kwargs: Dict[str, Any] = {
+    kwargs: dict[str, Any] = {
         "auto_wrap": auto_wrap,
         "bool_mode": bool_mode,
         "datetime_fmt": datetime_fmt,

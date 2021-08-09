@@ -47,6 +47,7 @@ def get_var_name_ref(dimensions: Dimensions, var_names_ref: str):
 class Config:
     var_names_ref: List[str]
     setup_dct: Dict[str, Any]
+    n_panels: int = 1
     derived_setup_params: List[Dict[str, Any]] = dc.field(default_factory=list)
     scale_fld_ref: Optional[float] = 1.0
 
@@ -531,6 +532,34 @@ def test_single(datadir, config):  # noqa:F811
                 ],
             },
         ),
+        Config(  # [config7]
+            var_names_ref=["spec001"],
+            setup_dct={
+                "files": {
+                    "input": datafilename4,
+                    "output": "dummy.png",
+                },
+                "model": {
+                    "name": "COSMO-1E",
+                },
+                "layout": {
+                    "plot_type": "multipanel",
+                    "multipanel_param": "time",
+                },
+                "panels": {
+                    "plot_variable": "concentration",
+                    "integrate": False,
+                    "dimensions": {
+                        "level": 0,
+                        "nageclass": 0,
+                        "release": 0,
+                        "species_id": 1,
+                        "time": [2, 4, 6, 8],
+                    },
+                },
+            },
+            n_panels=4,
+        ),
     ],
 )
 def test_multiple(datadir, config):  # noqa:F811
@@ -557,17 +586,17 @@ def test_multiple(datadir, config):  # noqa:F811
         )
         assert var_setups.dicts() == var_setups_dicts_pre
         assert len(field_groups) == 1
-        assert len(field_groups[0]) == 1
+        assert len(field_groups[0]) == config.n_panels
         fld = np.array(
             [field.fld for field_group in field_groups for field in field_group]
         )
-        assert fld.shape[0] == 1
-        fld = fld[0]
+        assert fld.shape[0] == config.n_panels
 
         # Read reference fields
-        fld_ref = None
+        fld_ref_lst = []
         for var_setup in var_setups:
             for panel in var_setup.panels:
+                fld_ref_lst.append(None)
                 for dimensions in panel.dimensions.decompress():
                     flds_ref_i = [
                         read_flexpart_field(
@@ -580,10 +609,11 @@ def test_multiple(datadir, config):  # noqa:F811
                         )
                     ]
                     fld_ref_i = np.nansum(flds_ref_i, axis=0)
-                    if fld_ref is None:
-                        fld_ref = fld_ref_i
+                    if fld_ref_lst[-1] is None:
+                        fld_ref_lst[-1] = fld_ref_i
                     else:
-                        fld_ref += fld_ref_i
+                        fld_ref_lst[-1] += fld_ref_i
+        fld_ref = np.array(fld_ref_lst)
         fld_ref *= config.scale_fld_ref
 
         assert fld.shape == fld_ref.shape

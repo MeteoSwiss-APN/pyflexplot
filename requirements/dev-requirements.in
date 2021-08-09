@@ -16,3 +16,4 @@ rstcheck
 sphinx
 sphinx-autobuild
 tox
+types-toml

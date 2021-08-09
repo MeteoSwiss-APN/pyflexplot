@@ -1,0 +1,32 @@
+# PyFlexPlot setup file to plot multiple time steps in one plot.
+
+[_base]
+# Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
+infile = "data/cosmo-2e/2021041100/000/grid_conc_20210411030000_MUE.nc"
+outfile = "{model}_{plot_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
+model = "COSMO-2E"
+plot_type = "multipanel"
+multipanel_param = "time"
+time = [2, 4, 8, 12]
+species_id = "*"
+combine_species = true
+
+[_base."_concentration+"]
+plot_variable = "concentration"
+level = 0
+
+# ["**"._full.de]
+# domain = "full"
+# lang = "de"
+
+["**"._full.en]
+domain = "full"
+lang = "en"
+
+# ["**"._ch.de]
+# domain = "ch"
+# lang = "de"
+
+# ["**"._ch.en]
+# domain = "ch"
+# lang = "en"

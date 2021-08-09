@@ -384,21 +384,40 @@ class InputFileEnsemble:
 
         # Create one FieldGroup per plot (possibly with multiple outfiles)
         field_groups: List[FieldGroup] = []
-        for time_idx, field_lst_i in field_lst_by_ts.items():
-            # Derive plot setup for given time step
-            panel_params = {"dimensions": {"time": time_idx}}
-            plot_setup_i = plot_setup.derive(
-                {"panels": [panel_params] * len(plot_setup.panels)}
-            )
+        if (
+            plot_setup.layout.plot_type == "multipanel"
+            and plot_setup.layout.multipanel_param == "time"
+        ):
             group_attrs = FieldGroupAttrs(
-                raw_path=plot_setup_i.files.input,
+                raw_path=plot_setup.files.input,
                 paths=self.public_paths,
                 ens_member_ids=plot_setup.model.ens_member_id,
             )
+            field_lst: List[Field] = [
+                field
+                for panel_setup in plot_setup.panels
+                for field in field_lst_by_ts[panel_setup.dimensions.time]
+            ]
             field_group = FieldGroup(
-                field_lst_i, plot_setup=plot_setup_i, attrs=group_attrs
+                field_lst, plot_setup=plot_setup.copy(), attrs=group_attrs
             )
             field_groups.append(field_group)
+        else:
+            for time_idx, field_lst_i in field_lst_by_ts.items():
+                # Derive plot setup for given time step
+                panel_params = {"dimensions": {"time": time_idx}}
+                plot_setup_i = plot_setup.derive(
+                    {"panels": [panel_params] * len(plot_setup.panels)}
+                )
+                group_attrs = FieldGroupAttrs(
+                    raw_path=plot_setup_i.files.input,
+                    paths=self.public_paths,
+                    ens_member_ids=plot_setup.model.ens_member_id,
+                )
+                field_group = FieldGroup(
+                    field_lst_i, plot_setup=plot_setup_i, attrs=group_attrs
+                )
+                field_groups.append(field_group)
         return field_groups
 
     def _read_member_fields_over_time(

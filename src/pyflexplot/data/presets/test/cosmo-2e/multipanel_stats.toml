@@ -3,20 +3,21 @@
 [_base]
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
 infile = "data/cosmo-2e/2021041100/{ens_member:03d}/grid_conc_20210411030000_MUE.nc"
-# ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
+ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+# ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
 model = "COSMO-2E"
-time = 6
 plot_type = "multipanel"
 multipanel_param = "ens_variable"
 outfile = "cosmo-2e_ens_stats_{plot_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
 ens_variable = ["minimum", "maximum", "mean", "median"]
-species_id = [1, 2]
+species_id = "*"
 combine_species = true
+time = -1
 
 # [_base."_concentration+"]
 # plot_variable = "concentration"
 # level = 0
+# time = 12
 
 [_base."_total_deposition+"]
 plot_variable = "tot_deposition"

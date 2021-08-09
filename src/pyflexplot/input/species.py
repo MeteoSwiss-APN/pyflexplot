@@ -1,6 +1,7 @@
 """Chemical species and their attributes."""
 # Standard library
 import dataclasses as dc
+from dataclasses import dataclass  # pylint doesn't understand dc.dataclass
 from typing import Any
 from typing import cast
 from typing import Dict
@@ -15,7 +16,7 @@ from typing import Union
 import numpy as np
 
 
-@dc.dataclass
+@dataclass
 class SpeciesAttribute:
     """Attribute of a chemical species."""
 
@@ -41,7 +42,7 @@ class SpeciesAttribute:
         return cls(value, unit)
 
 
-@dc.dataclass
+@dataclass
 # pylint: disable=R0902  # too-many-instance-attributes
 class Species:
     """Chemical species."""

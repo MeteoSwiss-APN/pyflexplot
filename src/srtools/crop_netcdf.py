@@ -1,9 +1,13 @@
 """Crop fields in a NetCDF file."""
+from __future__ import annotations
+
 # Standard library
 import dataclasses as dc
 import functools
 import sys
+from typing import Any
 from typing import Optional
+from typing import Union
 
 # Third-party
 import click
@@ -20,7 +24,7 @@ class Setup:
     lon_slice: slice
     set_const: Optional[float]
 
-    def dict(self):
+    def dict(self) -> dict[str, Any]:
         return dc.asdict(self)
 
 
@@ -75,7 +79,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     type=float,
     default=None,
 )
-def main(in_file_path, out_file_path, **kwargs_setup):
+def main(in_file_path: str, out_file_path: str, **kwargs_setup: Any) -> None:
     kwargs_setup["lat_slice"] = slice(*kwargs_setup["lat_slice"])
     kwargs_setup["lon_slice"] = slice(*kwargs_setup["lon_slice"])
     setup = Setup(**kwargs_setup)
@@ -93,13 +97,13 @@ def main(in_file_path, out_file_path, **kwargs_setup):
         transfer_variables(fi, fo, setup)
 
 
-def transfer_ncattrs(fi, fo):
+def transfer_ncattrs(fi: nc4.Dataset, fo: nc4.Dataset) -> None:
     """Transfer global attributes from in- to outfile."""
     ncattrs = {ncattr: fi.getncattr(ncattr) for ncattr in fi.ncattrs()}
     fo.setncatts(ncattrs)
 
 
-def transfer_dimensions(fi, fo, setup):
+def transfer_dimensions(fi: nc4.Dataset, fo: nc4.Dataset, setup: Setup) -> None:
     """Transfer all dimensions from in- to outfile."""
     if setup.lat_name not in fi.dimensions:
         raise Exception(f"dimension '{setup.lat_name}' not among {list(fi.dimensions)}")
@@ -109,7 +113,9 @@ def transfer_dimensions(fi, fo, setup):
         transfer_dimension(fi, fo, dim, setup)
 
 
-def transfer_dimension(fi, fo, dim, setup):
+def transfer_dimension(
+    fi: nc4.Dataset, fo: nc4.Dataset, dim: nc4.Dimension, setup: Setup
+) -> None:
     """Transfer single dimension from in- to outfile."""
     # Determine dimension size
     if dim.isunlimited():
@@ -138,7 +144,9 @@ def transfer_dimension(fi, fo, dim, setup):
         transfer_variable(fo, var, setup)
 
 
-def len_slice(arg, n):
+def len_slice(
+    arg: Union[slice, tuple[Optional[int], Optional[int], Optional[int]]], n: int
+) -> int:
     """Count number of elements selected by slice."""
     if not isinstance(arg, slice):
         if arg == (None, None, None):
@@ -147,14 +155,14 @@ def len_slice(arg, n):
     return len(range(arg.start, arg.stop, arg.step))
 
 
-def transfer_variables(fi, fo, setup):
+def transfer_variables(fi: nc4.Dataset, fo: nc4.Dataset, setup: Setup) -> None:
     """Transfer all regular variables from in- to outfile."""
     for var in fi.variables.values():
         if var.name not in fi.dimensions:
             transfer_variable(fo, var, setup)
 
 
-def transfer_variable(fo, var, setup):
+def transfer_variable(fo: nc4.Dataset, var: nc4.Dataset, setup: Setup) -> None:
     """Transfer single variable from in- to outfile."""
     # Create variable
     new_var = fo.createVariable(

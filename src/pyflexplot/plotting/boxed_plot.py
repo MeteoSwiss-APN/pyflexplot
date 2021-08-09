@@ -245,6 +245,8 @@ def _add_panel_label(
         width = 0.10
     elif multipanel_param == "ens_variable":
         width = 0.20
+    elif multipanel_param == "time":
+        width = 0.42
     else:
         raise NotImplementedError(f"label for multipanel param '{multipanel_param}'")
     zorder = ax.zorder["frames"]

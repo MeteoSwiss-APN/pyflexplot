@@ -137,7 +137,7 @@ class Test_Create:
 
             class Test_Time:
                 params = {
-                    "plot_variable": "concentration",
+                    "plot_variable": "tot_deposition",
                     "combine_species": True,
                     "dimensions": {
                         "species_id": (1, 2, 3, 4),
@@ -145,9 +145,9 @@ class Test_Create:
                     },
                 }
 
-                def test_params_dict_time(self):
+                def test_params_dict(self):
                     group = PlotPanelSetupGroup.create(
-                        self.params, multipanel_param="time"
+                        self.params, multipanel_param="dimensions.time"
                     )
                     res = group.dicts()
                     sol = [
@@ -165,7 +165,7 @@ class Test_Create:
 
                 def test_params_list_vs_dict(self):
                     group_dict = PlotPanelSetupGroup.create(
-                        self.params, multipanel_param="dimensions.time"
+                        self.params, multipanel_param="time"
                     )
                     params_lst = [
                         merge_dicts(
@@ -176,7 +176,7 @@ class Test_Create:
                         for val in self.params["dimensions"]["time"]
                     ]
                     group_list = PlotPanelSetupGroup.create(
-                        params_lst, multipanel_param="time"
+                        params_lst, multipanel_param="dimensions.time"
                     )
                     res = group_list.dicts()
                     sol = group_dict.dicts()

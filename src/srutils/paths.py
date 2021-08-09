@@ -1,7 +1,8 @@
 """Manipulate paths."""
+from __future__ import annotations
+
 # Standard library
 import re
-from typing import List
 from typing import Optional
 from typing import Sequence
 
@@ -27,7 +28,7 @@ class PathsOrganizer:
         self._suffix = f".{suffix.lstrip('.')}"
         self._dup_sep = str(dup_sep)
 
-    def group_related(self, paths: Sequence[str]) -> List[List[str]]:
+    def group_related(self, paths: Sequence[str]) -> list[list[str]]:
         """Group paths by shared base name.
 
         Args:
@@ -43,7 +44,7 @@ class PathsOrganizer:
             f"{re.escape(self._dup_sep)}[0-9]+{re.escape(self._suffix)}$"
         )
         paths = list(paths)
-        grouped_pdf_paths: List[List[str]] = []
+        grouped_pdf_paths: list[list[str]] = []
         for path in list(paths):
             if path not in paths:
                 # Already handled
@@ -67,7 +68,7 @@ class PathsOrganizer:
             if len(group) > 1
         ]
 
-    def merge(self, paths: List[str]) -> str:
+    def merge(self, paths: list[str]) -> str:
         """Format paths with shared base in a compact way.
 
         Args:
@@ -80,7 +81,7 @@ class PathsOrganizer:
         # SR_TMP >
         return merged
 
-    def format_compact(self, paths: List[str], syntax="braces") -> str:
+    def format_compact(self, paths: list[str], syntax: str = "braces") -> str:
         """Format paths with shared base in a compact way.
 
         Args:
@@ -97,7 +98,7 @@ class PathsOrganizer:
             "bar.{,1,2}.x"
 
         """
-        idcs: List[int] = []
+        idcs: list[int] = []
         rx = re.compile(
             f"(?P<base>^.*?)({re.escape(self._dup_sep)}(?P<idx>[0-9]+))?"
             f"{re.escape(self._suffix)}$"

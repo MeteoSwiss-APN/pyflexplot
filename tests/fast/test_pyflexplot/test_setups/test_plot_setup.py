@@ -74,7 +74,7 @@ class Test_Create:
         with pytest.raises((ValueError, InvalidParameterValueError)):
             PlotSetup.create(params)
 
-    def test_multipanel(self):
+    def test_multipanel_ens_variable(self):
         params = {
             "layout": {
                 "plot_type": "multipanel",
@@ -91,6 +91,30 @@ class Test_Create:
                 {"ens_variable": "maximum"},
                 {"ens_variable": "mean"},
                 {"ens_variable": "median"},
+            ]
+        }
+        check_is_sub_element(
+            name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
+        )
+        self.check_hashable(setup)
+
+    def test_multipanel_time(self):
+        params = {
+            "layout": {
+                "plot_type": "multipanel",
+                "multipanel_param": "time",
+            },
+            "panels": {"dimensions": {"time": [0, 3, 6, 9]}},
+        }
+        params = merge_dicts(self.base_params, params, overwrite_seqs=True)
+        setup = PlotSetup.create(params)
+        res = setup.dict()
+        sol = {
+            "panels": [
+                {"dimensions": {"time": 0}},
+                {"dimensions": {"time": 3}},
+                {"dimensions": {"time": 6}},
+                {"dimensions": {"time": 9}},
             ]
         }
         check_is_sub_element(
@@ -118,7 +142,7 @@ class Test_Derive:
             name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
         )
 
-    def test_multipanel(self):
+    def test_multipanel_ens_variable(self):
         params = {
             "layout": {
                 "plot_type": "multipanel",
@@ -133,6 +157,28 @@ class Test_Derive:
                 {"ens_variable": "maximum"},
                 {"ens_variable": "mean"},
                 {"ens_variable": "median"},
+            ]
+        }
+        res = setup.dict()
+        check_is_sub_element(
+            name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
+        )
+
+    def test_multipanel_time(self):
+        params = {
+            "layout": {
+                "plot_type": "multipanel",
+                "multipanel_param": "time",
+            },
+            "panels": {"dimensions": {"time": [3, 6, 9, 12]}},
+        }
+        setup = DEFAULT_SETUP.derive(params)
+        sol = {
+            "panels": [
+                {"dimensions": {"time": 3}},
+                {"dimensions": {"time": 6}},
+                {"dimensions": {"time": 9}},
+                {"dimensions": {"time": 12}},
             ]
         }
         res = setup.dict()

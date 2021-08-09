@@ -1,12 +1,20 @@
 """Various utilities."""
+from __future__ import annotations
+
 # Standard library
 import functools
+from typing import Callable
+from typing import Optional
+from typing import Sequence
+from typing import Union
 
 
-def check_array_indices(shape, inds):
+def check_array_indices(
+    shape: tuple[int, ...], inds: Sequence[Union[int, slice]]
+) -> None:
     """Check that slicing indices are consistent with array shape."""
 
-    def inds2str(inds):
+    def inds2str(inds: Sequence[Union[int, slice]]) -> str:
         """Convert indices to string, turning slices into '::' etc."""
         strs = []
         for ind in inds:
@@ -39,7 +47,9 @@ def check_array_indices(shape, inds):
         )
 
 
-def group_kwargs(name, name_out=None, separator=None):
+def group_kwargs(
+    name: str, name_out: Optional[str] = None, separator: Optional[str] = None
+) -> Callable:
     """Collect all keyword arguments whose name starts with a prefix.
 
     All keyword arguments '<name>__foo', '<name>__bar', etc. are collected and
@@ -47,18 +57,18 @@ def group_kwargs(name, name_out=None, separator=None):
     argument '<name>'.
 
     Args:
-        name (str): Name of the group. Constitutes the prefix of the arguments
-            to be collected, separated from the latter by ``separator``.
+        name: Name of the group. Constitutes the prefix of the arguments to be
+            collected, separated from the latter by ``separator``.
 
-        name_out (str, optional): Name of the dictionary which the collected
+        name_out (optional): Name of the dictionary which the collected
             arguments are grouped into. Defaults to ``name``.
 
-        separator (str, optional): Separator between the prefixed ``name`` and
-            the argument. Defaults to '__'.
+        separator (optional): Separator between the prefixed ``name`` and the
+            argument.
 
     Usage example:
 
-        @collect_kwargs('test', 'kwargs_test')
+        @group_kwargs('test', 'kwargs_test')
         def test(arg1, kwargs_test):
             print(kwargs_test)
 
