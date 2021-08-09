@@ -463,9 +463,9 @@ test-check: ${_INSTALL_DEV}
 # .PHONY: docs #CMD Generate HTML documentation, including API docs.
 # docs: ${_INSTALL_DEV}
 # 	@echo -e "\n[make docs] generating HTML documentation"
-# 	\rm -f docs/{{ cookiecutter.project_slug }}.rst
+# 	\rm -f docs/pyflexplot.rst
 # 	\rm -f docs/modules.rst
-# 	${PREFIX}sphinx-apidoc -o docs/ src/{{ cookiecutter.project_slug }}
+# 	${PREFIX}sphinx-apidoc -o docs/ src/pyflexplot
 # 	$(MAKE) -C docs clean
 # 	$(MAKE) -C docs html
 # 	${browser} docs/_build/html/index.html

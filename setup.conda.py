@@ -23,11 +23,11 @@ def read_present_files(paths: Sequence[str]) -> str:
 
 description_files = [
     "README",
-    "README.rst",
     "README.md",
+    "README.rst",
     "HISTORY",
-    "HISTORY.rst",
     "HISTORY.md",
+    "HISTORY.rst",
 ]
 
 metadata = {
