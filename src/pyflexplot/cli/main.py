@@ -1,6 +1,6 @@
 """Main module of PyFlexPlot."""
 # Standard library
-import multiprocessing
+import multiprocessing as mp
 import os
 import time
 from copy import copy
@@ -97,7 +97,7 @@ def main(
     if num_procs == 1:
         all_out_file_paths = fct()
     else:
-        with multiprocessing.Pool(processes=num_procs) as pool:
+        with mp.Pool(processes=num_procs) as pool:
             all_out_file_paths = fct(pool)
 
     if merge_pdfs:
@@ -163,7 +163,7 @@ def create_all_plots(
     only: Optional[int],
     show_version: bool,
     tmp_dir: Optional[str],
-    pool: Optional[multiprocessing.pool.Pool] = None,
+    pool: Optional[mp.Pool] = None,
 ) -> List[str]:
     """Create plots input file(s) by input file(s)."""
     log(vbs="read fields and create plots")
@@ -318,7 +318,7 @@ def restrict_grouped_setups(
 
 
 def get_pid() -> int:
-    name = multiprocessing.current_process().name
+    name = mp.current_process().name
     if name == "MainProcess":
         return 0
     elif name.startswith("ForkPoolWorker-"):
@@ -340,7 +340,7 @@ class SharedIterationState:
         n_field_groups_i: int = -1,
     ) -> None:
         """Create an instance of ``SharedIterationState``."""
-        self._dict: Dict[str, Any] = multiprocessing.Manager().dict()
+        self._dict: Dict[str, Any] = mp.Manager().dict()
         self.n_plot_files_curr = n_plot_files_curr
         self.n_input_files = n_input_files
         self.i_input_file = i_input_file
