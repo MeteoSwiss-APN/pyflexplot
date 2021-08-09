@@ -20,8 +20,8 @@ export CONDA_DIR
 VENV_DIR = $(CONDA_DIR)/envs/$(VENV_NAME)#
 export VENV_DIR
 
-PREFIX_VENV = ${VENV_DIR}/bin/#
-export PREVIX_VENV
+PREFIX_VENV = $(shell conda run -n $(VENV_NAME) python -c 'import os, sys; print(os.path.dirname(sys.executable))')/#
+export PREFIX_VENV
 
 ifneq (${IGNORE_VENV}, 0)
 # Ignore virtual env
@@ -197,10 +197,10 @@ clean-test:
 
 .PHONY: clean-venv #CMD Remove virtual environment.
 clean-venv:
-ifeq ("$(wildcard $(VENV_DIR))","")
-	@echo -e "\n[make clean-venv] no conda virtual environment to remove at '${VENV_DIR}'"
+ifneq ($(shell conda list -n $(VENV_NAME) 2>/dev/null 1>&2; echo $$?),0)
+	@echo -e "\n[make clean-venv] no conda virtual environment '${VENV_NAME}' to remove"
 else
-	@echo -e "\n[make clean-venv] removing conda virtual environment at '${VENV_DIR}'"
+	@echo -e "\n[make clean-venv] removing conda virtual environment '${VENV_NAME}'"
 	conda env remove -y --name ${VENV_NAME}
 endif
 
@@ -238,10 +238,10 @@ ifeq (${IGNORE_VENV}, 0)
 	$(eval PREFIX = ${PREFIX_VENV})
 	@export PREFIX
 ifeq (${VIRTUAL_ENV},)
-ifneq ("$(wildcard $(VENV_DIR))","")
-	@echo -e "\n[make venv] conda virtual environment '${VENV_NAME}' already exists at '${VENV_DIR}'"
+ifneq ($(shell conda list -n $(VENV_NAME) 2>/dev/null 1>&2; echo $$?),0)
+	@echo -e "\n[make venv] conda virtual environment '${VENV_NAME}' already exists"
 else
-	@echo -e "\n[make venv] creating conda virtual environment '${VENV_NAME}' at '${VENV_DIR}'"
+	@echo -e "\n[make venv] creating conda virtual environment '${VENV_NAME}'"
 	conda create -y --name "${VENV_NAME}" python==${PYTHON}
 endif
 	${PREFIX}python -m pip install -U pip
