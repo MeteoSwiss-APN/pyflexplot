@@ -432,19 +432,19 @@ test-check: ${_INSTALL_DEV}
 # Documentation
 #==============================================================================
 
-# .PHONY: docs #CMD Generate HTML documentation, including API docs.
-# docs: ${_INSTALL_DEV}
-# 	@echo -e "\n[make docs] generating HTML documentation"
-# 	\rm -f docs/pyflexplot.rst
-# 	\rm -f docs/modules.rst
-# 	${PREFIX}sphinx-apidoc -o docs/ src/pyflexplot
-# 	$(MAKE) -C docs clean
-# 	$(MAKE) -C docs html
-# 	${browser} docs/_build/html/index.html
+#.PHONY: docs #CMD Generate HTML documentation, including API docs.
+#docs: ${_INSTALL_DEV}
+#	@echo -e "\n[make docs] generating HTML documentation"
+#	\rm -f docs/pyflexplot.rst
+#	\rm -f docs/modules.rst
+#	${PREFIX}sphinx-apidoc -o docs/ src/pyflexplot
+#	$(MAKE) -C docs clean
+#	$(MAKE) -C docs html
+#	${browser} docs/_build/html/index.html
 
-# .PHONY: servedocs #CMD Compile the docs watching for changes.
-# servedocs: docs
-# 	@echo -e "\n[make servedocs] continuously regenerating HTML documentation"
-# 	${PREFIX}watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
+#.PHONY: servedocs #CMD Compile the docs watching for changes.
+#servedocs: docs
+#	@echo -e "\n[make servedocs] continuously regenerating HTML documentation"
+#	${PREFIX}watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 #==============================================================================
