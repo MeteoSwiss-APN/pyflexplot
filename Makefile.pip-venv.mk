@@ -15,7 +15,7 @@ VENV_NAME ?= pyflexplot#OPT Name of virtual environment if one is created
 #------------------------------------------------------------------------------
 
 PREFIX_VENV = ${VENV_DIR}/bin/#
-export PREVIX_VENV
+export PREFIX_VENV
 
 ifneq (${IGNORE_VENV}, 0)
 # Ignore virtual env

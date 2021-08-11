@@ -177,7 +177,7 @@ clean-test:
 .PHONY: clean-venv #CMD Remove virtual environment.
 clean-venv:
 ifeq (${IGNORE_VENV}, 0)
-	@# Do not ignore exising venv
+	@# Do not ignore existing venv
 ifeq (${VENV_DIR},"")
 	@# Path to conda venv has not been passed
 ifneq ($(shell conda list --name $(VENV_NAME) 2>/dev/null 1>&2; echo $$?),0)
@@ -232,7 +232,7 @@ ifneq (${VIRTUAL_ENV},)
 	exit 1
 endif
 ifeq (${IGNORE_VENV}, 0)
-	@# Do not ignore exising venv
+	@# Do not ignore existing venv
 ifeq (${VENV_DIR},"")
 	@# Path to conda venv has not been passed
 	$(eval VENV_DIR = $(shell conda run --name $(VENV_NAME) python -c 'import pathlib, sys; print(pathlib.Path(sys.executable).parent.parent)'))
@@ -255,7 +255,7 @@ endif
 .PHONY: _create_conda_venv
 _create_conda_venv: git
 ifeq (${IGNORE_VENV}, 0)
-	@# Do not ignore exising venv
+	@# Do not ignore existing venv
 ifeq (${VENV_DIR},"")
 	@# No path to conda venv has been passed
 ifeq ($(shell conda list --name $(VENV_NAME) 2>/dev/null 1>&2; echo $$?),0)
