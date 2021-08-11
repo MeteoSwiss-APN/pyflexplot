@@ -290,8 +290,8 @@ class MapAxes:
             "marker",
             "grid",
             "geo_upper",
-            "fld",
             "geo_lower",
+            "fld",
             "lowest",
         ][::-1]
         d0, dz = 1, 1
