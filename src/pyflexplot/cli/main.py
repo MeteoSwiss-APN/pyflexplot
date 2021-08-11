@@ -5,6 +5,7 @@ import os
 import time
 from copy import copy
 from functools import partial
+from multiprocessing.pool import Pool
 from os.path import abspath
 from os.path import relpath
 from pathlib import Path
@@ -97,7 +98,7 @@ def main(
     if num_procs == 1:
         all_out_file_paths = fct()
     else:
-        with mp.Pool(processes=num_procs) as pool:
+        with Pool(processes=num_procs) as pool:
             all_out_file_paths = fct(pool)
 
     if merge_pdfs:
@@ -163,7 +164,7 @@ def create_all_plots(
     only: Optional[int],
     show_version: bool,
     tmp_dir: Optional[str],
-    pool: Optional[mp.Pool] = None,
+    pool: Optional[Pool] = None,
 ) -> List[str]:
     """Create plots input file(s) by input file(s)."""
     log(vbs="read fields and create plots")
