@@ -6,8 +6,8 @@ SHELL := /bin/bash
 # Options
 #==============================================================================
 
-IGNORE_VENV ?= 0#OPT Don't create and/or use a virtual environment
 CHAIN ?= 0#OPT Whether to chain targets, e.g., let test depend on install-test
+IGNORE_VENV ?= 0#OPT Don't create and/or use a virtual environment
 MSG ?= ""#OPT Message used as, e.g., tag annotation in version bump commands
 VENV_DIR ?= venv#OPT Path to virtual environment to be created and/or used
 VENV_NAME ?= pyflexplot#OPT Name of virtual environment if one is created
@@ -15,7 +15,7 @@ VENV_NAME ?= pyflexplot#OPT Name of virtual environment if one is created
 #------------------------------------------------------------------------------
 
 PREFIX_VENV = ${VENV_DIR}/bin/#
-export PREVIX_VENV
+export PREFIX_VENV
 
 ifneq (${IGNORE_VENV}, 0)
 # Ignore virtual env
@@ -48,17 +48,14 @@ export PIP_OPTS
 # regardless of ${CHAIN}.
 #
 ifeq (${CHAIN}, 0)
-	_VENV :=
 	_INSTALL :=
 	_INSTALL_EDIT :=
 	_INSTALL_DEV :=
 else
-	_VENV := venv
 	_INSTALL := install
 	_INSTALL_EDIT := install-edit
 	_INSTALL_DEV := install-dev
 endif
-export _VENV
 export _INSTALL
 export _INSTALL_EDIT
 export _INSTALL_DEV
@@ -239,14 +236,14 @@ endif
 #==============================================================================
 
 .PHONY: install #CMD Install the package with pinned runtime dependencies.
-install: ${_VENV}
+install: venv
 	@echo -e "\n[make install] installing the package"
 	# SR_NOTE Pinned deps fail on tsa, probably due to cartopy/shapely vs. geos/proj
 	# ${PREFIX}python -m pip install -r requirements/requirements.txt ${PIP_OPTS}
 	${PREFIX}python -m pip install . ${PIP_OPTS}
 
 .PHONY: install-dev #CMD Install the package as editable with pinned runtime and\ndevelopment dependencies.
-install-dev: ${_VENV}
+install-dev: venv
 	@echo -e "\n[make install-dev] installing the package as editable with development dependencies"
 	# SR_NOTE Pinned deps fail on tsa, probably due to cartopy/shapely vs. geos/proj
 	# ${PREFIX}python -m pip install -r requirements/dev-requirements.txt ${PIP_OPTS}
@@ -435,19 +432,19 @@ test-check: ${_INSTALL_DEV}
 # Documentation
 #==============================================================================
 
-# .PHONY: docs #CMD Generate HTML documentation, including API docs.
-# docs: ${_INSTALL_DEV}
-# 	@echo -e "\n[make docs] generating HTML documentation"
-# 	\rm -f docs/{{ cookiecutter.project_slug }}.rst
-# 	\rm -f docs/modules.rst
-# 	${PREFIX}sphinx-apidoc -o docs/ src/{{ cookiecutter.project_slug }}
-# 	$(MAKE) -C docs clean
-# 	$(MAKE) -C docs html
-# 	${browser} docs/_build/html/index.html
+#.PHONY: docs #CMD Generate HTML documentation, including API docs.
+#docs: ${_INSTALL_DEV}
+#	@echo -e "\n[make docs] generating HTML documentation"
+#	\rm -f docs/pyflexplot.rst
+#	\rm -f docs/modules.rst
+#	${PREFIX}sphinx-apidoc -o docs/ src/pyflexplot
+#	$(MAKE) -C docs clean
+#	$(MAKE) -C docs html
+#	${browser} docs/_build/html/index.html
 
-# .PHONY: servedocs #CMD Compile the docs watching for changes.
-# servedocs: docs
-# 	@echo -e "\n[make servedocs] continuously regenerating HTML documentation"
-# 	${PREFIX}watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
+#.PHONY: servedocs #CMD Compile the docs watching for changes.
+#servedocs: docs
+#	@echo -e "\n[make servedocs] continuously regenerating HTML documentation"
+#	${PREFIX}watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 #==============================================================================

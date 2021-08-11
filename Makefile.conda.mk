@@ -10,32 +10,14 @@ CHAIN ?= 0#OPT Whether to chain targets, e.g., let test depend on install-test
 IGNORE_VENV ?= 0#OPT Don't create and/or use a virtual environment
 MSG ?= ""#OPT Message used as, e.g., tag annotation in version bump commands
 PYTHON ?= 3.8#OPT Python version used to create conda virtual environment
-VENV_NAME ?= pyflexplot.dev#OPT Name of conda virtual environment
+VENV_DIR ?= ""#OPT Path to existing or new conda virtual environment (overrides VENV_NAME)
+VENV_NAME ?= pyflexplot#OPT Name of conda virtual environment (overridden by VENV_DIR)
+
+# Default values used below (caution: keep values in sync with above)
+DEFAULT_VENV_NAME = pyflexplot#
+export DEFAULT_VENV_NAME
 
 #------------------------------------------------------------------------------
-
-CONDA_DIR = $(shell conda info --base)#
-export CONDA_DIR
-
-VENV_DIR = $(CONDA_DIR)/envs/$(VENV_NAME)#
-export VENV_DIR
-
-PREFIX_VENV = ${VENV_DIR}/bin/#
-export PREVIX_VENV
-
-ifneq (${IGNORE_VENV}, 0)
-# Ignore virtual env
-PREFIX ?=#
-else
-ifneq (${VIRTUAL_ENV},)
-# Virtual env is active
-PREFIX =#
-else
-# Virtual env is not active
-PREFIX = ${PREFIX_VENV}
-endif
-endif
-export PREFIX
 
 # Options for all calls to up-do-date pip (i.e., AFTER `pip install -U pip`)
 # Example: `--use-feature=2020-resolver` before the new resolver became the default
@@ -54,17 +36,14 @@ export PIP_OPTS
 # regardless of ${CHAIN}.
 #
 ifeq (${CHAIN}, 0)
-	_VENV :=
 	_INSTALL :=
 	_INSTALL_EDIT :=
 	_INSTALL_DEV :=
 else
-	_VENV := venv
 	_INSTALL := install
 	_INSTALL_EDIT := install-edit
 	_INSTALL_DEV := install-dev
 endif
-export _VENV
 export _INSTALL
 export _INSTALL_EDIT
 export _INSTALL_DEV
@@ -197,11 +176,25 @@ clean-test:
 
 .PHONY: clean-venv #CMD Remove virtual environment.
 clean-venv:
-ifeq ("$(wildcard $(VENV_DIR))","")
-	@echo -e "\n[make clean-venv] no conda virtual environment to remove at '${VENV_DIR}'"
+ifeq (${IGNORE_VENV}, 0)
+	@# Do not ignore existing venv
+ifeq (${VENV_DIR},"")
+	@# Path to conda venv has not been passed
+ifneq ($(shell conda list --name $(VENV_NAME) 2>/dev/null 1>&2; echo $$?),0)
+	@echo -e "\n[make clean-venv] no conda virtual environment '${VENV_NAME}' to remove"
+else
+	@echo -e "\n[make clean-venv] removing conda virtual environment '${VENV_NAME}'"
+	conda env remove --yes --name ${VENV_NAME}
+endif
+else
+	@# Path to conda venv has been passed
+ifneq ($(shell conda list --prefix $(VENV_DIR) 2>/dev/null 1>&2; echo $$?),0)
+	@echo -e "\n[make clean-venv] no conda virtual environment at '${VENV_DIR}' to remove"
 else
 	@echo -e "\n[make clean-venv] removing conda virtual environment at '${VENV_DIR}'"
-	conda env remove -y --name ${VENV_NAME}
+	conda env remove --yes --prefix ${VENV_DIR}
+endif
+endif
 endif
 
 #==============================================================================
@@ -232,41 +225,78 @@ _git_init:
 # Conda Virtual Environment
 #==============================================================================
 
-.PHONY: venv #CMD Create a virtual environment.
-venv: git
-ifeq (${IGNORE_VENV}, 0)
-	$(eval PREFIX = ${PREFIX_VENV})
-	@export PREFIX
-ifeq (${VIRTUAL_ENV},)
-ifneq ("$(wildcard $(VENV_DIR))","")
-	@echo -e "\n[make venv] conda virtual environment '${VENV_NAME}' already exists at '${VENV_DIR}'"
-else
-	@echo -e "\n[make venv] creating conda virtual environment '${VENV_NAME}' at '${VENV_DIR}'"
-	conda create -y --name "${VENV_NAME}" python==${PYTHON}
+.PHONY: venv #CMD Create/locate conda virtual environment.
+venv: _create_conda_venv
+ifneq (${VIRTUAL_ENV},)
+	@echo -e "[make venv] error: active non-conda virtual environment found: ${VIRTUAL_ENV}"
+	exit 1
 endif
+ifeq (${IGNORE_VENV}, 0)
+	@# Do not ignore existing venv
+ifeq (${VENV_DIR},"")
+	@# Path to conda venv has not been passed
+	$(eval VENV_DIR = $(shell conda run --name $(VENV_NAME) python -c 'import pathlib, sys; print(pathlib.Path(sys.executable).parent.parent)'))
+	export VENV_DIR
+else
+	@# Path to conda venv has been passed
+	$(eval VENV_DIR = $(shell conda run --prefix $(VENV_DIR) python -c 'import pathlib, sys; print(pathlib.Path(sys.executable).parent.parent)'))
+	export VENV_DIR
+ifneq (${VENV_NAME},${DEFAULT_VENV_NAME})
+	@# Name of conda venv has been passed alongside path
+	@echo -e "[make venv] warning: VENV_DIR=${VENV_DIR} overrides VENV_NAME=${VENV_NAME}"
+endif
+endif
+	$(eval PREFIX = ${VENV_DIR}/bin/)
+	export PREFIX
 	${PREFIX}python -m pip install -U pip
 endif
-endif
 	${PREFIX}python -V
+
+.PHONY: _create_conda_venv
+_create_conda_venv: git
+ifeq (${IGNORE_VENV}, 0)
+	@# Do not ignore existing venv
+ifeq (${VENV_DIR},"")
+	@# No path to conda venv has been passed
+ifeq ($(shell conda list --name $(VENV_NAME) 2>/dev/null 1>&2; echo $$?),0)
+	@# Conda venv already exists
+	@echo -e "\n[make venv] conda virtual environment '${VENV_NAME}' already exists"
+else
+	@# Conda venv doesn't exist yet
+	@echo -e "\n[make venv] creating conda virtual environment '${VENV_NAME}'"
+	conda create -y --name "${VENV_NAME}" python==${PYTHON}
+endif
+else
+	@# Path to conda venv has been passed
+ifeq ($(shell conda list --prefix $(VENV_DIR) 2>/dev/null 1>&2; echo $$?),0)
+	@# Conda venv already exists
+	@echo -e "\n[make venv] conda virtual environment at '${VENV_DIR}'"
+else
+	@# Path to conda venv has been passed
+	@echo -e "\n[make venv] creating conda virtual environment at '${VENV_DIR}'"
+	conda create -y --prefix "${VENV_DIR}" python==${PYTHON}
+endif
+endif
+endif
 
 #==============================================================================
 # Installation
 #==============================================================================
 
 .PHONY: install #CMD Install the package with pinned runtime dependencies.
-install: ${_VENV}
+install: venv
 	@echo -e "\n[make install] installing the package"
-	# conda install -y --name "${VENV_NAME}" --file requirements/requirements.txt  # pinned
-	conda install -y --name "${VENV_NAME}" --file requirements/requirements.in  # unpinned
+	# conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.txt  # pinned
+	conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.in  # unpinned
 	${PREFIX}python -m pip install . ${PIP_OPTS}
 	${PREFIX}pyflexplot -V
 
 .PHONY: install-dev #CMD Install the package as editable with pinned runtime and\ndevelopment dependencies.
-install-dev: ${_VENV}
+install-dev: venv
 	@echo -e "\n[make install-dev] installing the package as editable with development dependencies"
-	# conda install -y --name "${VENV_NAME}" --file requirements/dev-requirements.txt  # pinned
-	conda install -y --name "${VENV_NAME}" --file requirements/requirements.in  # unpinned
-	conda install -y --name "${VENV_NAME}" --file requirements/dev-requirements.in  # unpinned
+	# conda install --yes --prefix "${VENV_DIR}" --file requirements/dev-requirements.txt  # pinned
+	conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.in  # unpinned
+	conda install --yes --prefix "${VENV_DIR}" --file requirements/dev-requirements.in  # unpinned
 	${PREFIX}python -m pip install -e . ${PIP_OPTS}
 	${PREFIX}pre-commit install
 	${PREFIX}pyflexplot -V
@@ -460,19 +490,19 @@ test-check: ${_INSTALL_DEV}
 # Documentation
 #==============================================================================
 
-# .PHONY: docs #CMD Generate HTML documentation, including API docs.
-# docs: ${_INSTALL_DEV}
-# 	@echo -e "\n[make docs] generating HTML documentation"
-# 	\rm -f docs/{{ cookiecutter.project_slug }}.rst
-# 	\rm -f docs/modules.rst
-# 	${PREFIX}sphinx-apidoc -o docs/ src/{{ cookiecutter.project_slug }}
-# 	$(MAKE) -C docs clean
-# 	$(MAKE) -C docs html
-# 	${browser} docs/_build/html/index.html
+#.PHONY: docs #CMD Generate HTML documentation, including API docs.
+#docs: ${_INSTALL_DEV}
+#	@echo -e "\n[make docs] generating HTML documentation"
+#	\rm -f docs/pyflexplot.rst
+#	\rm -f docs/modules.rst
+#	${PREFIX}sphinx-apidoc -o docs/ src/pyflexplot
+#	$(MAKE) -C docs clean
+#	$(MAKE) -C docs html
+#	${browser} docs/_build/html/index.html
 
-# .PHONY: servedocs #CMD Compile the docs watching for changes.
-# servedocs: docs
-# 	@echo -e "\n[make servedocs] continuously regenerating HTML documentation"
-# 	${PREFIX}watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
+#.PHONY: servedocs #CMD Compile the docs watching for changes.
+#servedocs: docs
+#	@echo -e "\n[make servedocs] continuously regenerating HTML documentation"
+#	${PREFIX}watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 #==============================================================================
