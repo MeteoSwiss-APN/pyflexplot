@@ -1,0 +1,43 @@
+# PyFlexPlot setup file to create deterministic COSMO-2E-CTRL plots
+
+[_base]
+# Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
+infile = "data/cosmo-2e/2021030503/000/grid_conc_20210305030000.nc_BUG"
+model = "COSMO-2E"
+lang = "de"
+outfile_time_format = "%Y%m%dT%H%M"
+combine_species = false
+
+[_base._concentration]
+plot_variable = "concentration"
+level = 0
+
+[_base._concentration._integr]
+integrate = true
+time = -1
+
+[_base._tot_deposition]
+plot_variable = "tot_deposition"
+integrate = true
+
+[_base._affected_area]
+plot_variable = "affected_area"
+integrate = true
+level = 0
+time = -1
+combine_species = true
+
+[_base._concentration."_png+"]
+outfile = "concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+[_base._concentration._integr."_png+"]
+outfile = "integrated_concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+[_base._tot_deposition."_png+"]
+outfile = "deposition_tot_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+[_base._affected_area."_png+"]
+outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+
+["**".full]
+domain = "full"
+
+["**".ch]
+domain = "ch"
