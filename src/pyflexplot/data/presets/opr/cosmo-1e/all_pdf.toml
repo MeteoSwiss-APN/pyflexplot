@@ -47,6 +47,12 @@ outfile = "{release_start}_{release_site}_FLEXPART-{model}_probability_{domain}.
 ens_variable = "probability"
 ens_param_thr = 0
 
+[_base._concentration."_probability+"."_multipanel_time+"]
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_probability_{domain}.pdf"
+plot_type = "multipanel"
+multipanel_param = "time"
+time = [2, 4, 8, -1]
+
 [_base._concentration._integr."_pctl90+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_percentile_{domain}.pdf"
 ens_variable = "percentile"
@@ -59,6 +65,20 @@ ens_param_pctl = 90
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_percentile_{domain}.pdf"
 ens_variable = "percentile"
 ens_param_pctl = 90
+
+[_base._concentration._integr."_multipanel_pctl+"]
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_percentile_{domain}.pdf"
+plot_type = "multipanel"
+multipanel_param = "ens_param_pctl"
+ens_variable = "percentile"
+ens_param_pctl = [5, 50, 75, 95]
+
+[_base._tot_deposition."_multipanel_pctl+"]
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_percentile_{domain}.pdf"
+plot_type = "multipanel"
+multipanel_param = "ens_param_pctl"
+ens_variable = "percentile"
+ens_param_pctl = [5, 50, 75, 95]
 
 [_base._concentration._cloud]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_timing_{domain}.pdf"
