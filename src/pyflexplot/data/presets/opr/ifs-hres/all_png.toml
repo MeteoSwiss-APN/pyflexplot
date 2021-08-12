@@ -36,8 +36,14 @@ outfile = "deposition_tot_site-{release_site}_species-{species_id}_domain-{domai
 [_base._affected_area."_png+"]
 outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
 
-["**".cloud]
+[_base._concentration."_multipanel_time+"]
+outfile = "concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+plot_type = "multipanel"
+multipanel_param = "time"
+time = [2, 4, 8, -1]
+
+["**".full]
 domain = "cloud"
 
-["**".release_site]
+["**".zoom]
 domain = "release_site"

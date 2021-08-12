@@ -27,6 +27,11 @@ level = 0
 time = -1
 combine_species = true
 
+[_base._concentration._multipanel_time]
+plot_type = "multipanel"
+multipanel_param = "time"
+time = [2, 4, 8, -1]
+
 [_base._concentration.full]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.pdf"
 domain = "full"
@@ -38,6 +43,9 @@ outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition
 domain = "full"
 [_base._affected_area.full]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.pdf"
+domain = "full"
+[_base._concentration._multipanel_time.full]
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_Uebersicht.pdf"
 domain = "full"
 
 [_base._concentration.zoom]
@@ -51,4 +59,7 @@ outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition
 domain = "ch"
 [_base._affected_area.zoom]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.pdf"
+domain = "ch"
+[_base._concentration._multipanel_time.zoom]
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_Uebersicht_zoom.pdf"
 domain = "ch"
