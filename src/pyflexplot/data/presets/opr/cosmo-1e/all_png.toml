@@ -44,6 +44,11 @@ ens_param_thr = 0
 ens_variable = "probability"
 ens_param_thr = 0
 
+[_base._concentration."_probability+"."_multipanel_time+"]
+plot_type = "multipanel"
+multipanel_param = "time"
+time = [2, 4, 8, -1]
+
 [_base._concentration._integr."_pctl90+"]
 ens_variable = "percentile"
 ens_param_pctl = 90
@@ -53,6 +58,18 @@ ens_param_pctl = 90
 [_base._affected_area."_pctl90+"]
 ens_variable = "percentile"
 ens_param_pctl = 90
+
+[_base._concentration._integr."_multipanel_pctl+"]
+plot_type = "multipanel"
+multipanel_param = "ens_param_pctl"
+ens_variable = "percentile"
+ens_param_pctl = [5, 50, 75, 95]
+
+[_base._tot_deposition."_multipanel_pctl+"]
+plot_type = "multipanel"
+multipanel_param = "ens_param_pctl"
+ens_variable = "percentile"
+ens_param_pctl = [5, 50, 75, 95]
 
 [_base._concentration._cloud]
 ens_param_mem_min = 2

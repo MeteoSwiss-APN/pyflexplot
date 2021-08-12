@@ -997,3 +997,163 @@ class Test_Multipanel:
         assert_is_sub_element(
             name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
         )
+
+    def test_time_inherited_once(self, tmp_path):
+        """Inherit multipanel plot from single-panel plot."""
+        content = """\
+            [_base]
+            infile = "foo_{ens_member:03}.nc"
+            ens_member_id = [1, 2]
+            model = "COSMO-2E"
+            domain = "full"
+            time = -1
+
+            [_base.single]
+            plot_variable = "concentration"
+            level = 0
+            ens_variable = "probability"
+            outfile = "singlepanel.png"
+
+            [_base.single.multi]
+            plot_type = "multipanel"
+            multipanel_param = "time"
+            time = [2, 4, 6, 8]
+            outfile = "multipanel_time.png"
+        """
+        group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+        res = group.dicts()
+        sol = [
+            {
+                "files": {
+                    "input": "foo_{ens_member:03}.nc",
+                    "output": "singlepanel.png",
+                },
+                "layout": {
+                    "multipanel_param": None,
+                },
+                "model": {
+                    "name": "COSMO-2E",
+                    "ens_member_id": (1, 2),
+                },
+                "panels": [
+                    {
+                        "plot_variable": "concentration",
+                        "ens_variable": "probability",
+                        "domain": "full",
+                        "dimensions": {
+                            "level": 0,
+                            "time": -1,
+                        },
+                    }
+                ],
+            },
+            {
+                "files": {
+                    "input": "foo_{ens_member:03}.nc",
+                    "output": "multipanel_time.png",
+                },
+                "layout": {
+                    "multipanel_param": "time",
+                },
+                "model": {
+                    "name": "COSMO-2E",
+                    "ens_member_id": (1, 2),
+                },
+                "panels": [
+                    {
+                        "plot_variable": "concentration",
+                        "ens_variable": "probability",
+                        "domain": "full",
+                        "dimensions": {
+                            "level": 0,
+                            "time": time,
+                        },
+                    }
+                    for time in [2, 4, 6, 8]
+                ],
+            },
+        ]
+        assert_is_sub_element(
+            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+        )
+
+    def test_time_inherited_twice(self, tmp_path):
+        """Inherit multipanel plot from single-panel plot."""
+        content = """\
+            [_base]
+            infile = "foo_{ens_member:03}.nc"
+            ens_member_id = [1, 2]
+            model = "COSMO-2E"
+            time = -1
+
+            [_base."_single+"]
+            plot_variable = "concentration"
+            level = 0
+            ens_variable = "probability"
+            outfile = "singlepanel.png"
+
+            [_base."_single+"."_multi+"]
+            plot_type = "multipanel"
+            multipanel_param = "time"
+            time = [2, 4, 6, 8]
+            outfile = "multipanel_time.png"
+
+            ["**".full]
+            domain = "full"
+        """
+        group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+        res = group.dicts()
+        sol = [
+            {
+                "files": {
+                    "input": "foo_{ens_member:03}.nc",
+                    "output": "multipanel_time.png",
+                },
+                "layout": {
+                    "multipanel_param": "time",
+                },
+                "model": {
+                    "name": "COSMO-2E",
+                    "ens_member_id": (1, 2),
+                },
+                "panels": [
+                    {
+                        "plot_variable": "concentration",
+                        "ens_variable": "probability",
+                        "domain": "full",
+                        "dimensions": {
+                            "level": 0,
+                            "time": time,
+                        },
+                    }
+                    for time in [2, 4, 6, 8]
+                ],
+            },
+            {
+                "files": {
+                    "input": "foo_{ens_member:03}.nc",
+                    "output": "singlepanel.png",
+                },
+                "layout": {
+                    "multipanel_param": None,
+                },
+                "model": {
+                    "name": "COSMO-2E",
+                    "ens_member_id": (1, 2),
+                },
+                "panels": [
+                    {
+                        "plot_variable": "concentration",
+                        "ens_variable": "probability",
+                        "domain": "full",
+                        "dimensions": {
+                            "level": 0,
+                            "time": -1,
+                        },
+                    }
+                ],
+            },
+        ]
+        assert_is_sub_element(
+            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+        )
