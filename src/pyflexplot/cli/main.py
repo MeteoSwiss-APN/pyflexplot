@@ -181,7 +181,7 @@ def create_all_plots(
             break
         log(
             vbs=(
-                f"[{iter_state.i_input_file + 1}/{iter_state.n_input_files}]"
+                f"[{iter_state.i_input_file}/{iter_state.n_input_files}]"
                 f" read {setup_group.infile}"
             )
         )
