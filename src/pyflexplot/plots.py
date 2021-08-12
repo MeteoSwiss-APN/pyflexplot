@@ -644,9 +644,14 @@ def create_map_config(
 ) -> MapAxesConfig:
     model_name = plot_setup.model.name
     scale_fact = plot_setup.layout.scale_fact
+    plot_type = panel_setup.layout.plot_type
     domain_type = panel_setup.domain
     lang = panel_setup.lang
     n_panels = len(plot_setup.panels)
+
+    if plot_type == "multipanel":
+        # Shrink city labels etc.
+        scale_fact *= 0.75
 
     if n_panels == 1:
         ref_dist_config = {
