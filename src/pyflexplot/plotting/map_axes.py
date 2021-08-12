@@ -343,7 +343,7 @@ class MapAxes:
                 scale=self.config.geo_res,
                 edgecolor="black",
                 facecolor=facecolor,
-                linewidth=linewidth,
+                linewidth=linewidth * self.config.scale_fact,
                 rasterized=rasterized,
             ),
             zorder=self.zorder[zorder_key],
