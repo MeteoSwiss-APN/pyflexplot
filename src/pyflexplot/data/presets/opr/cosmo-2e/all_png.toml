@@ -91,11 +91,13 @@ ens_variable = "median"
 [_base._concentration._integr."_multipanel_pctl+"]
 plot_type = "multipanel"
 multipanel_param = "ens_param_pctl"
+ens_variable = "percentile"
 ens_param_pctl = [5, 50, 75, 95]
 
 [_base._tot_deposition."_multipanel_pctl+"]
 plot_type = "multipanel"
 multipanel_param = "ens_param_pctl"
+ens_variable = "percentile"
 ens_param_pctl = [5, 50, 75, 95]
 
 ["**".full]
