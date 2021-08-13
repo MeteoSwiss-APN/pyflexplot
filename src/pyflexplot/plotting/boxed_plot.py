@@ -72,7 +72,7 @@ class ContourLevelsLegendConfig:
 @summarizable
 @dc.dataclass
 class ContourLevelsConfig:
-    levels: np.ndarray
+    levels: np.ndarray = dc.field(default_factory=np.array)
     extend: str = "max"
     include_lower: bool = True
     legend: ContourLevelsLegendConfig = dc.field(
