@@ -46,6 +46,7 @@ class FontSizes:
     content_small: FontSizeType = 9.0
 
     def scale(self, factor: float) -> "FontSizes":
+        """Scale the font sizes by a constant factor."""
         # pylint: disable=E1101  # no-member (__dataclass_fields__)
         params = list(self.__dataclass_fields__)  # type: ignore
         return type(self)(**{param: getattr(self, param) * factor for param in params})

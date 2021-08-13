@@ -898,7 +898,6 @@ def create_panel_config(
     colors: Sequence[ColorType]
     if cmap == "flexplot":
         n_levels = levels_config.n
-        assert n_levels  # SR_TMP
         colors = colors_flexplot(n_levels, extend)
     elif cmap == "mono":
         colors = (np.array([(200, 200, 200)]) / 255).tolist()
