@@ -1285,6 +1285,7 @@ plot_summary = {
                 "label": "Minimum",
                 "levels": {
                     "type": "ContourLevelsConfig",
+                    "levels": [1e-14, 1e-13, 1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07],
                     "extend": "max",
                     "include_lower": False,
                     "legend": {
@@ -1304,8 +1305,6 @@ plot_summary = {
                             "      $\\tt >$ 1E-07",
                         ],
                     },
-                    "levels": [1e-14, 1e-13, 1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07],
-                    "n": 8,
                     "scale": "log",
                 },
                 "markers": {
@@ -1370,6 +1369,7 @@ plot_summary = {
                 "label": "Maximum",
                 "levels": {
                     "type": "ContourLevelsConfig",
+                    "levels": [1e-14, 1e-13, 1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07],
                     "extend": "max",
                     "include_lower": False,
                     "legend": {
@@ -1389,8 +1389,6 @@ plot_summary = {
                             "      $\\tt >$ 1E-07",
                         ],
                     },
-                    "levels": [1e-14, 1e-13, 1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07],
-                    "n": 8,
                     "scale": "log",
                 },
                 "markers": {
@@ -1455,6 +1453,7 @@ plot_summary = {
                 "label": "Median",
                 "levels": {
                     "type": "ContourLevelsConfig",
+                    "levels": [1e-14, 1e-13, 1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07],
                     "extend": "max",
                     "include_lower": False,
                     "legend": {
@@ -1474,8 +1473,6 @@ plot_summary = {
                             "      $\\tt >$ 1E-07",
                         ],
                     },
-                    "levels": [1e-14, 1e-13, 1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07],
-                    "n": 8,
                     "scale": "log",
                 },
                 "markers": {
@@ -1540,6 +1537,7 @@ plot_summary = {
                 "label": "Mittel",
                 "levels": {
                     "type": "ContourLevelsConfig",
+                    "levels": [1e-14, 1e-13, 1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07],
                     "extend": "max",
                     "include_lower": False,
                     "legend": {
@@ -1559,8 +1557,6 @@ plot_summary = {
                             "      $\\tt >$ 1E-07",
                         ],
                     },
-                    "levels": [1e-14, 1e-13, 1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07],
-                    "n": 8,
                     "scale": "log",
                 },
                 "markers": {

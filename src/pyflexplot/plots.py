@@ -14,6 +14,8 @@ Instead, all the logic is collected here in a straightforward but dirty way
 until sane design choices emerge from the code mess.
 
 """
+from __future__ import annotations
+
 # Standard library
 import os
 from datetime import datetime
@@ -793,10 +795,6 @@ def create_panel_config(
         "scale": "log",
     }
     legend_config_dct: Dict[str, Any] = {}
-    if plot_variable == "concentration":
-        levels_config_dct["n"] = 8
-    elif plot_variable.endswith("deposition"):
-        levels_config_dct["n"] = 9
     if plot_variable == "affected_area" and ens_variable != "probability":
         levels_config_dct["extend"] = "none"
         levels_config_dct["levels"] = np.array([0.0, np.inf])
@@ -837,9 +835,14 @@ def create_panel_config(
         ):
             levels_config_dct["extend"] = "max"
     if "levels" not in levels_config_dct:
-        n_levels = levels_config_dct["n"]
-        levels = levels_from_time_stats(n_levels=n_levels, val_max=val_max)
-        levels_config_dct["levels"] = levels
+        if plot_variable == "concentration":
+            levels_config_dct["levels"] = levels_from_time_stats(
+                n_levels=8, val_max=val_max
+            )
+        elif plot_variable.endswith("deposition"):
+            levels_config_dct["levels"] = levels_from_time_stats(
+                n_levels=9, val_max=val_max
+            )
     legend_config_dct["labels"] = format_level_ranges(
         levels=levels_config_dct["levels"],
         style=legend_config_dct.get("range_style", "base"),
@@ -852,16 +855,36 @@ def create_panel_config(
     levels_config_dct["legend"] = ContourLevelsLegendConfig(**legend_config_dct)
     levels_config = ContourLevelsConfig(**levels_config_dct)
 
+    def cmap2colors(
+        cmap: Union[str, Colormap],
+        levels_config: ContourLevelsConfig,
+        color_under: Optional[str] = None,
+        color_over: Optional[str] = None,
+    ) -> Sequence[ColorType]:
+        extend = levels_config.extend
+        n_colors = levels_config.n - 1
+        if extend in ["min", "both"] and not color_under:
+            n_colors += 1
+        if extend in ["max", "both"] and not color_over:
+            n_colors += 1
+        cmap = mpl.cm.get_cmap(cmap, lut=n_colors)
+        colors: list[ColorType]
+        try:
+            colors = cmap.colors.tolist()
+        except AttributeError:
+            colors = [cmap(i / (n_colors - 1)) for i in range(n_colors)]
+        if extend in ["min", "both"] and color_under:
+            colors.insert(0, color_under)
+        if extend in ["max", "both"] and color_over:
+            colors.append(color_over)
+        return colors
+
     # Colors
-    extend = levels_config.extend
-    cmap: Union[str, Colormap] = "flexplot"
-    color_under: Optional[str] = None
-    color_over: Optional[str] = None
     if plot_variable == "affected_area" and ens_variable != "probability":
-        cmap = "mono"
+        colors = (np.array([(200, 200, 200)]) / 255).tolist()
     elif model_setup.simulation_type == "ensemble" and ens_variable == "probability":
-        # cmap = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
         cmap = truncate_cmap("terrain_r", 0.075)
+        colors = cmap2colors(cmap, levels_config)
     elif (
         model_setup.simulation_type == "ensemble"
         and ens_variable == "percentile"
@@ -882,40 +905,39 @@ def create_panel_config(
             # cmap = "Greys"
             cmap = linear_cmap("grays", "black")
         cmap = truncate_cmap(cmap, 0.1)
+        colors = cmap2colors(cmap, levels_config)
     elif plot_variable == "cloud_arrival_time" or (
         ens_variable == "cloud_arrival_time"
     ):
-        cmap = "viridis"
-        color_under = "slategray"
-        color_over = "lightgray"
+        # SR_TMP < TODO settle on one
+        # cmap = "viridis"
+        # cmap = "rainbow_r"
+        # cmap = truncate_cmap("terrain", 0.0, 0.9)
+        cmap = truncate_cmap("nipy_spectral_r", 0.20, 0.95)
+        # SR_TMP >
+        colors = cmap2colors(
+            cmap,
+            levels_config,
+            color_under="slategray",
+            color_over="lightgray",
+        )
     elif plot_variable == "cloud_departure_time" or (
         ens_variable == "cloud_departure_time"
     ):
-        cmap = "viridis_r"
-        color_under = "lightgray"
-        color_over = "slategray"
-    colors: Sequence[ColorType]
-    if cmap == "flexplot":
-        n_levels = levels_config.n
-        assert n_levels  # SR_TMP
-        colors = colors_flexplot(n_levels, extend)
-    elif cmap == "mono":
-        colors = (np.array([(200, 200, 200)]) / 255).tolist()
+        # SR_TMP < TODO settle on one
+        # cmap = "viridis_r"
+        # cmap = "rainbow"
+        # cmap = truncate_cmap("terrain_r", 0.1, 1.0)
+        cmap = truncate_cmap("nipy_spectral", 0.05, 0.80)
+        # SR_TMP >
+        colors = cmap2colors(
+            cmap,
+            levels_config,
+            color_under="lightgray",
+            color_over="slategray",
+        )
     else:
-        levels = levels_config.levels
-        assert levels is not None  # mypy
-        n_levels = len(levels)
-        cmap = mpl.cm.get_cmap(cmap)
-        n_colors = n_levels - 1
-        if extend in ["min", "both"] and not color_under:
-            n_colors += 1
-        if extend in ["max", "both"] and not color_over:
-            n_colors += 1
-        colors = [cmap(i / (n_colors - 1)) for i in range(n_colors)]
-        if extend in ["min", "both"] and color_under:
-            colors.insert(0, color_under)
-        if extend in ["max", "both"] and color_over:
-            colors.append(color_over)
+        colors = colors_flexplot(levels_config.n, levels_config.extend)
 
     # Markers
     markers_config_dct: Dict[str, Any] = {}
