@@ -14,6 +14,8 @@ Instead, all the logic is collected here in a straightforward but dirty way
 until sane design choices emerge from the code mess.
 
 """
+from __future__ import annotations
+
 # Standard library
 import os
 from datetime import datetime
@@ -881,7 +883,6 @@ def create_panel_config(
     if plot_variable == "affected_area" and ens_variable != "probability":
         colors = (np.array([(200, 200, 200)]) / 255).tolist()
     elif model_setup.simulation_type == "ensemble" and ens_variable == "probability":
-        # cmap = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
         cmap = truncate_cmap("terrain_r", 0.075)
         colors = cmap2colors(cmap, levels_config)
     elif (
@@ -908,7 +909,12 @@ def create_panel_config(
     elif plot_variable == "cloud_arrival_time" or (
         ens_variable == "cloud_arrival_time"
     ):
-        cmap = "viridis"
+        # SR_TMP < TODO settle on one
+        # cmap = "viridis"
+        # cmap = "rainbow_r"
+        # cmap = truncate_cmap("terrain", 0.0, 0.9)
+        cmap = truncate_cmap("nipy_spectral_r", 0.20, 0.95)
+        # SR_TMP >
         colors = cmap2colors(
             cmap,
             levels_config,
@@ -918,7 +924,12 @@ def create_panel_config(
     elif plot_variable == "cloud_departure_time" or (
         ens_variable == "cloud_departure_time"
     ):
-        cmap = "viridis_r"
+        # SR_TMP < TODO settle on one
+        # cmap = "viridis_r"
+        # cmap = "rainbow"
+        # cmap = truncate_cmap("terrain_r", 0.1, 1.0)
+        cmap = truncate_cmap("nipy_spectral", 0.05, 0.80)
+        # SR_TMP >
         colors = cmap2colors(
             cmap,
             levels_config,
