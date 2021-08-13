@@ -905,13 +905,16 @@ def create_panel_config(
         levels = levels_config.levels
         assert levels is not None  # mypy
         n_levels = len(levels)
-        cmap = mpl.cm.get_cmap(cmap)
         n_colors = n_levels - 1
         if extend in ["min", "both"] and not color_under:
             n_colors += 1
         if extend in ["max", "both"] and not color_over:
             n_colors += 1
-        colors = [cmap(i / (n_colors - 1)) for i in range(n_colors)]
+        cmap = mpl.cm.get_cmap(cmap, lut=n_colors)
+        try:
+            colors = cmap.colors.tolist()
+        except AttributeError:
+            colors = [cmap(i / (n_colors - 1)) for i in range(n_colors)]
         if extend in ["min", "both"] and color_under:
             colors.insert(0, color_under)
         if extend in ["max", "both"] and color_over:
