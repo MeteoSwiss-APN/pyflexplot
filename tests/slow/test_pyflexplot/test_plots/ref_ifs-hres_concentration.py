@@ -413,6 +413,7 @@ plot_summary = {
                 "label": None,
                 "levels": {
                     "type": "ContourLevelsConfig",
+                    "levels": [1e-13, 1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07, 1e-06],
                     "extend": "max",
                     "include_lower": False,
                     "legend": {
@@ -432,8 +433,6 @@ plot_summary = {
                             "      $\\tt >$ 1E-06",
                         ],
                     },
-                    "levels": [1e-13, 1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07, 1e-06],
-                    "n": 8,
                     "scale": "log",
                 },
                 "markers": {

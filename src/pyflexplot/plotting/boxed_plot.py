@@ -71,14 +71,18 @@ class ContourLevelsLegendConfig:
 @summarizable
 @dc.dataclass
 class ContourLevelsConfig:
+    levels: np.ndarray
     extend: str = "max"
     include_lower: bool = True
     legend: ContourLevelsLegendConfig = dc.field(
         default_factory=ContourLevelsLegendConfig
     )
-    levels: Optional[np.ndarray] = None
-    n: int = 0  # SR_TMP TODO eliminate
     scale: str = "log"
+
+    @property
+    def n(self) -> int:
+        """Return the number of levels."""
+        return len(self.levels)
 
 
 @summarizable

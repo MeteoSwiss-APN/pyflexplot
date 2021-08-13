@@ -793,10 +793,6 @@ def create_panel_config(
         "scale": "log",
     }
     legend_config_dct: Dict[str, Any] = {}
-    if plot_variable == "concentration":
-        levels_config_dct["n"] = 8
-    elif plot_variable.endswith("deposition"):
-        levels_config_dct["n"] = 9
     if plot_variable == "affected_area" and ens_variable != "probability":
         levels_config_dct["extend"] = "none"
         levels_config_dct["levels"] = np.array([0.0, np.inf])
@@ -837,9 +833,14 @@ def create_panel_config(
         ):
             levels_config_dct["extend"] = "max"
     if "levels" not in levels_config_dct:
-        n_levels = levels_config_dct["n"]
-        levels = levels_from_time_stats(n_levels=n_levels, val_max=val_max)
-        levels_config_dct["levels"] = levels
+        if plot_variable == "concentration":
+            levels_config_dct["levels"] = levels_from_time_stats(
+                n_levels=8, val_max=val_max
+            )
+        elif plot_variable.endswith("deposition"):
+            levels_config_dct["levels"] = levels_from_time_stats(
+                n_levels=9, val_max=val_max
+            )
     legend_config_dct["labels"] = format_level_ranges(
         levels=levels_config_dct["levels"],
         style=legend_config_dct.get("range_style", "base"),

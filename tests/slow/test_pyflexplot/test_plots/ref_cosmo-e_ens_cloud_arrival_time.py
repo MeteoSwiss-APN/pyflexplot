@@ -423,6 +423,7 @@ plot_summary = {
                 "label": None,
                 "levels": {
                     "type": "ContourLevelsConfig",
+                    "levels": [0, 3, 6, 9, 12, 18, 24, 33],
                     "extend": "min",
                     "include_lower": False,
                     "legend": {
@@ -442,8 +443,6 @@ plot_summary = {
                             "24.0 $\\tt -$ 33.0",
                         ],
                     },
-                    "levels": [0, 3, 6, 9, 12, 18, 24, 33],
-                    "n": 8,
                     "scale": "lin",
                 },
                 "markers": {

@@ -1263,6 +1263,7 @@ plot_summary = {
                 "label": "2020-10-21 11:00 UTC",
                 "levels": {
                     "type": "ContourLevelsConfig",
+                    "levels": [1e-08, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1],
                     "extend": "max",
                     "include_lower": False,
                     "legend": {
@@ -1282,8 +1283,6 @@ plot_summary = {
                             "      $\\tt >$   0.1",
                         ],
                     },
-                    "levels": [1e-08, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1],
-                    "n": 8,
                     "scale": "log",
                 },
                 "markers": {
@@ -1348,6 +1347,7 @@ plot_summary = {
                 "label": "2020-10-21 17:00 UTC",
                 "levels": {
                     "type": "ContourLevelsConfig",
+                    "levels": [1e-08, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1],
                     "extend": "max",
                     "include_lower": False,
                     "legend": {
@@ -1367,8 +1367,6 @@ plot_summary = {
                             "      $\\tt >$   0.1",
                         ],
                     },
-                    "levels": [1e-08, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1],
-                    "n": 8,
                     "scale": "log",
                 },
                 "markers": {
@@ -1433,6 +1431,7 @@ plot_summary = {
                 "label": "2020-10-21 23:00 UTC",
                 "levels": {
                     "type": "ContourLevelsConfig",
+                    "levels": [1e-08, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1],
                     "extend": "max",
                     "include_lower": False,
                     "legend": {
@@ -1452,8 +1451,6 @@ plot_summary = {
                             "      $\\tt >$   0.1",
                         ],
                     },
-                    "levels": [1e-08, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1],
-                    "n": 8,
                     "scale": "log",
                 },
                 "markers": {
@@ -1518,6 +1515,7 @@ plot_summary = {
                 "label": "2020-10-22 05:00 UTC",
                 "levels": {
                     "type": "ContourLevelsConfig",
+                    "levels": [1e-08, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1],
                     "extend": "max",
                     "include_lower": False,
                     "legend": {
@@ -1537,8 +1535,6 @@ plot_summary = {
                             "      $\\tt >$   0.1",
                         ],
                     },
-                    "levels": [1e-08, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1],
-                    "n": 8,
                     "scale": "log",
                 },
                 "markers": {

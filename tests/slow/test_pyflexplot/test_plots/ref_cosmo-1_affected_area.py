@@ -417,6 +417,7 @@ plot_summary = {
                 "label": None,
                 "levels": {
                     "type": "ContourLevelsConfig",
+                    "levels": [0.0, np.inf],
                     "extend": "none",
                     "include_lower": False,
                     "legend": {
@@ -427,8 +428,6 @@ plot_summary = {
                         "rstrip_zeros": True,
                         "labels": ["      $\\tt >$   0.0"],
                     },
-                    "levels": [0.0, np.inf],
-                    "n": 0,
                     "scale": "lin",
                 },
                 "markers": {
