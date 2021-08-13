@@ -1,9 +1,9 @@
-# PyFlexPlot setup file to create deterministic COSMO-1E-CTRL plots
+# PyFlexPlot setup file to create deterministic COSMO-2E-CTRL plots
 
 [_base]
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
-infile = "data/cosmo-1e-ctrl/grid_conc_0910_20200216000000.nc"
-model = "COSMO-1E"
+infile = "data/cosmo-2e/2021030503/000/grid_conc_20210305030000.nc_BUG"
+model = "COSMO-2E"
 lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
