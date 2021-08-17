@@ -340,17 +340,42 @@ def getncattr(nc_obj: Union[nc4.Dataset, nc4.Variable], attr: str) -> Any:
 
 
 class _MetaDataBase:
-    def __repr__(self) -> str:
-        return dataclass_repr(self)
-
     def dict(self) -> Dict[str, Any]:
         dct: Dict[str, Any] = {}
         for field in get_dataclass_fields(type(self)):
             dct[field] = getattr(self, field)
         return dct
 
+    def __eq__(self, other: Any) -> bool:
+        self_dct = dc.asdict(self)
+        try:
+            other_dct = dc.asdict(other)
+        except TypeError:
+            try:
+                other_dct = other.dict()
+            except AttributeError:
+                try:
+                    other_dct = dict(other)
+                except TypeError:
+                    return False
+        if self_dct.keys() != other_dct.keys():
+            return False
+        for param, value in self_dct.items():
+            other_value = other_dct[param]
+            if value == other_value:
+                continue
+            try:
+                if not np.isclose(value, other_value, equal_nan=True):
+                    return False
+            except TypeError:
+                return False
+        return True
 
-@dc.dataclass(repr=False)
+    def __repr__(self) -> str:
+        return dataclass_repr(self)
+
+
+@dc.dataclass(eq=False, repr=False)
 class VariableMetaData(_MetaDataBase):
     unit: str
     bottom_level: float
@@ -419,7 +444,7 @@ class VariableMetaData(_MetaDataBase):
 
 # pylint: disable=R0902  # too-many-instance-attributes
 # pylint: disable=R0914  # too-many-instance-locals (>15)
-@dc.dataclass(repr=False)
+@dc.dataclass(eq=False, repr=False)
 class SimulationMetaData(_MetaDataBase):
     start: datetime
     end: datetime
@@ -520,7 +545,7 @@ class SimulationMetaData(_MetaDataBase):
         )
 
 
-@dc.dataclass(repr=False)
+@dc.dataclass(eq=False, repr=False)
 # pylint: disable=R0902  # too-many-instance-attrbutes
 class ReleaseMetaData(_MetaDataBase):
     duration: timedelta
@@ -574,7 +599,7 @@ class ReleaseMetaData(_MetaDataBase):
         )
 
 
-@dc.dataclass(repr=False)
+@dc.dataclass(eq=False, repr=False)
 # pylint: disable=R0902  # too-many-instance-attributes
 class SpeciesMetaData(_MetaDataBase):
     name: Union[str, Tuple[str, ...]]
