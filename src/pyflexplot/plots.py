@@ -333,6 +333,7 @@ def get_domain(field: Field, aspect: float) -> Domain:
 
 
 # SR_TMP <<< TODO Clean up nested functions! Eventually introduce class(es) of some kind
+# pylint: disable=R0914  # too-many-locals (>15)
 # pylint: disable=R0915  # too-many-statements
 def plot_add_text_boxes(
     plot: BoxedPlot,
