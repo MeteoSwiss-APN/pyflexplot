@@ -360,9 +360,7 @@ class InputFileEnsemble:
                 ens_member_ids=plot_setup.model.ens_member_id,
             )
             field_lst: List[Field] = [
-                field
-                for panel_setup in plot_setup.panels
-                for field in field_lst_by_ts[panel_setup.dimensions.time]
+                field for fields_i in field_lst_by_ts.values() for field in fields_i
             ]
             field_group = FieldGroup(
                 field_lst, plot_setup=plot_setup.copy(), attrs=group_attrs
