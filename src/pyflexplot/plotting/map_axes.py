@@ -432,7 +432,11 @@ class MapAxes:
             """Check if a city fulfils certain importance criteria."""
             is_capital = city.attributes["FEATURECLA"].startswith("Admin-0 capital")
             is_large = city.attributes["GN_POP"] > self.config.min_city_pop
-            return is_capital or is_large
+            excluded_cities = [
+                "Incheon",
+            ]
+            is_excluded = city.attributes["name_en"] in excluded_cities
+            return (is_capital or is_large) and not is_excluded
 
         def get_name(city: Record) -> str:
             """Fetch city name in current language, hand-correcting some."""

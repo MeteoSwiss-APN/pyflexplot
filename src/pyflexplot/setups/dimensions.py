@@ -251,11 +251,15 @@ class Dimensions:
             elif mode == "first":
                 obj.time = next(iter(values))
         else:
-            # Make negative (end-relative) time indices positive (absolute)
-            obj.time = resolve_negative_indices(
-                idcs=obj.get("time", unpack_single=False),  # type: ignore
-                n=raw_dimensions["time"]["size"],
-            )
+            try:
+                # If index is negative, make it positive (subtract from end)
+                obj.time = resolve_negative_indices(
+                    idcs=obj.get("time", unpack_single=False),  # type: ignore
+                    n=raw_dimensions["time"]["size"],
+                )
+            except ValueError as e:
+                n = raw_dimensions["time"]["size"]
+                raise Exception(f"invalid time index (n={n}): {obj.time}") from e
 
         if obj.level is None:
             if plot_variable == "concentration":
