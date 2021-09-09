@@ -23,7 +23,7 @@ from typing_extensions import Literal
 from srutils.dict import decompress_multival_dict
 from srutils.exceptions import InvalidParameterValueError
 from srutils.format import sfmt
-from srutils.iter import resolve_negative_indices
+from srutils.iter import resolve_indices
 from srutils.str import join_multilines
 
 # Local
@@ -253,9 +253,10 @@ class Dimensions:
         else:
             try:
                 # If index is negative, make it positive (subtract from end)
-                obj.time = resolve_negative_indices(
+                obj.time = resolve_indices(
                     idcs=obj.get("time", unpack_single=False),  # type: ignore
                     n=raw_dimensions["time"]["size"],
+                    force_in_range=True,
                 )
             except ValueError as e:
                 n = raw_dimensions["time"]["size"]
