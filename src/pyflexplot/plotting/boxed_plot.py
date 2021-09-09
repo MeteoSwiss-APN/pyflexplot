@@ -161,7 +161,12 @@ class BoxedPlot:
     ) -> None:
         n_panels = len(field_group)
         # SR_TMP < TODO proper check
-        assert n_panels == len(domains) == len(map_configs) == len(self.config.panels)
+        assert (
+            n_panels == len(domains) == len(map_configs) == len(self.config.panels)
+        ), (
+            f"not ({n_panels} == {len(domains)} == {len(map_configs)}"
+            f"== {len(self.config.panels)})"
+        )
         # SR_TMP >
         if n_panels == 1:
             field = next(iter(field_group))
@@ -194,7 +199,7 @@ class BoxedPlot:
                     name, field, domain, map_config, sub_rect, panel_config
                 )
         else:
-            raise NotImplementedError(f"{n_panels} number of panels")
+            raise NotImplementedError(f"{n_panels} panels")
 
     # pylint: disable=R0913  # too-many-arguments (>5)
     def add_map_plot(
