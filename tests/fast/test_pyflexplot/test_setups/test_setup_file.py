@@ -781,6 +781,7 @@ class Test_Wildcards:
         content = """\
             [_base]
             infile = "foo_{ens_member:02d}.nc"
+            ens_member_id = [1, 2]
             model = "COSMO-baz"
 
             [_base."_concentration"]

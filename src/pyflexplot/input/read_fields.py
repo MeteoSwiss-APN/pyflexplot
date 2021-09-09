@@ -319,46 +319,12 @@ class InputFileEnsemble:
 
         field_lst_by_ts: Dict[int, List[Field]] = {}
         for panel_setup_i in plot_setup.panels:
-
             # Create individual setups at each requested time step
-            panel_setups_req_time: PlotPanelSetupGroup = panel_setup_i.decompress(
-                ["dimensions.time"]
+            panel_setups_req_time: PlotPanelSetupGroup
+            panel_setups_req_time = panel_setup_i.decompress(["dimensions.time"])
+            fld_time_mem = self._read_fld_time_mem(
+                panel_setup_i, panel_setups_req_time, nc_dimensions_dct
             )
-
-            fld_time_mem = np.full(
-                self._get_shape_mem_time(
-                    nc_dimensions_dct, panel_setup_i.plot_variable
-                ),
-                np.nan,
-                np.float32,
-            )
-            for idx_mem, file_path in enumerate(self.paths):
-                timeless_panel_setup = panel_setup_i.derive(
-                    {"dimensions": {"time": None}}
-                )
-
-                # Read the data from disk
-                n_mem = len(self.paths)
-                log(dbg=f"reading file ({idx_mem + 1}/{n_mem}): {file_path}")
-                with nc4.Dataset(file_path, "r") as fi:
-                    self._read_grid(fi)
-
-                    # Read meta data at requested time steps
-                    mdata_tss_i = self._collect_meta_data_tss(fi, panel_setups_req_time)
-                    if idx_mem == 0:
-                        self.mdata_tss = mdata_tss_i
-                    elif mdata_tss_i != self.mdata_tss:
-                        raise Exception("meta data differ between members")
-
-                    if not self.config.dry_run:
-                        # Read fields for all members at all time steps
-                        fld_time_i = self._read_member_fields_over_time(
-                            fi, timeless_panel_setup
-                        )
-                    else:
-                        fld_time_i = np.empty(fld_time_mem.shape[1:], np.float32)
-                    fld_time_mem[idx_mem][:] = fld_time_i[:]
-
             fld_time = self._reduce_ensemble_etc(fld_time_mem, panel_setup_i, ts_hrs)
 
             # Compute some statistics across all time steps
@@ -394,9 +360,7 @@ class InputFileEnsemble:
                 ens_member_ids=plot_setup.model.ens_member_id,
             )
             field_lst: List[Field] = [
-                field
-                for panel_setup in plot_setup.panels
-                for field in field_lst_by_ts[panel_setup.dimensions.time]
+                field for fields_i in field_lst_by_ts.values() for field in fields_i
             ]
             field_group = FieldGroup(
                 field_lst, plot_setup=plot_setup.copy(), attrs=group_attrs
@@ -419,6 +383,43 @@ class InputFileEnsemble:
                 )
                 field_groups.append(field_group)
         return field_groups
+
+    def _read_fld_time_mem(
+        self,
+        panel_setup: PlotPanelSetup,
+        panel_setups_req_time: PlotPanelSetupGroup,
+        nc_dimensions_dct: Dict[str, Any],
+    ) -> np.ndarray:
+        fld_time_mem = np.full(
+            self._get_shape_mem_time(nc_dimensions_dct, panel_setup.plot_variable),
+            np.nan,
+            np.float32,
+        )
+        for idx_mem, file_path in enumerate(self.paths):
+            timeless_panel_setup = panel_setup.derive({"dimensions": {"time": None}})
+
+            # Read the data from disk
+            n_mem = len(self.paths)
+            log(dbg=f"reading file ({idx_mem + 1}/{n_mem}): {file_path}")
+            with nc4.Dataset(file_path, "r") as fi:
+                self._read_grid(fi)
+
+                # Read meta data at requested time steps
+                mdata_tss_i = self._collect_meta_data_tss(fi, panel_setups_req_time)
+                if idx_mem == 0:
+                    self.mdata_tss = mdata_tss_i
+                elif mdata_tss_i != self.mdata_tss:
+                    raise Exception("meta data differ between members")
+
+                if not self.config.dry_run:
+                    # Read fields for all members at all time steps
+                    fld_time_i = self._read_member_fields_over_time(
+                        fi, timeless_panel_setup
+                    )
+                else:
+                    fld_time_i = np.empty(fld_time_mem.shape[1:], np.float32)
+                fld_time_mem[idx_mem][:] = fld_time_i[:]
+        return fld_time_mem
 
     def _read_member_fields_over_time(
         self, fi: nc4.Dataset, timeless_panel_setup: PlotPanelSetup

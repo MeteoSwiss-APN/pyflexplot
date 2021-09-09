@@ -76,6 +76,7 @@ class Test_Create:
 
     def test_multipanel_ens_variable(self):
         params = {
+            "model": {"simulation_type": "ensemble"},
             "layout": {
                 "plot_type": "multipanel",
                 "multipanel_param": "ens_variable",
@@ -144,6 +145,7 @@ class Test_Derive:
 
     def test_multipanel_ens_variable(self):
         params = {
+            "model": {"simulation_type": "ensemble"},
             "layout": {
                 "plot_type": "multipanel",
                 "multipanel_param": "ens_variable",
@@ -315,7 +317,12 @@ class Test_Decompress:
 
         def test_model_param(self):
             """Decompress model parameters."""
-            setup = self.setup.derive({"model": {"ens_member_id": (0, 1, 2)}})
+            setup = self.setup.derive(
+                {
+                    "model": {"ens_member_id": (0, 1, 2)},
+                    "panels": {"ens_variable": "mean"},
+                }
+            )
             setups = setup.decompress(["model.ens_member_id"], internal=False)
             assert len(setups) == 3
             assert isinstance(setups, list)
