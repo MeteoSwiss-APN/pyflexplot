@@ -51,6 +51,7 @@ def test_concentration(datadir, config):  # noqa:F811
         },
         "model": {
             "name": "COSMO-E",
+            "simulation_type": "ensemble",
             "ens_member_id": config.ens_mem_ids,
         },
         "panels": [

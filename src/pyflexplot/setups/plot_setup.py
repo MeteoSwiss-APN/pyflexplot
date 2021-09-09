@@ -91,6 +91,21 @@ class PlotSetup(BaseSetup):
 
     def __post_init__(self) -> None:
 
+        # Wrap check in function to locally disable pylint check
+        # pylint: disable=E1101  # no-member ("Instance of 'Field' has no '...' member")
+        def _check_plot_type():
+            simulation_type = self.model.simulation_type
+            ens_variables = sorted(set(self.panels.collect("ens_variable")))
+            if simulation_type == "deterministic" and ens_variables != ["none"]:
+                raise ValueError(
+                    "ens_variable(s) not 'none' for deterministic simulation: "
+                    + ", ".join(map("'{}'".format, ens_variables))
+                )
+            elif simulation_type == "ensemble" and ens_variables == ["none"]:
+                raise ValueError("ens_variable is 'none' for ensemble simulation")
+
+        _check_plot_type()
+
         # Check number of panels
         n_panel_choices = [4]
         n_panels = len(self.panels)
@@ -326,6 +341,17 @@ class PlotSetup(BaseSetup):
             if isinstance(params.get("panels"), Mapping):
                 params["panels"] = [params["panels"]]
             self_dct = self.dict()
+            # Ensure correct simulation type
+            model_params = params.get("model", [])
+            if (
+                "simulation_type" not in model_params
+                and "ens_member_id" in model_params
+            ):
+                if (
+                    model_params["ens_member_id"] not in [None, "none"]
+                    and len(model_params["ens_member_id"]) > 1
+                ):
+                    params["model"]["simulation_type"] = "ensemble"
             # Reset 'dimensions.variable'; re-derived from 'plot_variable'
             for panel_dct in self_dct["panels"]:
                 panel_dct["dimensions"].pop("variable")

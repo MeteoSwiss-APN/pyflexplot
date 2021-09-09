@@ -30,9 +30,15 @@ class ModelSetup(BaseSetup):
     def _create_mod_params_post_cast(cls, params: Mapping[str, Any]) -> Dict[str, Any]:
         """Modify params in ``create`` after typecasting."""
         params = dict(params)
+        members: Optional[list] = params.get("ens_member_id", [])
+        multiple_members = members is not None and len(members) > 1
         if "simulation_type" not in params:
-            if params.get("ens_member_id"):
+            if multiple_members:
                 params["simulation_type"] = "ensemble"
             else:
                 params["simulation_type"] = "deterministic"
+        if params["simulation_type"] == "deterministic" and multiple_members:
+            raise ValueError(
+                f"deterministic simulation cannot have multiple members: {members}"
+            )
         return params
