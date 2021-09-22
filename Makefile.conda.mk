@@ -227,57 +227,82 @@ _git_init:
 
 .PHONY: venv #CMD Create/locate conda virtual environment.
 venv: _create_conda_venv
+	@# Use an active or existing conda env if possible, otherwise create new one
 ifneq (${VIRTUAL_ENV},)
+	@# An active Python virtual environment has been found, so abort this mission!
 	@echo -e "[make venv] error: active non-conda virtual environment found: ${VIRTUAL_ENV}"
 	exit 1
-endif
+endif  # VIRTUAL_ENV
 ifeq (${IGNORE_VENV}, 0)
-	@# Do not ignore existing venv
+	@# Don't ignore an existing conda env, and if there is none, create one
 ifeq (${VENV_DIR},"")
-	@# Path to conda venv has not been passed
+	@# Path VENV_DIR to conda env has NOT been passed
 	$(eval VENV_DIR = $(shell conda run --name $(VENV_NAME) python -c 'import pathlib, sys; print(pathlib.Path(sys.executable).parent.parent)'))
-	export VENV_DIR
-else
-	@# Path to conda venv has been passed
+	@export VENV_DIR
+else  # VENV_DIR
+	@# Path VENV_DIR to conda venv has been passed
 	$(eval VENV_DIR = $(shell conda run --prefix $(VENV_DIR) python -c 'import pathlib, sys; print(pathlib.Path(sys.executable).parent.parent)'))
-	export VENV_DIR
+	@ export VENV_DIR
 ifneq (${VENV_NAME},${DEFAULT_VENV_NAME})
-	@# Name of conda venv has been passed alongside path
+	@# Name VENV_NAME of conda env has been passed alongside path VENV_DIR
 	@echo -e "[make venv] warning: VENV_DIR=${VENV_DIR} overrides VENV_NAME=${VENV_NAME}"
-endif
-endif
+endif  # VENV_NAME
+endif  # VENV_DIR
 	$(eval PREFIX = ${VENV_DIR}/bin/)
-	export PREFIX
+	@export PREFIX
 	${PREFIX}python -m pip install -U pip
-endif
+endif  # IGNORE_VENV
 	${PREFIX}python -V
 
 .PHONY: _create_conda_venv
 _create_conda_venv: git
+	@# If there is an active conda environment, use it, regardless of VENV_NAME and VENV_DIR;
+	@# if there is an existing env matching VENV_NAME and (if set) VENV_DIR, use that;
+	@# otherwise create a new one based on VENV_NAME and (if set) VENV_DIR.
 ifeq (${IGNORE_VENV}, 0)
 	@# Do not ignore existing venv
+ifneq (${CONDA_DEFAULT_ENV},)
+	@# There already is an active conda environment, so use it (regardless of its name and path)
+	@echo -e "\n[make venv] found active conda environment '${CONDA_DEFAULT_ENV}' at '{CONDA_PREFIX}'"
+ifneq (${CONDA_DEFAULT_ENV}, ${VENV_NAME})
+	@# The name of the active env does not match VENV_NAME, but we assume that's OK over override it
+	@echo -e "[make venv] warning: name of active venv '${CONDA_DEFAULT_ENV}' overrides VENV_NAME='${VENV_NAME}'"
+	$(eval VENV_NAME = ${CONDA_DEFAULT_ENV})
+	@export VENV_NAME
+endif  # CONDA_DEFAULT_ENV
+ifneq (${CONDA_PREFIX}, ${VENV_DIR})
+	@# The path to the active env does not match VENV_DIR (if set), but we assume that's OK and override it
+ifneq (${VENV_DIR},"")
+	@echo -e "[make venv] warning: path to active venv '${CONDA_PREFIX}' overrides VENV_DIR='${VENV_DIR}'"
+endif  # VENV_DIR
+	$(eval VENV_DIR = ${CONDA_PREFIX})
+	@export VENV_DIR
+endif  # CONDA_PREFIX
+else  # CONDA_DEFAULT_ENV
+	@# The is no active conda environment
 ifeq (${VENV_DIR},"")
-	@# No path to conda venv has been passed
+	@# Path VENV_DIR to conda env has NOT been passed
 ifeq ($(shell conda list --name $(VENV_NAME) 2>/dev/null 1>&2; echo $$?),0)
-	@# Conda venv already exists
+	@# Conda venv with name VENV_NAME already exists, so use it
 	@echo -e "\n[make venv] conda virtual environment '${VENV_NAME}' already exists"
-else
-	@# Conda venv doesn't exist yet
+else  # shell conda ...
+	@# Conda env with name VENV_NAME doesn't exist yet, so create it
 	@echo -e "\n[make venv] creating conda virtual environment '${VENV_NAME}'"
 	conda create -y --name "${VENV_NAME}" python==${PYTHON}
-endif
-else
-	@# Path to conda venv has been passed
+endif  # shell conda ...
+else  # VENV_DIR
+	@# Path to conda env VENV_DIR has been passed
 ifeq ($(shell conda list --prefix $(VENV_DIR) 2>/dev/null 1>&2; echo $$?),0)
-	@# Conda venv already exists
+	@# Conda env at path VENV_DIR already exists, so use it
 	@echo -e "\n[make venv] conda virtual environment at '${VENV_DIR}'"
-else
-	@# Path to conda venv has been passed
+else  # shell conda ...
+	@# Conda env at path VENV_DIR does NOT yet exist, so create it
 	@echo -e "\n[make venv] creating conda virtual environment at '${VENV_DIR}'"
 	conda create -y --prefix "${VENV_DIR}" python==${PYTHON}
-endif
-endif
-endif
+endif  # shell conda ...
+endif  # VENV_DIR
+endif  # CONDA_DEFAULT_ENV
+endif  # IGNORE_VENV
 
 #==============================================================================
 # Installation
