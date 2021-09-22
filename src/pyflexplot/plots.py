@@ -819,12 +819,7 @@ def create_panel_config(
         legend_config_dct["range_align"] = "right"
         legend_config_dct["range_widths"] = (4, 3, 4)
         legend_config_dct["rstrip_zeros"] = True
-        cloud_levels = [0, 3, 6, 9, 12, 18] + list(
-            range(24, simulation_duration_hours, 12)
-        )
-        if cloud_levels[-1] != simulation_duration_hours:
-            cloud_levels += [simulation_duration_hours]
-        levels_config_dct["levels"] = cloud_levels
+        levels_config_dct["levels"] = get_cloud_timing_levels(simulation_duration_hours)
         if (
             plot_variable == "cloud_arrival_time"
             or ens_variable == "cloud_arrival_time"
@@ -1755,6 +1750,16 @@ def colors_from_cmap(cmap, n_levels, extend):
     if extend not in ["max", "both"]:
         colors.pop(-1)
     return colors
+
+
+def get_cloud_timing_levels(simulation_duration_hours: int) -> list[int]:
+    """Derive levels for cloud timing plots from simulation duration."""
+    if simulation_duration_hours <= 21:
+        return np.arange(0, simulation_duration_hours + 1, 3)
+    levels = [0, 3, 6, 9, 12, 18] + list(range(24, simulation_duration_hours, 12))
+    if levels[-1] < simulation_duration_hours:
+        levels += [simulation_duration_hours]
+    return levels
 
 
 def levels_from_time_stats(n_levels: int, val_max: float) -> np.ndarray:
