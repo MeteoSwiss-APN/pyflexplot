@@ -423,6 +423,7 @@ endif
 bump-minor: ${_INSTALL_DEV}
 ifeq ($(MSG), "")
 	@echo -e "\n[make bump-minor] Error: Please provide a description with MSG='...' (use '"'\\n'"' for multiple lines)"
+else
 	@echo -e '\nTag annotation:\n\n$(subst ',",$(MSG))\n'
 	@${PREFIX}bumpversion minor --verbose --no-commit --no-tag && echo
 	@${PREFIX}pre-commit run --files $$(git diff --name-only) && git add -u
@@ -430,7 +431,6 @@ ifeq ($(MSG), "")
 	@git tag -a v$$(cat VERSION) -m $$'$(subst ',",$(MSG))'
 	@echo -e "\ngit tag -n -l v$$(cat VERSION)" && git tag -n -l v$$(cat VERSION)
 	@echo -e "\ngit log -n1" && git log -n1
-else
 endif
 # ' (close quote that vim thinks is still open to get the syntax highlighting back in order)
 
@@ -438,6 +438,7 @@ endif
 bump-major: ${_INSTALL_DEV}
 ifeq ($(MSG), "")
 	@echo -e "\n[make bump-major] Error: Please provide a description with MSG='...' (use '"'\\n'"' for multiple lines)"
+else
 	@echo -e '\nTag annotation:\n\n$(subst ',",$(MSG))\n'
 	@${PREFIX}bumpversion major --verbose --no-commit --no-tag && echo
 	@${PREFIX}pre-commit run --files $$(git diff --name-only) && git add -u
@@ -445,7 +446,6 @@ ifeq ($(MSG), "")
 	@git tag -a v$$(cat VERSION) -m $$'$(subst ',",$(MSG))'
 	@echo -e "\ngit tag -n -l v$$(cat VERSION)" && git tag -n -l v$$(cat VERSION)
 	@echo -e "\ngit log -n1" && git log -n1
-else
 endif
 # ' (close quote that vim thinks is still open to get the syntax highlighting back in order)
 
