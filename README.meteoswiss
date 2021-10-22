@@ -5,8 +5,8 @@
 # results stored in NetCDF format.
 
 
-# Load environment
-# ----------------
+# Load Python environment
+# -----------------------
 # The environment must be configured as follows for installing and also
 # for using pyflexplot:
 
@@ -25,8 +25,70 @@ printenv PYTHONUSERBASE  # should be defined
 python --version         # should be >= 3.7.4
 
 
+# Install using Conda
+# -------------------
+# Assumes that Miniconda (subset of Conda) has already been installed.
+
+# Note: Size of repository ~260 MB,
+#       size of virtual environment ~730 MB,
+#       do the following preferably on a scratch disk
+
+# Check the Conda channels
+
+conda info --unsafe-channels
+
+# It should contain conda-forge. If not, add it with
+
+conda config --add channels conda-forge
+
+# Clone the pyflexplot repository from github
+
+git clone git@github.com/MeteoSwiss-APN/pyflexplot.git
+
+# Go into repository and check if the correct Makefile is linked
+
+cd pyflexplot
+ls -l Makefile
+
+# It should point to Makefile.conda.mk
+
+# Get help for make options and targets
+
+make help
+
+# Install pyflexplot (and dependencies with CHAIN=1)
+
+make install CHAIN=1
+
+# Check the Conda environment.
+
+conda info --env
+
+# A pyflexplot environment should now be available.
+# Activate the Conda environment for pyflexplot
+
+conda activate pyflexplot
+
+# Check version
+
+pyflexplot --version
+
+# Test installation (and dependencies with CHAIN=1)
+
+make test CHAIN=1
+
+# Deactivate Conda environment for pyflexplot
+
+conda deactivate
+
+# Check installation (see below)
+
+# Run pyflexplot (see below)
+
+
 # Install using pipx
 # ------------------
+# (no longer supported)
 
 # You may want to change the default installation location by defining
 # the following two environment variables:
@@ -54,35 +116,11 @@ pipx upgrade pyflexplot
 # Upgrade a specific version
 pipx install --force git+ssh://git@github.com/MeteoSwiss-APN/pyflexplot.git@v0.13.9
 
-# Uninstall
-# ---------
+# Uninstall if no longer needed
 pipx uninstall pyflexplot
-
-
-# Install from git clone
-# ----------------------
-# Note: Size of repository ~260 MB, size of virtual environment ~730 MB,
-# do the following preferably on a scratch disk
-
-# Clone the pyflexplot repository
-git clone git@github.com:MeteoSwiss-APN/pyflexplot.git
-
-# Get help
-make help
-
-# Install using git clone
-# Use CHAIN=1 to install and test installation,
-# use VENV_DIR for other installation directory than VENV_DIR=venv
-make install CHAIN=1
-
-# "Editable" installation creating soft links in the venv directory
-# Note that this way all modifications to working directory, including
-# branch switches and pulls, immediately affect the pyflexplot application
-make install-dev CHAIN=1
 
 # Only to work interactively, activate venv
 source venv/bin/activate
-
 
 
 # Check installation
@@ -107,39 +145,50 @@ $PIPX_HOME/venvs/pyflexplot/bin/python -m pip freeze
 venv/bin/python -m pip freeze
 
 
-# Test with pyflexplot-test
-# -------------------------
+# Test using pyflexplot-test
+# --------------------------
 
 # Compare two versions (old and new) of pyflexplot with pyflexplot-test
 # pyflexplot-test takes two git tags and compares the resulting plots.
+# Do the following preferably on a scratch disk.
 
 # Install pyflexplot-test using pipx
 pipx install git+ssh://git@github.com/MeteoSwiss-APN/pyflexplot-test
+
+# Install pyflexplot-test from git clone
+git clone git+ssh://git@github.com/MeteoSwiss-APN/pyflexplot-test
+cd pyflexplot-test
+make install CHAIN=1
+
+# Make "editable" installation, creating soft links in the venv directory
+make install-dev CHAIN=1
 
 # Check installation of pyflexplot-test and prepare for tests
 pyflexplot-test --version  # show version
 pyflexplot-test --help     # show help
 
-# Do the following preferably on a scratch disk
 
-# Automated test
+# Automated test using pyflexplot-test
 
 # Example scripts to run test cases are in examples
-cd pyflexplot-test/examples
+ls examples
 
 # The script run_pyflexplot_test.sh runs the default test cases
 # Adapt the variables "old" and "new" in this or other scripts
 # as desired.
+$EDITOR examples/run_pyflexplot_test.sh
 
-# Run the script in a parallel environment either manually
+# Run the script in a parallel environment
+# Submit it as parallel job to SLURM
+batchPP -T 10 examples/run_pyflexplot_test.sh
+
+# or run in interatively
 salloc -c 10
-./run_pyflexplot_test.sh
+examples/run_pyflexplot_test.sh
 exit
 
-# or better submit it as parallel job to SLURM
-batchPP  -T 10 -r redhat79 ./run_pyflexplot_test.sh
 
-# Manual test
+# Manual test using pyflexplot-test
 
 # Generic call of pyflexplot-test with placeholders
 # Note: the result will be stored in ./pyflexplot-test/work
@@ -151,7 +200,6 @@ pyflexplot-test --old-rev=<old-rev> --new-rev=<new-rev> \
 eog pyflexplot-test/work/<old-rev>_vs_<new-rev>/*.png
 
 # Examples for manual tests
-# -------------------------
 
 # Allocate parallel resources, e.g. 10 cores
 salloc -c 10
@@ -204,6 +252,7 @@ pyflexplot-test --num-procs=$SLURM_CPUS_PER_TASK --old-rev=$old_rev --new-rev=$n
 # Release allocated resources
 exit
 
+
 # Run pyflexplot
 # --------------
 
@@ -216,40 +265,58 @@ salloc -c 10
 # Important: Free resources when no longer needed.
 exit
 
-# Default input files are searched in ./data
-# A set of iput files are available in and can be linked from
+# Default input files are searched for in ./data
+# Link the default input files
 ln -s /scratch/ruestefa/shared/test/pyflexplot/data .
 
+# Examples
+
 # Create ensemble plots from default test input
-pyflexplot --preset opr/cosmo-2e/all_pdf --merge-pdfs
-#--preset opr/cosmo-2e/all_png
-#--preset opr/cosmo-1e/all_pdf --merge-pdfs
-#--preset opr/cosmo-1e/all_png
+pyflexplot --preset "$preset" --merge-pdfs
 
-# Run PyFlexPlot with a preset file on an arbitrary FLEXPART output file
-# (Replace <YYYYMMDDhhmmss> by actual value)
+# Useful definitions of preset (use wildcards to create png and pdf):
+# For FLEXPART-IFS      Global output:        preset=opr/ifs-hres/all_???
+# For FLEXPART-IFS      Europe output:        preset=opr/ifs-hres-eu/all_???
+# For FLEXPART-COSMO    deterministic output: preset=opr/cosmo-1e_ctrl/all_???
+# For FLEXPART-COSMO    deterministic output: preset=opr/cosmo-2e_ctrl/all_???
+# For FLEXPART-COSMO-1E ensemble output:      preset=opr/cosmo-1e/all_???
+# For FLEXPART-COSMO-2E ensemble output:      preset=opr/cosmo-2e/all_???
 
-# For FLEXPART-IFS Global output
-pyflexplot --preset opr/ifs-hres/all_??? --merge-pdfs --setup infile grid_conc_<YYYYMMDDhhmmss>.nc
+# Run PyFlexPlot with a preset on an arbitrary FLEXPART output file
+# If the FLEXPART output was produced by the test-fp script, find the
+# file by the job number
+# Example FLEXPART with COSMO-2E Control Run
+preset=opr/cosmo-2e-ctrl/all_pdf
+job=1074
+# Submit pyflexplot job
+infile=$SCRATCH/flexpart/job/$job/output/*.nc
+basetime=$(cat $SCRATCH/flexpart/job/$job/output/plot_info)
+dest=$SCRATCH/flexpart/job/$job/plots
+mkdir -p $dest
+batchPP -t 1 -T 10 -n plot$job "pyflexplot --preset $preset --merge-pdfs --setup infile $infile --setup base_time $basetime --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK"
 
-# For FLEXPART-IFS Europe output
-pyflexplot --preset opr/ifs-hres-eu/all_??? --merge-pdfs --setup infile grid_conc_<YYYYMMDDhhmmss>.nc
+# Example FLEXPART with COSMO-1E Control Run
+preset=opr/cosmo-1e-ctrl/all_pdf
+job=1076
+# Submit job with same commands as above
 
-# For FLEXPART-COSMO deterministic output
-pyflexplot --preset opr/cosmo-1e_ctrl/all_??? --merge-pdfs --setup infile grid_conc_<YYYYMMDDhhmmss>.nc
+# Example: FLEXPART with COSMO-2E Ensemble Run
+# Settings
+preset=opr/cosmo-2e/all_pdf
+job=short-bug
+basetime=2021090612
+# Derive file name pattern for infile
+infile000=$(echo $SCRATCH/flexpart/job/$job/output/000/*.nc)
+infile=${infile000/\/000\//\/\{ens_member:03\}\/}
+# Create directory for plots
+dest=$SCRATCH/flexpart/job/$job/plots
+mkdir -p $dest
+# Submit job
+batchPP -t 1 -T 10 -n plot$job "pyflexplot --preset $preset --merge-pdfs --setup infile $infile --setup base_time $basetime --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK"
 
-# For FLEXPART-COSMO-1E ensemble output
-job=1055
-infile=$(ls $SCRATCH/flexpart/job/$job/output/*.nc)
-
-infile=$SCRATCH/flexpart/job/1055
-pyflexplot --preset opr/cosmo-1e/all_* --merge-pdfs --num-procs=$SLURM_CPUS_PER_TASK --setup infile $infile1
-
-# For FLEXPART-COSMO-2E ensemble output
-pyflexplot --preset opr/cosmo-2e/all_* --merge-pdfs --num-procs=$SLURM_CPUS_PER_TASK --setup infile $infile2
 
 # Dry run to check what is being done
-pyflexplot --dry-run --preset opr/cosmo-1e-ctrl/all_pdf
+pyflexplot --dry-run --preset
 
 # Create plots and open them with `eog`
 pyflexplot --open-all eog --preset opr/cosmo-1e_ctrl/all_png
@@ -261,11 +328,11 @@ pyflexplot --open-all eog --preset opr/cosmo-1e_ctrl/all_png
 # Commit changes
 git commit
 
-# Increase version, commit and make tag
+# Increase version, commit, and make tag
 make bump-patch MSG=<message>
 
-# Push to GitHub
+# Push commit and associated tag to GitHub
 git push
 git push --tag
 
-# Master branch in dev branch mergen
+# To continue development, merge master branch into dev branch
