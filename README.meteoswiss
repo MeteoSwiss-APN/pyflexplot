@@ -1,28 +1,8 @@
 # PyFlexpPlot
 # ===========
 
-# PyFlexPlot is a Python-based tool to visualize FLEXPART dispersion simulation
-# results stored in NetCDF format.
-
-
-# Load Python environment
-# -----------------------
-# The environment must be configured as follows for installing and also
-# for using pyflexplot:
-
-# Define basic environment for Python (if not defined in .bashrc),
-# necessary for pipx and other executables needed during installation
-export PYTHONUSERBASE=/apps/mch/msopr/osm/python
-PATH=${PATH}:${PYTHONUSERBASE}/bin
-
-# Define $OPR_SETUP_DIR as provided by osm
-source /oprusers/osm/.opr_setup_dir
-# Load modules for programming environment, Python, geos, and proj
-source ${OPR_SETUP_DIR}/.python_base
-
-# Check environment
-printenv PYTHONUSERBASE  # should be defined
-python --version         # should be >= 3.7.4
+# PyFlexPlot is a Python-based tool to visualize FLEXPART dispersion
+# simulation results stored in NetCDF format.
 
 
 # Install using Conda
@@ -43,7 +23,7 @@ conda config --add channels conda-forge
 
 # Clone the pyflexplot repository from github
 
-git clone git@github.com/MeteoSwiss-APN/pyflexplot.git
+git clone git@github.com:MeteoSwiss-APN/pyflexplot.git
 
 # Go into repository and check if the correct Makefile is linked
 
@@ -52,6 +32,14 @@ ls -l Makefile
 
 # It should point to Makefile.conda.mk
 
+# If it does not, overwrite the links with
+ln -sf Makefile.conda.mk Makefile
+ln -sf setup.conda.py setup.py
+
+# Important: Bevore installation, make sure no conda environment is active,
+# otherwise pyflexplot will be installed there instead of creating
+# its own environment!
+
 # Get help for make options and targets
 
 make help
@@ -59,6 +47,11 @@ make help
 # Install pyflexplot (and dependencies with CHAIN=1)
 
 make install CHAIN=1
+
+# Alternatively install pyflexplot for development
+# (Installation with symlinks pointing to files in git clone)
+
+make install-dev CHAIN=1
 
 # Check the Conda environment.
 
@@ -77,18 +70,40 @@ pyflexplot --version
 
 make test CHAIN=1
 
-# Deactivate Conda environment for pyflexplot
+# Continue with section "Check installation"
+
+# or directly with section "Run pyflexplot"
+
+# After you are finished working with pyflexplot,
+# deactivate the Conda environment for pyflexplot
 
 conda deactivate
 
-# Check installation (see below)
 
-# Run pyflexplot (see below)
+# Alternative installation with pipx, obsolete!
+# ---------------------------------------------
+# (skip this section if installed with Conda)
 
+# Load Python environment
+# The environment must be configured as follows for installing and also
+# for using pyflexplot:
 
-# Install using pipx
-# ------------------
-# (no longer supported)
+# Define $OPR_SETUP_DIR as provided by osm
+source /oprusers/osm/.opr_setup_dir
+# Load modules for programming environment, Python, geos, and proj
+# This is needed because the system installation of Python is too old
+source ${OPR_SETUP_DIR}/.python_base
+
+# Check environment
+python --version         # should be >= 3.7.4
+
+# Define basic environment for Python (if not defined in .bashrc),
+# necessary for pipx and other executables needed during installation
+export PYTHONUSERBASE=/apps/mch/msopr/osm/python
+PATH=${PATH}:${PYTHONUSERBASE}/bin
+
+# Check environment
+printenv PYTHONUSERBASE  # should be defined
 
 # You may want to change the default installation location by defining
 # the following two environment variables:
@@ -174,8 +189,8 @@ pyflexplot-test --help     # show help
 ls examples
 
 # The script run_pyflexplot_test.sh runs the default test cases
-# Adapt the variables "old" and "new" in this or other scripts
-# as desired.
+# Important: Before running any of these scripts, adapt the version
+# in the variables "old" and "new" as required.
 $EDITOR examples/run_pyflexplot_test.sh
 
 # Run the script in a parallel environment
@@ -272,6 +287,7 @@ ln -s /scratch/ruestefa/shared/test/pyflexplot/data .
 # Examples
 
 # Create ensemble plots from default test input
+# (after defining preset, see below)
 pyflexplot --preset "$preset" --merge-pdfs
 
 # Useful definitions of preset (use wildcards to create png and pdf):
@@ -303,8 +319,11 @@ job=1076
 # Example: FLEXPART with COSMO-2E Ensemble Run
 # Settings
 preset=opr/cosmo-2e/all_pdf
+# Some Flexpart outputs are available on
+cd /scratch/kaufmann/flexpart/job
 job=short-bug
-basetime=2021090612
+# Define basetime (plot_info may not exist, set manually in this case)
+basetime=$(cat $job/plot_info)
 # Derive file name pattern for infile
 infile000=$(echo $SCRATCH/flexpart/job/$job/output/000/*.nc)
 infile=${infile000/\/000\//\/\{ens_member:03\}\/}
@@ -325,6 +344,8 @@ pyflexplot --open-all eog --preset opr/cosmo-1e_ctrl/all_png
 # Commit a new version
 # --------------------
 
+
+git checkout dev
 # Commit changes
 git commit
 

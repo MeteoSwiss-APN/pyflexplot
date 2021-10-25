@@ -262,6 +262,7 @@ _create_conda_venv: git
 ifeq (${IGNORE_VENV}, 0)
 	@# Do not ignore existing venv
 ifneq (${CONDA_DEFAULT_ENV},)
+ifneq (${CONDA_DEFAULT_ENV},base)
 	@# There already is an active conda environment, so use it (regardless of its name and path)
 	@echo -e "\n[make venv] found active conda environment '${CONDA_DEFAULT_ENV}' at '{CONDA_PREFIX}'"
 ifneq (${CONDA_DEFAULT_ENV}, ${VENV_NAME})
@@ -301,6 +302,7 @@ else  # shell conda ...
 	conda create -y --prefix "${VENV_DIR}" python==${PYTHON}
 endif  # shell conda ...
 endif  # VENV_DIR
+endif  # CONDA_DEFAULT_ENV
 endif  # CONDA_DEFAULT_ENV
 endif  # IGNORE_VENV
 
