@@ -4,6 +4,20 @@
 # PyFlexPlot is a Python-based tool to visualize FLEXPART dispersion
 # simulation results stored in NetCDF format.
 
+# Load necessary environment (including geos and proj) and a
+# little more advanced version of Python than the system default (2.7).
+# The environment must be configured as follows for installing and also
+# for using pyflexplot:
+
+# Define $OPR_SETUP_DIR as provided by the operational user osm:
+source /oprusers/osm/.opr_setup_dir
+# Load modules for programming environment, Python, geos, and proj
+# This is needed because the system installation of Python is too old
+source ${OPR_SETUP_DIR}/.python_base
+
+# Check environment
+python --version         # should be >= 3.7.4
+
 
 # Install using Conda
 # -------------------
@@ -25,20 +39,20 @@ conda config --add channels conda-forge
 
 git clone git@github.com:MeteoSwiss-APN/pyflexplot.git
 
-# Go into repository and check if the correct Makefile is linked
+# Go into repository and check if the links Makefile and setup.py
+# are linked to the Conda versions
 
 cd pyflexplot
-ls -l Makefile
+ls -l Makefile setup.py
 
-# It should point to Makefile.conda.mk
-
-# If it does not, overwrite the links with
+# They should point to Makefile.conda.mk and setup.conda.py
+# They do not, overwrite the links with
 ln -sf Makefile.conda.mk Makefile
 ln -sf setup.conda.py setup.py
 
-# Important: Bevore installation, make sure no conda environment is active,
-# otherwise pyflexplot will be installed there instead of creating
-# its own environment!
+# Important: Bevore installation, make sure no or only the Conda base
+# environment is active, otherwise pyflexplot will be installed in the active
+# environment instead of creating its own!
 
 # Get help for make options and targets
 
@@ -83,19 +97,6 @@ conda deactivate
 # Alternative installation with pipx, obsolete!
 # ---------------------------------------------
 # (skip this section if installed with Conda)
-
-# Load Python environment
-# The environment must be configured as follows for installing and also
-# for using pyflexplot:
-
-# Define $OPR_SETUP_DIR as provided by osm
-source /oprusers/osm/.opr_setup_dir
-# Load modules for programming environment, Python, geos, and proj
-# This is needed because the system installation of Python is too old
-source ${OPR_SETUP_DIR}/.python_base
-
-# Check environment
-python --version         # should be >= 3.7.4
 
 # Define basic environment for Python (if not defined in .bashrc),
 # necessary for pipx and other executables needed during installation
@@ -344,16 +345,41 @@ pyflexplot --open-all eog --preset opr/cosmo-1e_ctrl/all_png
 # Commit a new version
 # --------------------
 
-
+# Bring all changes to the dev branch if they are not already there.
 git checkout dev
-# Commit changes
-git commit
 
-# Increase version, commit, and make tag
+# Copy or merge changes into dev
+
+# If plots change, create new reference plots
+# Situation: make test-slow fails (tests/slow/pyflexplot/test_plots/test_*.py)
+# Reason: Plot references (summary dicts; tests/slow/pyflexplot/test_plots/ref_*.py) have changed
+# Steps:
+# Uncomment _TestBase = _TestCreateReference in tests/slow/pyflexplot/test_plots/shared.py
+# Rerun
+make test-slow
+
+# Revert tests/slow/pyflexplot/test_plots/shared.py
+git checkout tests/slow/pyflexplot/test_plots/shared.py
+
+# Inspect the changes
+git diff tests/slow/pyflexplot/test_plots
+
+# Stage and commit all changes in dev
+git add ...
+git commit ...
+
+# Merge changes into master
+# (unless you have merged them from master)
+git checkout master
+git merge dev
+
+# Increase version, commit, push to github including tag
+# Choose target according to change level:
+# bump-patch, bump-minor, bump-major
 make bump-patch MSG=<message>
 
 # Push commit and associated tag to GitHub
 git push
 git push --tag
 
-# To continue development, merge master branch into dev branch
+# Continue development, preferably in the dev branch
