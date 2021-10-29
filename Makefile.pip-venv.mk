@@ -8,7 +8,7 @@ SHELL := /bin/bash
 
 CHAIN ?= 0#OPT Whether to chain targets, e.g., let test depend on install-test
 IGNORE_VENV ?= 0#OPT Don't create and/or use a virtual environment
-MSG ?= ""#OPT Message used as, e.g., tag annotation in version bump commands
+MSG ?= #OPT Message used as, e.g., tag annotation in version bump commands
 VENV_DIR ?= venv#OPT Path to virtual environment to be created and/or used
 VENV_NAME ?= pyflexplot#OPT Name of virtual environment if one is created
 
@@ -49,15 +49,12 @@ export PIP_OPTS
 #
 ifeq (${CHAIN}, 0)
 	_INSTALL :=
-	_INSTALL_EDIT :=
 	_INSTALL_DEV :=
 else
 	_INSTALL := install
-	_INSTALL_EDIT := install-edit
 	_INSTALL_DEV := install-dev
 endif
 export _INSTALL
-export _INSTALL_EDIT
 export _INSTALL_DEV
 
 _TMP_VENV := $(shell date +venv-tmp-%s)
@@ -227,7 +224,6 @@ ifeq (${IGNORE_VENV}, 0)
 ifeq (${VIRTUAL_ENV},)
 	@echo -e "\n[make venv] creating virtual environment '${VENV_NAME}' at '${VENV_DIR}'"
 	python -m venv ${VENV_DIR} --prompt='${VENV_NAME}'
-	${PREFIX}python -m pip install -U pip
 endif
 endif
 
@@ -238,6 +234,7 @@ endif
 .PHONY: install #CMD Install the package with pinned runtime dependencies.
 install: venv
 	@echo -e "\n[make install] installing the package"
+	${PREFIX}python -m pip install -U pip
 	# SR_NOTE Pinned deps fail on tsa, probably due to cartopy/shapely vs. geos/proj
 	# ${PREFIX}python -m pip install -r requirements/requirements.txt ${PIP_OPTS}
 	${PREFIX}python -m pip install . ${PIP_OPTS}
@@ -245,6 +242,7 @@ install: venv
 .PHONY: install-dev #CMD Install the package as editable with pinned runtime and\ndevelopment dependencies.
 install-dev: venv
 	@echo -e "\n[make install-dev] installing the package as editable with development dependencies"
+	${PREFIX}python -m pip install -U pip
 	# SR_NOTE Pinned deps fail on tsa, probably due to cartopy/shapely vs. geos/proj
 	# ${PREFIX}python -m pip install -r requirements/dev-requirements.txt ${PIP_OPTS}
 	${PREFIX}python -m pip install -r requirements/dev-requirements.in ${PIP_OPTS}
@@ -322,7 +320,7 @@ update-deps: update-run-dev-deps update-tox-deps update-precommit-deps
 
 .PHONY: bump-patch #CMD Increment patch component Z of version number X.Y.Z,\nincl. git commit and tag
 bump-patch: ${_INSTALL_DEV}
-ifeq ($(MSG), "")
+ifeq ($(MSG),)
 	@echo -e "\n[make bump-patch] Error: Please provide a description with MSG='...' (use '"'\\n'"' for multiple lines)"
 else
 	@echo -e "\n[make bump-patch] bumping version number: increment patch component\n"
@@ -338,7 +336,7 @@ endif
 
 .PHONY: bump-minor #CMD Increment minor component Y of version number X.Y.Z,\nincl. git commit and tag
 bump-minor: ${_INSTALL_DEV}
-ifeq ($(MSG), "")
+ifeq ($(MSG),)
 	@echo -e "\n[make bump-minor] Error: Please provide a description with MSG='...' (use '"'\\n'"' for multiple lines)"
 else
 	@echo -e '\nTag annotation:\n\n$(subst ',",$(MSG))\n'
@@ -353,7 +351,7 @@ endif
 
 .PHONY: bump-major #CMD Increment major component X of version number X.Y.Z,\nincl. git commit and tag
 bump-major: ${_INSTALL_DEV}
-ifeq ($(MSG), "")
+ifeq ($(MSG),)
 	@echo -e "\n[make bump-major] Error: Please provide a description with MSG='...' (use '"'\\n'"' for multiple lines)"
 else
 	@echo -e '\nTag annotation:\n\n$(subst ',",$(MSG))\n'

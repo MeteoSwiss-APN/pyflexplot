@@ -8,9 +8,9 @@ SHELL := /bin/bash
 
 CHAIN ?= 0#OPT Whether to chain targets, e.g., let test depend on install-test
 IGNORE_VENV ?= 0#OPT Don't create and/or use a virtual environment
-MSG ?= ""#OPT Message used as, e.g., tag annotation in version bump commands
+MSG ?= #OPT Message used as, e.g., tag annotation in version bump commands
 PYTHON ?= 3.8#OPT Python version used to create conda virtual environment
-VENV_DIR ?= ""#OPT Path to existing or new conda virtual environment (overrides VENV_NAME)
+VENV_DIR ?= #OPT Path to existing or new conda virtual environment (overrides VENV_NAME)
 VENV_NAME ?= pyflexplot#OPT Name of conda virtual environment (overridden by VENV_DIR)
 
 # Default values used below (caution: keep values in sync with above)
@@ -36,20 +36,23 @@ export PIP_OPTS
 # regardless of ${CHAIN}.
 #
 ifeq (${CHAIN}, 0)
-	_INSTALL :=
-	_INSTALL_EDIT :=
-	_INSTALL_DEV :=
+	_INSTALL := venv
+	_INSTALL_DEV := venv
 else
 	_INSTALL := install
-	_INSTALL_EDIT := install-edit
 	_INSTALL_DEV := install-dev
 endif
 export _INSTALL
-export _INSTALL_EDIT
 export _INSTALL_DEV
 
 _TMP_VENV := $(shell date +venv-tmp-%s)
 export _TMP_VENV
+
+# If conda base environment is active, ignore it
+ifeq (${CONDA_DEFAULT_ENV},base)
+	CONDA_DEFAULT_ENV := #
+	export CONDA_DEFAULT_ENV
+endif
 
 #==============================================================================
 # Python script: Print help
@@ -178,7 +181,7 @@ clean-test:
 clean-venv:
 ifeq (${IGNORE_VENV}, 0)
 	@# Do not ignore existing venv
-ifeq (${VENV_DIR},"")
+ifeq (${VENV_DIR},)
 	@# Path to conda venv has not been passed
 ifneq ($(shell conda list --name $(VENV_NAME) 2>/dev/null 1>&2; echo $$?),0)
 	@echo -e "\n[make clean-venv] no conda virtual environment '${VENV_NAME}' to remove"
@@ -235,14 +238,14 @@ ifneq (${VIRTUAL_ENV},)
 endif  # VIRTUAL_ENV
 ifeq (${IGNORE_VENV}, 0)
 	@# Don't ignore an existing conda env, and if there is none, create one
-ifeq (${VENV_DIR},"")
+ifeq (${VENV_DIR},)
 	@# Path VENV_DIR to conda env has NOT been passed
 	$(eval VENV_DIR = $(shell conda run --name $(VENV_NAME) python -c 'import pathlib, sys; print(pathlib.Path(sys.executable).parent.parent)'))
 	@export VENV_DIR
 else  # VENV_DIR
 	@# Path VENV_DIR to conda venv has been passed
 	$(eval VENV_DIR = $(shell conda run --prefix $(VENV_DIR) python -c 'import pathlib, sys; print(pathlib.Path(sys.executable).parent.parent)'))
-	@ export VENV_DIR
+	@export VENV_DIR
 ifneq (${VENV_NAME},${DEFAULT_VENV_NAME})
 	@# Name VENV_NAME of conda env has been passed alongside path VENV_DIR
 	@echo -e "[make venv] warning: VENV_DIR=${VENV_DIR} overrides VENV_NAME=${VENV_NAME}"
@@ -250,7 +253,6 @@ endif  # VENV_NAME
 endif  # VENV_DIR
 	$(eval PREFIX = ${VENV_DIR}/bin/)
 	@export PREFIX
-	${PREFIX}python -m pip install -U pip
 endif  # IGNORE_VENV
 	${PREFIX}python -V
 
@@ -262,7 +264,6 @@ _create_conda_venv: git
 ifeq (${IGNORE_VENV}, 0)
 	@# Do not ignore existing venv
 ifneq (${CONDA_DEFAULT_ENV},)
-ifneq (${CONDA_DEFAULT_ENV},base)
 	@# There already is an active conda environment, so use it (regardless of its name and path)
 	@echo -e "\n[make venv] found active conda environment '${CONDA_DEFAULT_ENV}' at '{CONDA_PREFIX}'"
 ifneq (${CONDA_DEFAULT_ENV}, ${VENV_NAME})
@@ -273,7 +274,7 @@ ifneq (${CONDA_DEFAULT_ENV}, ${VENV_NAME})
 endif  # CONDA_DEFAULT_ENV
 ifneq (${CONDA_PREFIX}, ${VENV_DIR})
 	@# The path to the active env does not match VENV_DIR (if set), but we assume that's OK and override it
-ifneq (${VENV_DIR},"")
+ifneq (${VENV_DIR},)
 	@echo -e "[make venv] warning: path to active venv '${CONDA_PREFIX}' overrides VENV_DIR='${VENV_DIR}'"
 endif  # VENV_DIR
 	$(eval VENV_DIR = ${CONDA_PREFIX})
@@ -281,7 +282,7 @@ endif  # VENV_DIR
 endif  # CONDA_PREFIX
 else  # CONDA_DEFAULT_ENV
 	@# The is no active conda environment
-ifeq (${VENV_DIR},"")
+ifeq (${VENV_DIR},)
 	@# Path VENV_DIR to conda env has NOT been passed
 ifeq ($(shell conda list --name $(VENV_NAME) 2>/dev/null 1>&2; echo $$?),0)
 	@# Conda venv with name VENV_NAME already exists, so use it
@@ -303,7 +304,6 @@ else  # shell conda ...
 endif  # shell conda ...
 endif  # VENV_DIR
 endif  # CONDA_DEFAULT_ENV
-endif  # CONDA_DEFAULT_ENV
 endif  # IGNORE_VENV
 
 #==============================================================================
@@ -315,6 +315,7 @@ install: venv
 	@echo -e "\n[make install] installing the package"
 	# conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.txt  # pinned
 	conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.in  # unpinned
+	${PREFIX}python -m pip install -U pip
 	${PREFIX}python -m pip install . ${PIP_OPTS}
 	${PREFIX}pyflexplot -V
 
@@ -324,6 +325,7 @@ install-dev: venv
 	# conda install --yes --prefix "${VENV_DIR}" --file requirements/dev-requirements.txt  # pinned
 	conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.in  # unpinned
 	conda install --yes --prefix "${VENV_DIR}" --file requirements/dev-requirements.in  # unpinned
+	${PREFIX}python -m pip install -U pip
 	${PREFIX}python -m pip install -e . ${PIP_OPTS}
 	${PREFIX}pre-commit install
 	${PREFIX}pyflexplot -V
@@ -407,7 +409,7 @@ update-deps: update-run-dev-deps update-tox-deps update-precommit-deps
 
 .PHONY: bump-patch #CMD Increment patch component Z of version number X.Y.Z,\nincl. git commit and tag
 bump-patch: ${_INSTALL_DEV}
-ifeq ($(MSG), "")
+ifeq ($(MSG),)
 	@echo -e "\n[make bump-patch] Error: Please provide a description with MSG='...' (use '"'\\n'"' for multiple lines)"
 else
 	@echo -e "\n[make bump-patch] bumping version number: increment patch component\n"
@@ -423,7 +425,7 @@ endif
 
 .PHONY: bump-minor #CMD Increment minor component Y of version number X.Y.Z,\nincl. git commit and tag
 bump-minor: ${_INSTALL_DEV}
-ifeq ($(MSG), "")
+ifeq ($(MSG),)
 	@echo -e "\n[make bump-minor] Error: Please provide a description with MSG='...' (use '"'\\n'"' for multiple lines)"
 else
 	@echo -e '\nTag annotation:\n\n$(subst ',",$(MSG))\n'
@@ -438,7 +440,7 @@ endif
 
 .PHONY: bump-major #CMD Increment major component X of version number X.Y.Z,\nincl. git commit and tag
 bump-major: ${_INSTALL_DEV}
-ifeq ($(MSG), "")
+ifeq ($(MSG),)
 	@echo -e "\n[make bump-major] Error: Please provide a description with MSG='...' (use '"'\\n'"' for multiple lines)"
 else
 	@echo -e '\nTag annotation:\n\n$(subst ',",$(MSG))\n'
@@ -486,7 +488,7 @@ test-fast: ${_INSTALL_DEV}
 	${PREFIX}pytest tests/fast
 
 .PHONY: test-medium #CMD Run only medium-fast tests in the development environment
-test-medium: ${_INSTALL_TEST}
+test-medium: venv ${_INSTALL_TEST}
 	@echo -e "\n[make test-medium] running medium-fast tests locally"
 	# ${PREFIX}tox -e py37 -- tests/medium
 	${PREFIX}pytest tests/medium
