@@ -319,6 +319,16 @@ def cast_value(
                 pass
         raise error(value, type_, f"no compatible inner type: {inner_types}")
 
+    elif type_.startswith("typing.Optional["):
+        if value in [None, "None"]:
+            return None
+        inner_type = type_[len("typing.Optional[") : -len("]")]
+        try:
+            return cast_value(inner_type, value, **kwargs)
+        except IncompatibleTypesError:
+            pass
+        raise error(value, type_, f"incompatible inner type: {inner_type}")
+
     elif type_ in ["datetime", "datetime.datetime"]:
         if isinstance(datetime_fmt, str):
             datetime_fmt = (datetime_fmt,)  # type: ignore
