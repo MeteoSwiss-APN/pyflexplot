@@ -95,7 +95,7 @@ def create_layout_post_vintage(
     aspect: float,
     *,
     h_rigtop: float = 0.08,
-    h_rigbot: float = 0.42,
+    h_rigbot: float = 0.415,
 ) -> Tuple[Dict[str, float], Dict[str, RectType]]:
     # Primary
     x0_tot: float = 0.0
@@ -150,7 +150,7 @@ def create_layout_post_vintage(
 def create_layout_post_vintage_ens(
     aspect: float,
 ) -> Tuple[Dict[str, float], Dict[str, RectType]]:
-    return create_layout_post_vintage(aspect, h_rigtop=0.2)
+    return create_layout_post_vintage(aspect, h_rigtop=0.18)
 
 
 def create_layout_standalone_details(

@@ -531,7 +531,7 @@ class InputFileEnsemble:
         self.time = time
 
     def _prepare_time(self, fi: nc4.Dataset, time: np.ndarray) -> np.ndarray:
-        if self.config.add_ts0:
+        if self.config.add_ts0 and len(time) >= 2:
             dts = time[1] - time[0]
             ts0 = time[0] - dts
             time = np.r_[ts0, time]
@@ -803,7 +803,9 @@ class InputFileEnsemble:
     @staticmethod
     def get_temp_res_hrs(fi: nc4.Dataset) -> float:
         """Determine the (constant) temporal resolution in hours."""
-        time = fi.variables["time"]
+        time = fi.variables["time"][:]
+        if len(time) < 2:
+            return 1
         dts = set(time[1:] - time[:-1])
         if len(dts) > 1:
             raise Exception(f"Non-uniform time resolution: {sorted(dts)} ({time})")
