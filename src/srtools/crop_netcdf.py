@@ -3,7 +3,6 @@ from __future__ import annotations
 
 # Standard library
 import dataclasses as dc
-import functools
 import sys
 from typing import Any
 from typing import Optional
@@ -29,7 +28,10 @@ class Setup:
 
 
 # Show default values of options by default
-click.option = functools.partial(click.option, show_default=True)  # type: ignore
+_click_option = click.option
+click.option = lambda *args, **kwargs: _click_option(
+    *args, **{**kwargs, "show_default": True}
+)
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 

@@ -53,7 +53,7 @@ class SetupFile:
         only: Optional[int] = None,
     ) -> PlotSetupGroup:
         """Read the setup from a text file in TOML format."""
-        with open(self.path, "r") as f:
+        with open(self.path, "r", encoding="utf-8") as f:
             try:
                 raw_data = toml.load(f)
             except Exception as e:

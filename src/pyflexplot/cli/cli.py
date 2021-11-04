@@ -1,7 +1,6 @@
 # pylint: disable=R0914  # too-many-locals
 """Command line interface of PyFlexPlot."""
 # Standard library
-import functools
 from typing import Any
 
 # Third-party
@@ -31,7 +30,10 @@ add_to_preset_paths(presets_data_path)
 
 
 # Show default values of options by default
-click.option = functools.partial(click.option, show_default=True)  # type: ignore
+_click_option = click.option
+click.option = lambda *args, **kwargs: _click_option(
+    *args, **{**kwargs, "show_default": True}
+)
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})

@@ -286,6 +286,8 @@ class PlotSetup(BaseSetup):
         panels_dcts_lst: List[List[Dict[str, Any]]] = []
         # pylint: disable=E1101  # no-member [pylint 2.7.4]
         # (pylint 2.7.4 does not support dataclasses.field)
+        # pylint: disable=E1133  # not-an-iterable
+        # (pylint 2.10.2 doesn't recognize PlotPanelSetupGroup as iterable)
         for panels in self.panels.decompress(
             select_panels, skip_panels, internal=False
         ):

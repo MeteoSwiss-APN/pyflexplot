@@ -94,6 +94,6 @@ def cat_preset(name: str, include_source: bool = False) -> str:
     for path in collect_preset_files_flat(name).values():
         if include_source:
             lines.append(f"# source: {path}\n")
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             lines.extend([line.strip() for line in f.readlines()])
     return "\n".join(lines)

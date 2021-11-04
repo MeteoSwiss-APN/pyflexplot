@@ -191,6 +191,7 @@ class CloudDomain(Domain):
                 )
             if mask is None:
                 mask = np.zeros([self.lat.size, self.lon.size], dtype=np.bool_)
+        assert mask is not None  # mypy
         self.mask: np.ndarray = mask
 
     # pylint: disable=R0912  # too-many-branches (>12)
@@ -351,7 +352,10 @@ class ReleaseSiteDomainConfig(DomainConfig):
     """
 
     aspect: Optional[float] = None
-    field_proj: Projection = dc.field(default_factory=PlateCarree)
+    field_proj: Projection = dc.field(
+        # pylint: disable=E0110  # abstract-class-instatiated (PlateCarree)
+        default_factory=PlateCarree
+    )
     min_size_lat: float = 0.0
     min_size_lon: float = 0.0
     release_lat: Optional[float] = None
@@ -426,7 +430,10 @@ class ReleaseSiteDomain(Domain):
             d_lon = d_lat / self.config.aspect
         if isinstance(self.config.field_proj, RotatedPole):
             c_lon, c_lat = self.config.field_proj.transform_point(
-                self.config.release_lon, self.get_release_lat(), PlateCarree()
+                # pylint: disable=E0110  # abstract-class-instatiated (PlateCarree)
+                self.config.release_lon,
+                self.get_release_lat(),
+                PlateCarree(),
             )
             lllat = c_lat - 0.5 * d_lat
             lllon = c_lon - 0.5 * d_lon

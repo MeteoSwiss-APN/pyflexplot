@@ -2,9 +2,7 @@
 from __future__ import annotations
 
 # Standard library
-import functools
 from typing import Any
-from typing import Callable
 from typing import Mapping
 from typing import Optional
 from typing import Sequence
@@ -13,55 +11,6 @@ from typing import Union
 
 # Third-party
 import click
-
-
-def click_options(
-    f_options: Callable[[], Sequence[click.Option]]
-) -> Callable[[Callable], Callable]:
-    """Define a list of click options that can be shared by multiple commands.
-
-    Args:
-        f_options (function): Function returning a list of ``click.option``
-            objects.
-
-    Example:
-        > @click_options          # <= define options
-        > def common_options():
-        >     return [click.option(...), click.option(...), ...]
-
-        > @click.group
-        > def main(...):
-        >     ...
-
-        > @CLI.command
-        > @common_options         # <= use options
-        > def foo(...):
-        >     ...
-
-        > @CLI.command
-        > @common_options         # <= use options
-        > def bar(...):
-        >     ...
-
-
-    Applications:
-        Define options that to be shared by multiple commands but are passed
-        after the respective command, instead of before as group options (the
-        native way to define shared options) are.
-
-        Define options used only by a single group or command in a function
-        instead of as decorators, which allows them to be folded by the editor
-        more easily.
-
-    Source:
-        https://stackoverflow.com/a/52147284
-
-    """
-
-    def fct(f: Callable) -> Callable:
-        return functools.reduce(lambda x, opt: opt(x), f_options(), f)
-
-    return fct
 
 
 class CharSepList(click.ParamType):
@@ -104,7 +53,7 @@ class CharSepList(click.ParamType):
         self.name: str = name or f"{type_.__name__}{separator}" * 2 + "..."
 
     def convert(
-        self, value: str, param: click.Parameter, ctx: click.Context
+        self, value: str, param: Optional[click.Parameter], ctx: Optional[click.Context]
     ) -> list[Union[str, Type[Any]]]:
         """Convert a string to a list of ``type_`` elements."""
         values_str = value.split(self.separator)
@@ -158,7 +107,9 @@ class DerivChoice(click.ParamType):
         choices = list(self.base_choices) + list(self.derived_choices)
         return f"[{'|'.join(choices)}]"
 
-    def convert(self, value: Any, param: click.Parameter, ctx: click.Context) -> Any:
+    def convert(
+        self, value: Any, param: Optional[click.Parameter], ctx: Optional[click.Context]
+    ) -> Any:
         """Check that a string is among the given choices or combinations."""
         if value in self.base_choices:
             return value

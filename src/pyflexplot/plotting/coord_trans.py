@@ -41,12 +41,17 @@ class CoordinateTransformer:
     trans_axes: Projection
     trans_data: Projection
     proj_map: Projection = dc.field(
+        # pylint: disable=E0110  # abstract-class-instatiated (PlateCarree)
         default_factory=lambda: PlateCarree(central_longitude=0.0)
     )
     proj_data: Projection = dc.field(
+        # pylint: disable=E0110  # abstract-class-instatiated (PlateCarree)
         default_factory=lambda: PlateCarree(central_longitude=0.0)
     )
-    proj_geo: Projection = dc.field(default_factory=PlateCarree(central_longitude=0.0))
+    proj_geo: Projection = dc.field(
+        # pylint: disable=E0110  # abstract-class-instatiated (PlateCarree)
+        default_factory=lambda: PlateCarree(central_longitude=0.0)
+    )
     invalid_ok: bool = True
     invalid_warn: bool = True
 

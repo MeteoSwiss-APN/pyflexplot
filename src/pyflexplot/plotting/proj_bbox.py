@@ -29,6 +29,7 @@ class Projections:
 
     @classmethod
     def create_regular(cls, *, clon: float = 0.0) -> "Projections":
+        # pylint: disable=E0110  # abstract-class-instatiated (PlateCarree)
         return cls(
             data=PlateCarree(central_longitude=0.0),
             map=PlateCarree(central_longitude=clon),
@@ -39,6 +40,7 @@ class Projections:
     def create_rotated(
         cls, *, pollat: float = 90.0, pollon: float = 180.0
     ) -> "Projections":
+        # pylint: disable=E0110  # abstract-class-instatiated (PlateCarree, RotatedPole)
         return cls(
             data=RotatedPole(pole_latitude=pollat, pole_longitude=pollon),
             map=RotatedPole(pole_latitude=pollat, pole_longitude=pollon),
