@@ -868,7 +868,10 @@ def create_panel_config(
         try:
             colors = cmap.colors.tolist()
         except AttributeError:
-            colors = [cmap(i / (n_colors - 1)) for i in range(n_colors)]
+            if n_colors == 1:
+                colors = [cmap(0.0)]
+            else:
+                colors = [cmap(i / (n_colors - 1)) for i in range(n_colors)]
         if extend in ["min", "both"] and color_under:
             colors.insert(0, color_under)
         if extend in ["max", "both"] and color_over:
