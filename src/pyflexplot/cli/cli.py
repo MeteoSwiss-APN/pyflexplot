@@ -1,11 +1,13 @@
 # pylint: disable=R0914  # too-many-locals
 """Command line interface of PyFlexPlot."""
 # Standard library
+import warnings
 from typing import Any
 
 # Third-party
 import click
 from click import Context
+from shapely.errors import ShapelyDeprecationWarning
 
 # Local
 from .. import __version__
@@ -216,4 +218,26 @@ click.option = lambda *args, **kwargs: _click_option(
 @click.pass_context
 def cli(ctx: Context, **kwargs: Any) -> None:
     wrapped_main = wrap_pdb(main) if ctx.obj["raise"] else main
+    ignore_shapely_warnings()
     wrapped_main(ctx, **kwargs)
+
+
+def ignore_shapely_warnings() -> None:
+    """Ignore selected shapely deprecation warnings."""
+    messages = []
+    messages.append(
+        "__len__ for multi-part geometries is deprecated and will be removed in Shapely"
+        " 2.0. Check the length of the `geoms` property instead to get the  number of"
+        " parts of a multi-part geometry."
+    )
+    messages.append(
+        "Iteration over multi-part geometries is deprecated and will be removed in"
+        " Shapely 2.0. Use the `geoms` property to access the constituent parts of a"
+        " multi-part geometry."
+    )
+    for message in messages:
+        warnings.filterwarnings(
+            "ignore",
+            category=ShapelyDeprecationWarning,
+            message=f"[\n.]*{message}[\n.]*",
+        )
