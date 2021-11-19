@@ -20,11 +20,17 @@
 
 # Check the Conda channels
 
-conda info --unsafe-channels
+conda config --get channels
 
-# It should contain conda-forge. If not, add it with
+# It should contain 'defaults' with highest and 'conda-forge' with
+# lowest priority. If 'conda-forge' is missing, append it to the
+# channel list with
 
-conda config --add channels conda-forge
+conda config --append channels conda-forge
+
+# Make sure the default channel has priority
+
+conda config --set channel_priority strict
 
 # Clone the pyflexplot repository from github
 
@@ -138,6 +144,11 @@ make install
 
 make install-dev
 
+# To create a new environment with a different name, set the
+# VENV_NAME variable to the desired name (here: pyflexplot_new)
+
+make install VENV_NAME=pyflexplot_new
+
 
 # Alternative installation with pipx, obsolete!
 # ---------------------------------------------
@@ -196,7 +207,7 @@ $PIPX_HOME/venvs/pyflexplot/bin/python -m pip freeze
 venv/bin/python -m pip freeze
 
 
-# Test using pyflexplot-test
+# Test using pyflexplot-test, currently outdated: needs update!
 # --------------------------
 
 # Compare two versions (old and new) of pyflexplot with pyflexplot-test
@@ -231,7 +242,7 @@ $EDITOR examples/run_pyflexplot_test.sh
 
 # Run the script in a parallel environment
 # Submit it as parallel job to SLURM
-batchPP -T 10 examples/run_pyflexplot_test.sh
+batchPP -t 3 -T 10 examples/run_pyflexplot_test.sh
 
 # or run in interatively
 salloc -c 10
@@ -307,14 +318,27 @@ exit
 # Run pyflexplot
 # --------------
 
-# You may want to allocate parallel resources, e.g. 10 cores
-salloc -c 10
+# Activate the conda environment
+conda activate pyflexplot
 
 # To use all allocated cpus, add the following option to the pyflexplot command
   --num-procs=$SLURM_CPUS_PER_TASK
 
-# Important: Free resources when no longer needed.
+# To make a dry run to check what would be done, add
+  --dry-run
+
+# To open plots automatically with 'eog' after creation, add
+  --open-all eog
+
+# If you want to run the following examples interatcively,
+# you may want do allocate parallel resources, e.g. 10 cores
+salloc -c 10
+
+# Important: Free resources when done!
 exit
+
+# Examples how to run pyflexplot
+# ------------------------------
 
 # Example using default input file
 
@@ -356,7 +380,8 @@ infile=$FP_JOBS/$job/output/*.nc
 basetime=$(cat $FP_JOBS/$job/output/plot_info)
 dest=$FP_OUT/$job/plots
 mkdir -p $dest
-batchPP -t 1 -T 10 -n plot$job "pyflexplot --preset $preset --merge-pdfs --setup infile $infile --setup base_time $basetime --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK"
+batchPP -t 1 -T 10 -n plot$job "$CONDA_PREFIX/bin/pyflexplot --preset $preset --merge-pdfs --setup infile $infile --setup base_time $basetime --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK"
+
 
 # Example FLEXPART with COSMO-2E Control Run
 preset=opr/cosmo-2e-ctrl/all_pdf
@@ -369,19 +394,22 @@ job=1076
 # Submit job with same commands as above
 
 # Example: FLEXPART with COSMO-2E Ensemble Run
-# Settings
+# For ensembles, the infile needs to be a pattern rather than a single file
 preset=opr/cosmo-2e/all_pdf
+FP_JOBS=/scratch/kaufmann/flexpart/job
+FP_OUT=$SCRATCH/flexpart/job
 job=short-bug
-# For ensembles, the infile needs to be a pattern rather than a single file,
-# create the pattern with
-infile000=$(echo $SCRATCH/flexpart/job/$job/output/000/*.nc)
+infile000=$(echo $FP_JOBS/$job/output/000/*.nc)
 infile=${infile000/\/000\//\/\{ens_member:03\}\/}
+basetime=2021090612
+dest=$FP_OUT/$job/plots
+mkdir -p $dest
+# submit job with batchPP command above
+# after job completion, list and vizualize results with
+ls $dest/*pdf
+evince $dest/*pdf
 
-# Dry run to check what is being done
-pyflexplot --dry-run --preset ...
-
-# Create plots and automatically open them with `eog`
-pyflexplot --open-all eog --preset opr/cosmo-1e_ctrl/all_png
+# Example: FLEXPART with COSMO-2E Ensemble Run
 
 
 # Commit a new version
@@ -391,6 +419,11 @@ pyflexplot --open-all eog --preset opr/cosmo-1e_ctrl/all_png
 git checkout dev
 
 # Copy or merge changes into dev
+
+# Save environment specificatons to allow for an exact replication of
+# environment with make install
+
+conda env export --file=environment.yml
 
 # If plots change, create new reference plots
 # Situation: make test-slow fails (tests/slow/pyflexplot/test_plots/test_*.py)
