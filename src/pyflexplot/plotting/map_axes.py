@@ -1,4 +1,6 @@
 """Map axes."""
+from __future__ import annotations
+
 # Standard library
 import dataclasses as dc
 import warnings
@@ -407,82 +409,137 @@ class MapAxes:
             )
             self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
 
+    # pylint: disable=R0914  # too-many-locals (>15)
     def _ax_add_cities(self, rasterized: bool = False) -> None:
         """Add major cities, incl. all capitals."""
-
-        def is_visible(city: Record) -> bool:
-            """Check if a point is inside the domain."""
-            px_geo: float = city.geometry.x
-            py_geo: float = city.geometry.y
-            # pylint: disable=E0633  # unpacking-non-sequence
-            px_ax, py_ax = self.trans.geo_to_axes(px_geo, py_geo)
-            in_domain = 0.0 <= px_ax <= 1.0 and 0.0 <= py_ax <= 1.0
-            if not in_domain:
-                return False
-            if self.ref_dist_box is None:
-                behind_ref_dist_box = False
-            else:
-                behind_ref_dist_box = (
-                    self.ref_dist_box.x0_box <= px_ax <= self.ref_dist_box.x1_box
-                    and self.ref_dist_box.y0_box <= py_ax <= self.ref_dist_box.y1_box
-                )
-            return not behind_ref_dist_box
-
-        def is_of_interest(city: Record) -> bool:
-            """Check if a city fulfils certain importance criteria."""
-            is_capital = city.attributes["FEATURECLA"].startswith("Admin-0 capital")
-            is_large = city.attributes["GN_POP"] > self.config.min_city_pop
-            excluded_cities = [
+        # Explicitly excluded cities by name
+        excluded_names = np.array(
+            [
                 "Incheon",
-            ]
-            is_excluded = city.attributes["name_en"] in excluded_cities
-            return (is_capital or is_large) and not is_excluded
+            ],
+            dtype=np.str_,
+        )
 
         def get_name(city: Record) -> str:
-            """Fetch city name in current language, hand-correcting some."""
+            """Get city name in current language, hand-correcting some."""
             name = city.attributes[f"name_{self.config.lang}"]
             if name.startswith("Freiburg im ") and name.endswith("echtland"):
                 name = "Freiburg"
             return name
 
+        def is_capital(city: Record) -> bool:
+            """Determine whether a city is a capital."""
+            return city.attributes["FEATURECLA"].startswith("Admin-0 capital")
+
+        def get_population(city: Record) -> int:
+            """Get city population."""
+            return city.attributes["GN_POP"]
+
+        def get_lon(city: Record) -> np.ndarray:
+            """Get the city longitude."""
+            return city.geometry.x
+
+        def get_lat(city: Record) -> np.ndarray:
+            """Get the city latitude."""
+            return city.geometry.y
+
+        def is_in_domain(px_ax: float, py_ax: float) -> bool:
+            """Check if point is in domain."""
+            return 0.0 <= px_ax <= 1.0 and 0.0 <= py_ax <= 1.0
+
+        def is_behind_ref_dist_box(px_ax: float, py_ax: float) -> bool:
+            """Check if point is behind reference distance box."""
+            if self.ref_dist_box is None:
+                return False
+            return (
+                self.ref_dist_box.x0_box <= px_ax <= self.ref_dist_box.x1_box
+                and self.ref_dist_box.y0_box <= py_ax <= self.ref_dist_box.y1_box
+            )
+
+        np_get_name = np.frompyfunc(get_name, 1, 1)
+        np_is_capital = np.frompyfunc(is_capital, 1, 1)
+        np_get_population = np.frompyfunc(get_population, 1, 1)
+        np_get_lon = np.frompyfunc(get_lon, 1, 1)
+        np_get_lat = np.frompyfunc(get_lat, 1, 1)
+        np_is_in_domain = np.frompyfunc(is_in_domain, 2, 1)
+        np_is_behind_ref_dist_box = np.frompyfunc(is_behind_ref_dist_box, 2, 1)
+
         # src: https://www.naturalearthdata.com/downloads/50m-cultural-vectors/...
         # .../50m-populated-places/lk
-        cities: Sequence[Record] = cartopy.io.shapereader.Reader(
-            cartopy.io.shapereader.natural_earth(
-                category="cultural",
-                name="populated_places",
-                resolution=self.config.geo_res_cities,
+        cities = np.array(
+            list(
+                cartopy.io.shapereader.Reader(
+                    cartopy.io.shapereader.natural_earth(
+                        category="cultural",
+                        name="populated_places",
+                        resolution=self.config.geo_res_cities,
+                    )
+                ).records()
             )
-        ).records()
+        )
+
+        # Select cities of interest
+        capitals = np_is_capital(cities).astype(np.bool_)
+        populations = np_get_population(cities).astype(np.int32)
+        selected = capitals | (populations > self.config.min_city_pop)
+        cities = cities[selected]
+
+        # Pre-select cities in and around domain
+        lons = np_get_lon(cities).astype(np.float32)
+        lats = np_get_lat(cities).astype(np.float32)
+        lon_min, lat_min, lon_max, lat_max = self._get_domain_bbox()
+        in_domain = (
+            (lons > lon_min) & (lons < lon_max) & (lats > lat_min) & (lats < lat_max)
+        )
+        cities = cities[in_domain]
+
+        # Select visible cities
+        lons = np_get_lon(cities).astype(np.float32)
+        lats = np_get_lat(cities).astype(np.float32)
+        # pylint: disable=E0633  # unpacking-non-sequence (false negative?!?)
+        xs, ys = self.trans.geo_to_axes(lons, lats)
+        in_domain = np_is_in_domain(xs, ys).astype(np.bool_)
+        behind_ref_dist_box = np_is_behind_ref_dist_box(xs, ys).astype(np.bool_)
+        visible = in_domain & ~behind_ref_dist_box
+        cities = cities[visible]
+
+        # Sort cities by name
+        names = np_get_name(cities).astype(np.str_)
+        sorted_inds = names.argsort()
+        names = names[sorted_inds]
+        cities = cities[sorted_inds]
+
+        # Exclude certain cities by name
+        excluded = np.in1d(names, excluded_names)
+        cities = cities[~excluded]
 
         plot_domain = mpl.patches.Rectangle(
             xy=(0, 0), width=1.0, height=1.0, transform=self.ax.transAxes
         )
-        cities_by_name = {get_name(city): city for city in cities}
-        for name, city in sorted(cities_by_name.items()):
+        for city in cities:
             lon, lat = city.geometry.x, city.geometry.y
-            if is_visible(city) and is_of_interest(city):
-                self.add_marker(
-                    p_lat=lat,
-                    p_lon=lon,
-                    marker="o",
-                    color="black",
-                    fillstyle="none",
-                    markeredgewidth=1 * self.config.scale_fact,
-                    markersize=3 * self.config.scale_fact,
-                    zorder=self.zorder["geo_upper"],
-                    rasterized=rasterized,
-                )
-                text = self.add_text(
-                    lon,
-                    lat,
-                    name,
-                    va="center",
-                    size=9 * self.config.scale_fact,
-                    rasterized=rasterized,
-                )
-                # Note: `clip_on=True` doesn't work in cartopy v0.18
-                text.set_clip_path(plot_domain)
+            name = get_name(city)
+            self.add_marker(
+                p_lat=lat,
+                p_lon=lon,
+                marker="o",
+                color="black",
+                fillstyle="none",
+                markeredgewidth=1 * self.config.scale_fact,
+                markersize=3 * self.config.scale_fact,
+                zorder=self.zorder["geo_upper"],
+                rasterized=rasterized,
+            )
+            text = self.add_text(
+                lon,
+                lat,
+                name,
+                va="center",
+                size=9 * self.config.scale_fact,
+                rasterized=rasterized,
+            )
+            # Note: `clip_on=True` doesn't work in cartopy v0.18
+            text.set_clip_path(plot_domain)
 
     def _ax_add_data_domain_outline(self) -> None:
         """Add domain outlines to map plot."""
@@ -507,3 +564,20 @@ class MapAxes:
                 clip_on=False,
             ),
         )
+
+    # pylint: disable=R0914  # too-many-locals (>15)
+    # pylint: disable=E0633  # unpacking-non-sequence (false negative?!?)
+    def _get_domain_bbox(
+        self, n: int = 20, pad: float = 1.0
+    ) -> tuple[float, float, float, float]:
+        """Get ``(lon0, lat0, lon1, lat1)`` bounding box of domain."""
+        trans = self.trans.axes_to_geo
+        lons_s, lats_s = trans(np.linspace(0, 1, n), np.full([n], 0))
+        lons_n, lats_n = trans(np.linspace(0, 1, n), np.full([n], 1))
+        lons_w, lats_w = trans(np.full([n], 0), np.linspace(0, 1, n))
+        lons_e, lats_e = trans(np.full([n], 1), np.linspace(0, 1, n))
+        lon_min = min([lons_s.min(), lons_n.min(), lons_w.min(), lons_e.min()])
+        lat_min = min([lats_s.min(), lats_n.min(), lats_w.min(), lats_e.min()])
+        lon_max = max([lons_s.max(), lons_n.max(), lons_w.max(), lons_e.max()])
+        lat_max = max([lats_s.max(), lats_n.max(), lats_w.max(), lats_e.max()])
+        return (lon_min - pad, lat_min - pad, lon_max + pad, lat_max + pad)
