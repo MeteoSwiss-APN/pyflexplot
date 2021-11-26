@@ -1,9 +1,10 @@
 """Matplotlib coordinate transformations."""
+from __future__ import annotations
+
 # Standard library
 import dataclasses as dc
 import warnings
 from typing import overload
-from typing import Tuple
 
 # Third-party
 import numpy as np
@@ -56,29 +57,30 @@ class CoordinateTransformer:
     invalid_warn: bool = True
 
     @overload
-    def axes_to_data(self, x: float, y: float) -> Tuple[float, float]:
+    def axes_to_data(self, x: float, y: float) -> tuple[float, float]:
         ...
 
     @overload
     def axes_to_data(
         self, x: np.ndarray, y: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         ...
 
     def axes_to_data(self, x, y):
         """Transform from axes to data coordinates."""
         # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.axes_to_geo(x, y)
-        return self.geo_to_data(x_geo, y_geo)
+        x, y = self.geo_to_data(x_geo, y_geo)
+        return (x, y)
 
     @overload
-    def axes_to_geo(self, x: float, y: float) -> Tuple[float, float]:
+    def axes_to_geo(self, x: float, y: float) -> tuple[float, float]:
         ...
 
     @overload
     def axes_to_geo(
         self, x: np.ndarray, y: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         ...
 
     def axes_to_geo(self, x, y):
@@ -89,7 +91,7 @@ class CoordinateTransformer:
             assert isinstance(y, np.ndarray)  # mypy
             # pylint: disable=E0633  # unpacking-non-sequence
             x, y = np.array([self.axes_to_geo(xi, yi) for xi, yi in zip(x, y)]).T
-            return x, y
+            return (x, y)
 
         x = float(x)
         y = float(y)
@@ -109,48 +111,51 @@ class CoordinateTransformer:
         xy_geo = self.proj_geo.transform_point(x_plt, y_plt, self.proj_map, trap=True)
         check_valid_coords(xy_geo, self.invalid_ok, self.invalid_warn)
 
-        return xy_geo
+        x, y = xy_geo
+        return (x, y)
 
     @overload
-    def axes_to_map(self, x: float, y: float) -> Tuple[float, float]:
+    def axes_to_map(self, x: float, y: float) -> tuple[float, float]:
         ...
 
     @overload
     def axes_to_map(
         self, x: np.ndarray, y: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         ...
 
     def axes_to_map(self, x, y):
         """Transform from axes to map coordinates."""
         # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.axes_to_geo(x, y)
-        return self.geo_to_map(x_geo, y_geo)
+        x, y = self.geo_to_map(x_geo, y_geo)
+        return (x, y)
 
     @overload
-    def data_to_axes(self, x: float, y: float) -> Tuple[float, float]:
+    def data_to_axes(self, x: float, y: float) -> tuple[float, float]:
         ...
 
     @overload
     def data_to_axes(
         self, x: np.ndarray, y: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         ...
 
     def data_to_axes(self, x, y):
         """Transform from data to axes coordinates."""
         # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.data_to_geo(x, y)
-        return self.geo_to_axes(x_geo, y_geo)
+        x, y = self.geo_to_axes(x_geo, y_geo)
+        return (x, y)
 
     @overload
-    def data_to_geo(self, x: float, y: float) -> Tuple[float, float]:
+    def data_to_geo(self, x: float, y: float) -> tuple[float, float]:
         ...
 
     @overload
     def data_to_geo(
         self, x: np.ndarray, y: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         ...
 
     def data_to_geo(self, x, y):
@@ -160,35 +165,37 @@ class CoordinateTransformer:
             # pylint: disable=E1101  # no-member [pylint 2.7.4]
             # (pylint 2.7.4 does not support dataclasses.field)
             x, y = self.proj_geo.transform_points(self.proj_data, x, y)[:, :2].T
-            return x, y
+            return (x, y)
         # pylint: disable=E1101  # no-member [pylint 2.7.4]
         # (pylint 2.7.4 does not support dataclasses.field)
-        return self.proj_geo.transform_point(x, y, self.proj_data, trap=True)
+        x, y = self.proj_geo.transform_point(x, y, self.proj_data, trap=True)
+        return (x, y)
 
     @overload
-    def data_to_map(self, x: float, y: float) -> Tuple[float, float]:
+    def data_to_map(self, x: float, y: float) -> tuple[float, float]:
         ...
 
     @overload
     def data_to_map(
         self, x: np.ndarray, y: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         ...
 
     def data_to_map(self, x, y):
         """Transform from data to map coordinates."""
         # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.data_to_geo(x, y)
-        return self.geo_to_map(x_geo, y_geo)
+        x, y = self.geo_to_map(x_geo, y_geo)
+        return (x, y)
 
     @overload
-    def geo_to_axes(self, x: float, y: float) -> Tuple[float, float]:
+    def geo_to_axes(self, x: float, y: float) -> tuple[float, float]:
         ...
 
     @overload
     def geo_to_axes(
         self, x: np.ndarray, y: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         ...
 
     def geo_to_axes(self, x, y):
@@ -199,7 +206,7 @@ class CoordinateTransformer:
             assert isinstance(y, np.ndarray)  # mypy
             # pylint: disable=E0633  # unpacking-non-sequence
             x, y = np.array([self.geo_to_axes(xi, yi) for xi, yi in zip(x, y)]).T
-            return x, y
+            return (x, y)
 
         check_valid_coords((x, y), self.invalid_ok, self.invalid_warn)
 
@@ -226,16 +233,17 @@ class CoordinateTransformer:
         check_valid_coords(xy_axs, self.invalid_ok, warn=False)
         # SR_TMP >
 
-        return xy_axs
+        x, y = xy_axs
+        return (x, y)
 
     @overload
-    def geo_to_data(self, x: float, y: float) -> Tuple[float, float]:
+    def geo_to_data(self, x: float, y: float) -> tuple[float, float]:
         ...
 
     @overload
     def geo_to_data(
         self, x: np.ndarray, y: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         ...
 
     def geo_to_data(self, x, y):
@@ -245,17 +253,18 @@ class CoordinateTransformer:
             # pylint: disable=E1101  # no-member [pylint 2.7.4]
             # (pylint 2.7.4 does not support dataclasses.field)
             x, y = self.proj_data.transform_points(self.proj_geo, x, y)[:, :2].T
-            return x, y
+            return (x, y)
         # pylint: disable=E1101  # no-member [pylint 2.7.4]
         # (pylint 2.7.4 does not support dataclasses.field)
-        return self.proj_data.transform_point(x, y, self.proj_geo, trap=True)
+        x, y = self.proj_data.transform_point(x, y, self.proj_geo, trap=True)
+        return (x, y)
 
     @overload
-    def geo_to_map(self, x: float, y: float) -> Tuple[float, float]:
+    def geo_to_map(self, x: float, y: float) -> tuple[float, float]:
         ...
 
     @overload
-    def geo_to_map(self, x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def geo_to_map(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         ...
 
     def geo_to_map(self, x, y):
@@ -265,49 +274,52 @@ class CoordinateTransformer:
             # pylint: disable=E1101  # no-member [pylint 2.7.4]
             # (pylint 2.7.4 does not support dataclasses.field)
             x, y = self.proj_map.transform_points(self.proj_geo, x, y)[:, :2].T
-            return x, y
+            return (x, y)
         # pylint: disable=E1101  # no-member [pylint 2.7.4]
         # (pylint 2.7.4 does not support dataclasses.field)
-        return self.proj_map.transform_point(x, y, self.proj_geo, trap=True)
+        x, y = self.proj_map.transform_point(x, y, self.proj_geo, trap=True)
+        return (x, y)
 
     @overload
-    def map_to_axes(self, x: float, y: float) -> Tuple[float, float]:
+    def map_to_axes(self, x: float, y: float) -> tuple[float, float]:
         ...
 
     @overload
     def map_to_axes(
         self, x: np.ndarray, y: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         ...
 
     def map_to_axes(self, x, y):
         """Transform from map to axes coordinates."""
         # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.map_to_geo(x, y)
-        return self.geo_to_axes(x_geo, y_geo)
+        x, y = self.geo_to_axes(x_geo, y_geo)
+        return (x, y)
 
     @overload
-    def map_to_data(self, x: float, y: float) -> Tuple[float, float]:
+    def map_to_data(self, x: float, y: float) -> tuple[float, float]:
         ...
 
     @overload
     def map_to_data(
         self, x: np.ndarray, y: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         ...
 
     def map_to_data(self, x, y):
         """Transform from map to data coordinates."""
         # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.map_to_geo(x, y)
-        return self.geo_to_data(x_geo, y_geo)
+        x, y = self.geo_to_data(x_geo, y_geo)
+        return (x, y)
 
     @overload
-    def map_to_geo(self, x: float, y: float) -> Tuple[float, float]:
+    def map_to_geo(self, x: float, y: float) -> tuple[float, float]:
         ...
 
     @overload
-    def map_to_geo(self, x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def map_to_geo(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         ...
 
     def map_to_geo(self, x, y):
@@ -317,19 +329,20 @@ class CoordinateTransformer:
             # pylint: disable=E1101  # no-member [pylint 2.7.4]
             # (pylint 2.7.4 does not support dataclasses.field)
             x, y = self.proj_geo.transform_points(self.proj_map, x, y)[:, :2].T
-            return x, y
+            return (x, y)
         # pylint: disable=E1101  # no-member [pylint 2.7.4]
         # (pylint 2.7.4 does not support dataclasses.field)
-        return self.proj_geo.transform_point(x, y, self.proj_map, trap=True)
+        x, y = self.proj_geo.transform_point(x, y, self.proj_map, trap=True)
+        return (x, y)
 
 
 @overload
-def check_valid_coords(xy: Tuple[float, float], allow, warn):
+def check_valid_coords(xy: tuple[float, float], allow, warn):
     ...
 
 
 @overload
-def check_valid_coords(xy: Tuple[np.ndarray, np.ndarray], allow, warn):
+def check_valid_coords(xy: tuple[np.ndarray, np.ndarray], allow, warn):
     ...
 
 
