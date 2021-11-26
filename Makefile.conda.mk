@@ -9,7 +9,7 @@ SHELL := /bin/bash
 CHAIN ?= 0#OPT Whether to chain targets, e.g., let test depend on install-test
 IGNORE_VENV ?= 0#OPT Don't create and/or use a virtual environment
 MSG ?= #OPT Message used as, e.g., tag annotation in version bump commands
-PYTHON ?= 3.8#OPT Python version used to create conda virtual environment
+PYTHON ?= 3.9.7#OPT Python version used to create conda virtual environment
 VENV_DIR ?= #OPT Path to existing or new conda virtual environment (overrides VENV_NAME)
 VENV_NAME ?= pyflexplot#OPT Name of conda virtual environment (overridden by VENV_DIR)
 
@@ -21,7 +21,7 @@ export DEFAULT_VENV_NAME
 
 # Options for all calls to up-do-date pip (i.e., AFTER `pip install -U pip`)
 # Example: `--use-feature=2020-resolver` before the new resolver became the default
-PIP_OPTS = --use-feature=in-tree-build
+PIP_OPTS = # --use-feature=in-tree-build is now default in pip
 export PIP_OPTS
 
 #
@@ -265,7 +265,7 @@ ifeq (${IGNORE_VENV}, 0)
 	@# Do not ignore existing venv
 ifneq (${CONDA_DEFAULT_ENV},)
 	@# There already is an active conda environment, so use it (regardless of its name and path)
-	@echo -e "\n[make venv] found active conda environment '${CONDA_DEFAULT_ENV}' at '{CONDA_PREFIX}'"
+	@echo -e "\n[make venv] found active conda environment '${CONDA_DEFAULT_ENV}' at '${CONDA_PREFIX}'"
 ifneq (${CONDA_DEFAULT_ENV}, ${VENV_NAME})
 	@# The name of the active env does not match VENV_NAME, but we assume that's OK over override it
 	@echo -e "[make venv] warning: name of active venv '${CONDA_DEFAULT_ENV}' overrides VENV_NAME='${VENV_NAME}'"
@@ -313,9 +313,10 @@ endif  # IGNORE_VENV
 .PHONY: install #CMD Install the package with pinned runtime dependencies.
 install: venv
 	@echo -e "\n[make install] installing the package"
+	conda env update --prefix "${VENV_DIR}" --file=environment.yml
 	# conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.txt  # pinned
-	conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.in  # unpinned
-	${PREFIX}python -m pip install -U pip
+	# conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.in  # unpinned
+	# ${PREFIX}python -m pip install -U pip
 	${PREFIX}python -m pip install . ${PIP_OPTS}
 	${PREFIX}pyflexplot -V
 
@@ -325,8 +326,8 @@ install-dev: venv
 	# conda install --yes --prefix "${VENV_DIR}" --file requirements/dev-requirements.txt  # pinned
 	conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.in  # unpinned
 	conda install --yes --prefix "${VENV_DIR}" --file requirements/dev-requirements.in  # unpinned
-	${PREFIX}python -m pip install -U pip
-	${PREFIX}python -m pip install -e . ${PIP_OPTS}
+	# ${PREFIX}python -m pip install -U pip
+	${PREFIX}python -m pip install --editable . ${PIP_OPTS}
 	${PREFIX}pre-commit install
 	${PREFIX}pyflexplot -V
 
