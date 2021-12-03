@@ -13,14 +13,98 @@ For the available releases, see `Releases`_.
 .. _`Github`: https://github.com/MeteoSwiss-APN/pyflexplot
 .. _`Releases`: https://github.com/MeteoSwiss-APN/pyflexplot/releases
 
+With Conda
+----------
+
+Due to the dependency of cartopy on contemporary system libraries, it is the recommended
+to install pyflexplot with conda. Conda is, as opposed to pipx and pip, not only able to
+manage Python code, but also other items like system libraries.
+
+To install conda, look for the latest Miniconda version on
+https://docs.conda.io/en/latest/miniconda.html.
+
+If you are working on a HPC system of the CSCS, consult the next section for more details.
+
+The installation of pyflexplot needs some packages only available in the `conda-forge` channel.
+Check your configured conda channels with::
+
+    conda config --get channels
+
+The list should contain 'conda-forge' with highest and 'defaults' with
+a lower priority. If 'conda-forge' is missing, add it at the top of the
+channel list with::
+
+    conda config --add channels conda-forge
+
+The following, although recommended by conda,
+is not strictly necessary, and may even prevent conda from solving the environment
+if you don't have conda-forge as priority channel::
+
+    conda config --set channel_priority strict
+
+When you have installed conda, copy the pyflexplot repository (approx. 260 MB)::
+
+    git clone git@github.com:MeteoSwiss-APN/pyflexplot.git
+
+Change into the base directory of the repository and check the links `Makefile` and `setup.py`::
+
+    cd pyflexplot
+    ls -l Makefile setup.py
+
+They should point to `Makefile.conda.mk` and `setup.conda.py`.
+If they do not, overwrite the links with::
+
+    ln -sf Makefile.conda.mk Makefile
+    ln -sf setup.conda.py setup.py
+
+Check the Python version::
+
+    python --version
+
+If the python version provided by the system is < 3.7,
+use the conda base environment for the further steps::
+
+    conda activate
+
+Display help for make options and targets::
+
+    make help
+
+Important: Before starting the installation, make sure none or the conda base
+environment is active, otherwise pyflexplot will be installed in the active
+conda environment instead of creating its own!
+
+For the installation of pyflexplot with conda,
+continue with the section `Installation from repository` further below.
+
 At CSCS
 -------
 
-To install PyFlexPlot at CSCS, first prepare the Python environment::
+As contemporary system libraries are not available on the HPC systems
+of the CSCS, it is highly recommended to use conda for the installation.
+Install the latest Miniconda for 64-bit Linux. Choose a directory within
+your `$SCRATCH` file system as installation location to
+avoid cluttering the limited space on the user's `$HOME`.
+
+For the same reason, it is better to clone the git repository to a
+location within your `$SCRATCH` file system, although conda uses the
+conda installation location to store the environment, unlike pipx and
+pip, which by default use a `venv` subdirectory of the repository.
+
+If you use conda for the installation, skip the
+following sections that describe the installation with pipx and pip.
+Continue with the section  `Installation from repository` further below.
+
+Preparation for installation with pipx
+++++++++++++++++++++++++++++++++++++++
+
+If you nevertheless wish to use pipx or pip, you first need to prepare
+a suitable Python environment::
 
     source /oprusers/osm/.opr_setup_dir
     source ${OPR_SETUP_DIR}/.python_base
 
+This gives you Python 3.7 instead of the system default 2.7.
 Then follow the instructions for installation either with Pipx (for deployment) or by hand (for testing and development).
 
 The locations where Pipx installs the code (takes some space) and links the commands (must be in `$PATH`) can be set with environment variables (e.g., in `.bashrc`).
@@ -101,12 +185,12 @@ You can also install it with your system package manager, but this may tie it to
 .. _`Pipx`: https://github.com/pipxproject/pipx
 .. _`Pyenv`: https://github.com/pyenv/pyenv
 
-Manually
+With Pip
 --------
 
-You may install PyFlexPlot manually from Github if you cannot (or do not want to) use Pipx; if you want to run tests to verify your installation; and/or if you want to develop it further.
+You may install PyFlexPlot manually from Github if you cannot or do not want to use Pipx, if you want to run tests to verify your installation, and/or if you want to develop it further.
 If you only want to deploy the tool -- without easy access to the code, without running tests, etc. -- you can directly install it into a virtual environment with pip, without cloning the git repository yourself.
-However, if you also want to test and/or develop, you first have to clone the git repository and can then use the Makefile (or manual comands) to install the tool for your purposes.
+However, if you also want to test and/or develop, you first have to clone the git repository and can then use the Makefile (or manual commands) to install the tool for your purposes.
 
 Deployment only
 +++++++++++++++
@@ -141,6 +225,7 @@ The same installations as just described, but starting with a git clone of the r
     cd <local/installs>
     git clone git+ssh://github.com/MeteoSwiss-APN/pyflexplot --branch=v0.9.5 --depth=1 manual/git/pyflexplot/v0.9.5
     cd manual/git/pyflexplot/v0.9.5
+    python -m venv manual/venvs/pyflexplot/v0.9.5
     make install VENV_DIR=<local/installs>/manual/venvs/pyflexplot/v0.9.5
     cd <dir/in/PATH>
     ln -s <local/installs>/manual/venvs/pyflexplot/v0.9.5/bin/pyflexplot pyflexplot_v0.9.5
@@ -149,37 +234,49 @@ The same installations as just described, but starting with a git clone of the r
 Note that without `--depth=1`, the whole git history is downloaded, not just the tagged commit.
 Also note that without `VENV_DIR=...`, the virtual environment is created in `./venv` instead of in `<local/installs>/manual/venvs/pyflexplot/v0.9.5`.
 
-Testing and development
-+++++++++++++++++++++++
 
-The most convenient way to test and/or develop PyFlexPlot is by using the Makefile, which provides commands for the most common operations related to installation, testing etc. (and may also serve as a reference for the respective Python commands).
-Type `make help` (or just `make`)) in the root of the project to see all available commands and options.
-(Note that the options must come after `make <command>`, even though they look like environment variables.)
+Installation from repository
+----------------------------
+
+The most convenient way to install, test and/or develop PyFlexPlot is by using the
+Makefile, which provides commands for the most common operations related to
+installation, testing etc. (and may also serve as a reference for the respective
+Python commands).
+
+Type `make help` (or just `make`)) in the root of the project to see all available
+commands and options.
+(Note that the options must come after `make <command>`, even though they look like
+environment variables.)
 
 Express::
 
-    git@github.com:MeteoSwiss-APN/pyflexplot.git
+    git clone git@github.com:MeteoSwiss-APN/pyflexplot.git
     cd pyflexplot
-    make test-all CHAIN=1
+    make test CHAIN=1
 
-(With `CHAIN=1`, the `make test*` commands first run `make install-test`.)
+(With `CHAIN=1`, the `make test*` commands first run `make install`.)
 
 Short::
 
-    git@github.com:MeteoSwiss-APN/pyflexplot.git
+    git clone git@github.com:MeteoSwiss-APN/pyflexplot.git
     cd pyflexplot
-    make install-dev
-    make test-all
+    make install
+    make test
 
-    ./venv/bin/pyflexplot -h
-    # or:
+    conda activate pyflexplot
+    pyflexplot --help
+
+    # or (if installed with pip):
+    ./venv/bin/pyflexplot --help
+
+    # or (if installed with pip):
     source ./venv/bin/activate
-    pyflexplot -h
+    pyflexplot --help
 
 Details::
 
     # Clone the repository
-    git@github.com:MeteoSwiss-APN/pyflexplot.git
+    git clone git@github.com:MeteoSwiss-APN/pyflexplot.git
     cd pyflexplot
     make  # list available commands
 
@@ -188,17 +285,24 @@ Details::
     make venv
 
     # Install tool and dependencies in virtual environment
-    make install  # runtime dependencies only
-    # or
-    make install-test  # editable, run + test deps
+    make install      # runtime dependencies only
     # or
     make install-dev  # editable, run + test + dev deps
 
+    # Check if conda environment `pyflexplot` now exists
+    conda info --env
+
     # Verify the installation (show help)
-    ./venv/bin/pyflexplot -h
-    # or
+    conda activate pyflexplot
+    pyflexplot --help
+    # or (if installed with pip):
+    ./venv/bin/pyflexplot --help
+    # or (if installed with pip):
     source ./venv/bin/activate
-    pyflexplot -h
+    pyflexplot --help
+
+    # Check if correct version is installed
+    pyflexplot --version
 
     # Run tests
     make test  # all tests
@@ -206,37 +310,51 @@ Details::
     make test-fast  # fast tests only
     # or
     make test-medium  # fast and medium-fast tests only
-    # or
-    make test-all  # all tests and some checkers, in isolated envirnoment
 
 Usage
 =====
+
+Activate the conda environment::
+
+    conda activate pyflexplot
 
 To get a list of all available commands, just type::
 
     pyflexplot --help  # or -h
 
 Plots -- including in- and output files -- are defined in setup files written in the `TOML`_ format.
-(`TOML`_ files look similar to INI-files common in system configuration, but with a more well-defined syntax.)
+(`TOML`_ files look similar to INI-files common in system configuration,
+but with a more well-defined syntax.)
 Most command line flags are primarily useful during development and testing.
 
 _`TOML`: https://github.com/toml-lang/toml
 
 PyFlexPlot ships with a few sets of predefined plots for both operations and testing.
-The standard operational deterministic dispersion plots based on COSMO-1 can be produced as follows::
+To get a list of available presets, use::
 
-    pyflexplot --preset=opr/cosmo1
+    pyflexplot --preset=?
 
-This produces the plots defined in `pyflexplot/src/pyflexplot/data/presets/opr/cosmo1.toml` (check that file for input data paths etc.).
-Specifically, it looks for a file matching `opr/cosmo1` (suffix omitted) in any preset path, which by default contains `pyflexplot/src/pyflexplot/data/presets`.
+To see the contents of one of the presets, use::
+
+    pyflexplot --preset-cat <preset>
+
+The standard operational deterministic dispersion plots based on the COSMO-1E control run
+can be produced as follows::
+
+    pyflexplot --preset=opr/cosmo-1e-ctrl/all_pdf
+
+This produces the plots defined in `pyflexplot/src/pyflexplot/data/presets/opr/cosmo-1e-ctrl.toml`
+(check that file for input data paths etc.).
+Specifically, it looks for a file matching `opr/cosmo-1e-ctrl` (suffix omitted) in any preset path,
+which by default contains `pyflexplot/src/pyflexplot/data/presets`.
 
 You can open all produced plots in an image viewer like `eog`::
 
-    pyflexplot --open-all=eog --preset=test/cosmo1/concentration
+    pyflexplot --open-all=eog --preset=test/cosmo-1e-ctrl/concentration
     # or
-    pyflexplot --open-first=feh --preset=test/cosmo2d/*
+    pyflexplot --open-first=eog --preset=test/cosmo-2e/*
 
-It's always good to double-check before-hand::
+It's always good to double-check what pyflexplot would do before-hand::
 
     pyflexplot --dry-run -vv --preset=opr/*
 
@@ -247,21 +365,24 @@ Some useful functionality includes::
     pyflexplot --preset=?
 
     # Use wild cards and multiple preset patterns
-    pyflexplot --preset=test/cosmo1/* --preset=test/cosmo2e/basic_stats
+    pyflexplot --preset=test/cosmo-1e-ctrl/* --preset=test/cosmo-2e/stats
 
     # Exclude some presets
     pyflexplot --preset=test/* --preset-skip=test/cosmo2d/multipanel*
 
-While the plots are best specified in the setup files, sometimes you may want to change some parameters::
+While the plots are best specified in the setup files,
+sometimes you may want to change some parameters::
 
-    pyflexplot --preset=test/cosmo1/deposition --setup lang en --setup domain ch
+    pyflexplot --preset=test/cosmo-1e-ctrl/deposition --setup lang en --setup domain ch
 
-This will first read the setup files, and then substitute parameters you specified with `--setup` (removing duplicate specifications in the process).
+This will first read the setup files, and then substitute parameters you specified with `--setup`
+(removing duplicate specifications in the process).
 
 Credits
 -------
 
-This package was created with `Cookiecutter`_ and the `MeteoSwiss-APN/mch-python-blueprint`_ project template.
+This package was created with `Cookiecutter`_ and the `MeteoSwiss-APN/mch-python-blueprint`_
+project template.
 
 .. _`Cookiecutter`: https://github.com/audreyr/cookiecutter
 .. _`MeteoSwiss-APN/mch-python-blueprint`: https://github.com/MeteoSwiss-APN/mch-python-blueprint
