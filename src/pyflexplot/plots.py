@@ -1131,12 +1131,14 @@ def create_box_labels(
         ] += f" ({words['since']} {simulation_reduction_start_fmtd})"
     if simulation_now_fmtd is not None:
         labels["title"]["tr"] = capitalize(
-            f"{simulation_now_fmtd} ({words['lead_time']} {simulation_lead_time_fmtd})"
+            f"{simulation_now_fmtd}"
+            # f"{simulation_now_fmtd} ({words['lead_time']} {simulation_lead_time_fmtd})"
         )
-    else:
-        labels["title"]["tr"] = capitalize(
-            f"{words['lead_time']} {simulation_lead_time_fmtd}"
-        )
+    # ?# else:
+    # ?# labels["title"]["tr"] = ""
+    # labels["title"]["tr"] = capitalize(
+    #     f"{words['lead_time']} {simulation_lead_time_fmtd}"
+    # )
     labels["title"]["br"] = capitalize(
         f"{time_since_release_start_fmtd}" f" {words['after']} {words['release_start']}"
     )
