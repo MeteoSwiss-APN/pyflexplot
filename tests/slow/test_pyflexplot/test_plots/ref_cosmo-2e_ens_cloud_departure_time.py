@@ -493,7 +493,7 @@ plot_summary = {
             "title": {
                 "tl": "Wolkenabzugszeit",
                 "bl": 'Aufsummiert $\\mathrm{\\"u}$ber 9:00$\\,$h (seit 2021-03-05 03:00 UTC)',
-                "tr": "2021-03-05 12:00 UTC (Vorhersagezeit +9:00$\\,$h)",
+                "tr": "2021-03-05 12:00 UTC",
                 "br": "9:00$\\,$h nach Freisetzungsbeginn",
             },
             "data_info": {
@@ -1562,7 +1562,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2021-03-05 12:00 UTC (Vorhersagezeit +9:00$\\,$h)",
+                    "s": "2021-03-05 12:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

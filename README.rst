@@ -1,8 +1,9 @@
-==========
+##########
 PyFlexPlot
-==========
+##########
 
-PyFlexPlot is a Python-based tool to visualize FLEXPART dispersion simulation results stored in NetCDF format.
+PyFlexPlot is a Python-based tool to visualize FLEXPART dispersion simulation
+results stored in NetCDF format.
 
 Installation
 ============
@@ -77,6 +78,7 @@ conda environment instead of creating its own!
 For the installation of pyflexplot with conda,
 continue with the section `Installation from repository` further below.
 
+
 At CSCS
 -------
 
@@ -91,136 +93,13 @@ location within your `$SCRATCH` file system, although conda uses the
 conda installation location to store the environment, unlike pipx and
 pip, which by default use a `venv` subdirectory of the repository.
 
-If you use conda for the installation, skip the
-following sections that describe the installation with pipx and pip.
-Continue with the section  `Installation from repository` further below.
+`More information for MeteoSwiss installation at CSCS <README.meteoswiss.rst>`__
 
-Preparation for installation with pipx
-++++++++++++++++++++++++++++++++++++++
-
-If you nevertheless wish to use pipx or pip, you first need to prepare
-a suitable Python environment::
-
-    source /oprusers/osm/.opr_setup_dir
-    source ${OPR_SETUP_DIR}/.python_base
-
-This gives you Python 3.7 instead of the system default 2.7.
-Then follow the instructions for installation either with Pipx (for deployment) or by hand (for testing and development).
-
-The locations where Pipx installs the code (takes some space) and links the commands (must be in `$PATH`) can be set with environment variables (e.g., in `.bashrc`).
-On a system with persistent `$SCRATCH`, a suitable setup may look like this::
-
-    # Location to install tools, libraries, etc.
-    export LOCAL_SCRATCH="${SCRATCH}/local"
-    export PATH="${LOCAL_SCRATCH}/bin:${PATH}"
-
-    # Location where Pipx places virtualenvs
-    export PIPX_HOME="${LOCAL_SCRATCH}/pipx"
-
-    # Location where Pipx links commands (must be in $PATH)
-    # Can be shared with other tools and manual installations
-    export PIPX_BIN_DIR="${LOCAL_SCRATCH}/bin"
-
-    # If necessary:  [we already did this above]
-    # export PATH="${PIPX_BIN_DIR}:${PATH}"
-
-With Pipx
----------
-
-If you only want to use PyFlexPlot, `Pipx`_ provides a fast way to install it along with its dependencies into a designated virtual environment.
-The virtual environment is entirely handled by `Pipx`_ -- there is no need for users to activate or otherwise case about it.
-
-Install the latest version::
-
-    pipx install git+ssh://git@github.com/MeteoSwiss-APN/pyflexplot
-
-Overwrite or upgrade an existing installation::
-
-    pipx install git+ssh://git@github.com/MeteoSwiss-APN/pyflexplot
-    # or:
-    pipx upgrade pyflexplot
-
-Install a specific `release`_, e.g., 0.8.2 (the latest at the time of writing)::
-
-    pipx install git+ssh://git@github.com/MeteoSwiss-APN/pyflexplot@v0.8.2
-    # or:
-    pipx install --force git+ssh://git@github.com/MeteoSwiss-APN/pyflexplot@v0.8.2
-
-Specifying a release is recommended unless you specifically want the latest
-version (i.e., commit), as it prevents upgrading by accident.
-
-As of early August 2020, Pipx supports a way to install multiple releases of the same command in parallel by adding a suffix, but only in its master branch, with a release containing this feature still pending.
-It works as follows::
-
-    pipx install git+ssh://git@github.com/MeteoSwiss-APN/pyflexplot@v0.8.2 --suffix=_v0.8.2
-    pipx install git+ssh://git@github.com/MeteoSwiss-APN/pyflexplot@v0.9.3 --suffix=0.9.3
-    pipx install git+ssh://git@github.com/MeteoSwiss-APN/pyflexplot
-    pyflexplot_v0.8.2 --version  # -> 0.8.2
-    pyflexplot0.9.3 --version  # -> 0.9.3
-    pyflexplot --version  # -> 0.9.5
-
-.. _`release`: https://github.com/MeteoSwiss-APN/pyflexplot/releases
-
-To remove PyFlexPlot from your system::
-
-    pipx uninstall pyflexplot
-
-Note that `Pipx`_ does nothing magic.
-In fact, it merely saves you a few manual steps during installation:
-
-    * creating a designated virtual environment,
-    * installing the tool and its dependencies into it, and
-    * symlinking all commands to a directory in PATH.
-
-If Pipx is not already available on your system, you can easily install it manually::
-
-    cd <local/installs>
-    python -m venv venvs/pipx
-    ./venvs/pipx/bin/python -m pip install git+ssh://github.com/pipxproject/pipx.git
-    cd <dir/in/PATH>
-    ln -s <local/installs>/venvs/pipx/bin/pipx
-
-You can also install it with your system package manager, but this may tie it to your system Python installation (using system Python is bad!) and does not work easily with `Pyenv`_ (which you should check out).
-
-.. _`Pipx`: https://github.com/pipxproject/pipx
-.. _`Pyenv`: https://github.com/pyenv/pyenv
-
-With Pip
---------
-
-You may install PyFlexPlot manually from Github if you cannot or do not want to use Pipx, if you want to run tests to verify your installation, and/or if you want to develop it further.
-If you only want to deploy the tool -- without easy access to the code, without running tests, etc. -- you can directly install it into a virtual environment with pip, without cloning the git repository yourself.
-However, if you also want to test and/or develop, you first have to clone the git repository and can then use the Makefile (or manual commands) to install the tool for your purposes.
-
-Deployment only
-+++++++++++++++
-
-Install the latest version of PyFlexPlot and its dependencies directly into a virtual environment::
-
-    cd <local/installs>
-    python -m venv manual/venvs/pyflexplot/master
-    ./manual/venvs/pyflexplot/master/bin/python -m pip install -U pip git+ssh://github.com/MeteoSwiss-APN/pyflexplot
-    cd <dir/in/PATH>
-    ln -s <local/installs>/manual/venvs/pyflexplot/master/bin/pyflexplot
-    pyflexplot --version
-
-Same for a specific version::
-
-    cd <local/installs>
-    python -m venv manual/venvs/pyflexplot/v0.9.5
-    ./manual/venvs/pyflexplot/v0.9.5/bin/python -m pip install -U pip git+ssh://github.com/MeteoSwiss-APN/pyflexplot@v0.9.5
-    cd <dir/in/PATH>
-    ln -s <local/installs>/manual/venvs/pyflexplot/v0.9.5/bin/pyflexplot pyflexplot_v0.9.5
-    pyflexplot_v0.9.5 --version
-    ln -s pyflexplot_v0.9.5 pyflexplot  # use as default version
-    pyflexplot --version
-
-Note that `manual/venvs/pyflexplot/v0.9.5` is merely a suggestion and can be adapted as desired.
 
 Deployment with repository
 ++++++++++++++++++++++++++
 
-The same installations as just described, but starting with a git clone of the repository, can be achieved as follows::
+The installation, starting with a git clone of the repository, can be achieved as follows::
 
     cd <local/installs>
     git clone git+ssh://github.com/MeteoSwiss-APN/pyflexplot --branch=v0.9.5 --depth=1 manual/git/pyflexplot/v0.9.5
@@ -232,7 +111,9 @@ The same installations as just described, but starting with a git clone of the r
     pyflexplot_v0.9.5 --version
 
 Note that without `--depth=1`, the whole git history is downloaded, not just the tagged commit.
-Also note that without `VENV_DIR=...`, the virtual environment is created in `./venv` instead of in `<local/installs>/manual/venvs/pyflexplot/v0.9.5`.
+Also note that without `VENV_DIR=...`, the conda environment is created with
+the default name ``pyflexplot``. If an environment other than base is activated,
+pyflexplot is installed in the currently activated environment.
 
 
 Installation from repository

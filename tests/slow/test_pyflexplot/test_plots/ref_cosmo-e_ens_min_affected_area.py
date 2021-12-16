@@ -483,7 +483,7 @@ plot_summary = {
             "title": {
                 "tl": "Ensemble-Minimum des beaufschlagten Gebietes",
                 "bl": 'Aufsummiert $\\mathrm{\\"u}$ber 45:00$\\,$h (seit 2021-03-05 03:00 UTC)',
-                "tr": "2021-03-07 00:00 UTC (Vorhersagezeit +45:00$\\,$h)",
+                "tr": "2021-03-07 00:00 UTC",
                 "br": "45:00$\\,$h nach Freisetzungsbeginn",
             },
             "data_info": {
@@ -1621,7 +1621,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2021-03-07 00:00 UTC (Vorhersagezeit +45:00$\\,$h)",
+                    "s": "2021-03-07 00:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

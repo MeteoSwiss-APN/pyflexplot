@@ -494,7 +494,7 @@ plot_summary = {
             "title": {
                 "tl": "Totale Bodendeposition",
                 "bl": 'Akkumuliert $\\mathrm{\\"u}$ber 48:00$\\,$h (seit 2020-11-13 12:00 UTC)',
-                "tr": "2020-11-15 12:00 UTC (Vorhersagezeit +48:00$\\,$h)",
+                "tr": "2020-11-15 12:00 UTC",
                 "br": "46:00$\\,$h nach Freisetzungsbeginn",
             },
             "data_info": {
@@ -2623,7 +2623,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2020-11-15 12:00 UTC (Vorhersagezeit +48:00$\\,$h)",
+                    "s": "2020-11-15 12:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

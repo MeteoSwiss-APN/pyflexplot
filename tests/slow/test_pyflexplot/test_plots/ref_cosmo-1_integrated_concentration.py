@@ -479,7 +479,7 @@ plot_summary = {
             "title": {
                 "tl": "Integrated air activity concentration",
                 "bl": "Summed over 30:00$\\,$h (since 2019-09-30 12:00 UTC)",
-                "tr": "2019-10-01 18:00 UTC (lead time +30:00$\\,$h)",
+                "tr": "2019-10-01 18:00 UTC",
                 "br": "30:00$\\,$h after release start",
             },
             "data_info": {
@@ -1616,7 +1616,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2019-10-01 18:00 UTC (lead time +30:00$\\,$h)",
+                    "s": "2019-10-01 18:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

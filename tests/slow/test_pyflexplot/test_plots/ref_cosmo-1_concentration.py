@@ -479,7 +479,7 @@ plot_summary = {
             "title": {
                 "tl": 'Luftaktivit$\\mathrm{\\"a}$tskonzentration',
                 "bl": 'Gemittelt $\\mathrm{\\"u}$ber 3:00$\\,$h (seit 2019-10-01 00:00 UTC)',
-                "tr": "2019-10-01 03:00 UTC (Vorhersagezeit +15:00$\\,$h)",
+                "tr": "2019-10-01 03:00 UTC",
                 "br": "15:00$\\,$h nach Freisetzungsbeginn",
             },
             "data_info": {
@@ -1645,7 +1645,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2019-10-01 03:00 UTC (Vorhersagezeit +15:00$\\,$h)",
+                    "s": "2019-10-01 03:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
