@@ -498,7 +498,7 @@ plot_summary = {
             "title": {
                 "tl": "Ensemble mean of total surface deposition",
                 "bl": "Accumulated over 33:00$\\,$h (since 2019-07-27 12:00 UTC)",
-                "tr": "2019-07-28 21:00 UTC (lead time +33:00$\\,$h)",
+                "tr": "2019-07-28 21:00 UTC",
                 "br": "33:00$\\,$h after release start",
             },
             "data_info": {
@@ -1689,7 +1689,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2019-07-28 21:00 UTC (lead time +33:00$\\,$h)",
+                    "s": "2019-07-28 21:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

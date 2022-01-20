@@ -491,7 +491,7 @@ plot_summary = {
             "title": {
                 "tl": "Totale Bodendeposition",
                 "bl": 'Akkumuliert $\\mathrm{\\"u}$ber 33:00$\\,$h (seit 2019-09-30 12:00 UTC)',
-                "tr": "2019-10-01 21:00 UTC (Vorhersagezeit +33:00$\\,$h)",
+                "tr": "2019-10-01 21:00 UTC",
                 "br": "33:00$\\,$h nach Freisetzungsbeginn",
             },
             "data_info": {
@@ -1652,7 +1652,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2019-10-01 21:00 UTC (Vorhersagezeit +33:00$\\,$h)",
+                    "s": "2019-10-01 21:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

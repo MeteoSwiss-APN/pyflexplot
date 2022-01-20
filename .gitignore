@@ -1,8 +1,15 @@
 # Local files
 local/
 
+# Default test data link
+data
+
 # Plot test directory
 test_preset_plots/
+plot_*/
+
+# Batch processing log files
+log/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

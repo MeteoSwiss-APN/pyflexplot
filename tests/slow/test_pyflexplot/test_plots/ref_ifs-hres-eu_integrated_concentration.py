@@ -480,7 +480,7 @@ plot_summary = {
             "title": {
                 "tl": "Integrated air activity concentration",
                 "bl": "Summed over 30:00$\\,$h (since 2020-11-13 12:00 UTC)",
-                "tr": "2020-11-14 18:00 UTC (lead time +30:00$\\,$h)",
+                "tr": "2020-11-14 18:00 UTC",
                 "br": "28:00$\\,$h after release start",
             },
             "data_info": {
@@ -2406,7 +2406,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2020-11-14 18:00 UTC (lead time +30:00$\\,$h)",
+                    "s": "2020-11-14 18:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

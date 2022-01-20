@@ -486,7 +486,7 @@ plot_summary = {
             "title": {
                 "tl": 'Ensemble-Maximum der integrierten Luftaktivit$\\mathrm{\\"a}$tskonzentration',
                 "bl": 'Aufsummiert $\\mathrm{\\"u}$ber 30:00$\\,$h (seit 2019-07-27 12:00 UTC)',
-                "tr": "2019-07-28 18:00 UTC (Vorhersagezeit +30:00$\\,$h)",
+                "tr": "2019-07-28 18:00 UTC",
                 "br": "30:00$\\,$h nach Freisetzungsbeginn",
             },
             "data_info": {
@@ -1607,7 +1607,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2019-07-28 18:00 UTC (Vorhersagezeit +30:00$\\,$h)",
+                    "s": "2019-07-28 18:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

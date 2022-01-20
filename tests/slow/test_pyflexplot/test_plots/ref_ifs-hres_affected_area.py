@@ -474,7 +474,7 @@ plot_summary = {
             "title": {
                 "tl": "Affected area",
                 "bl": "Summed over 48:00$\\,$h (since 2020-03-17 00:00 UTC)",
-                "tr": "2020-03-19 00:00 UTC (lead time +48:00$\\,$h)",
+                "tr": "2020-03-19 00:00 UTC",
                 "br": "48:00$\\,$h after release start",
             },
             "data_info": {
@@ -1926,7 +1926,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2020-03-19 00:00 UTC (lead time +48:00$\\,$h)",
+                    "s": "2020-03-19 00:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

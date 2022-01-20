@@ -332,18 +332,20 @@ class MapAxes:
         self._ax_add_countries("lowest", rasterized=True)
         self._ax_add_lakes("lowest", rasterized=True)
         self._ax_add_rivers("lowest", rasterized=True)
+        self._ax_add_countries("geo_lower", rasterized=True)
         self._ax_add_countries("geo_upper", rasterized=True)
         self._ax_add_cities(rasterized=False)
 
     def _ax_add_countries(self, zorder_key: str, rasterized: bool = False) -> None:
+        edgecolor = "white" if zorder_key == "geo_lower" else "black"
         facecolor = "white" if zorder_key == "lowest" else "none"
-        linewidth = 1 if zorder_key == "lowest" else 1 / 3
+        linewidth = 1 / 3 if zorder_key == "geo_upper" else 1
         self.ax.add_feature(
             cartopy.feature.NaturalEarthFeature(
                 category="cultural",
                 name="admin_0_countries_lakes",
                 scale=self.config.geo_res,
-                edgecolor="black",
+                edgecolor=edgecolor,
                 facecolor=facecolor,
                 linewidth=linewidth * self.config.scale_fact,
                 rasterized=rasterized,

@@ -1592,7 +1592,6 @@ plot_summary = {
             "title": {
                 "tl": 'Luftaktivit$\\mathrm{\\"a}$tskonzentration',
                 "bl": 'Gemittelt $\\mathrm{\\"u}$ber letzte 3:00$\\,$h',
-                "tr": "Vorhersagezeit +6:00$\\,$/$\\,$+12:00$\\,$/$\\,$+18:00$\\,$/$\\,$+24:00$\\,$h",
                 "br": "6:00$\\,$/$\\,$12:00$\\,$/$\\,$18:00$\\,$/$\\,$24:00$\\,$h nach Freisetzungsbeginn",
             },
             "data_info": {
@@ -5572,34 +5571,6 @@ plot_summary = {
                         "size": 12.0,
                         "ha": "left",
                         "va": "baseline",
-                    },
-                },
-                {
-                    "type": "TextBoxElementText",
-                    "loc": {
-                        "type": "TextBoxLocation",
-                        "loc": "tr",
-                        "loc_y": "t",
-                        "loc_x": "r",
-                        "dx_unit": 0.009527439024390244,
-                        "dy_unit": 0.11250000000000004,
-                        "dx": 0.0,
-                        "dy": 0.0,
-                        "x0": 0.9904725609756098,
-                        "y0": 0.8875,
-                        "x": 0.9904725609756098,
-                        "y": 0.8875,
-                        "va": "top",
-                        "ha": "right",
-                    },
-                    "s": "Vorhersagezeit +6:00$\\,$/$\\,$+12:00$\\,$/$\\,$+18:00$\\,$/$\\,$+24:00$\\,$h",
-                    "replace_edge_spaces": False,
-                    "edge_spaces_replacement_char": "␣",
-                    "kwargs": {
-                        "fontname": "Liberation Sans",
-                        "size": 12.0,
-                        "ha": "right",
-                        "va": "top",
                     },
                 },
                 {
