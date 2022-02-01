@@ -6,6 +6,7 @@ netcdf4
 numpy
 pillow>=8.4.0
 pypdf2
+pytest
 scipy
 toml
 typing-extensions

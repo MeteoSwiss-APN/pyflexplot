@@ -10,7 +10,6 @@ mypy
 pre-commit
 pydocstyle
 pylint >= 2.6.0
-pytest
 rope
 rstcheck
 sphinx
