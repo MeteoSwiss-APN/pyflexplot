@@ -310,7 +310,7 @@ endif  # IGNORE_VENV
 # Installation
 #==============================================================================
 
-.PHONY: install #CMD Install the package with pinned runtime dependencies.
+.PHONY: install #CMD Install the package with unpinned runtime dependencies.
 install: venv
 	@echo -e "\n[make install] installing the package"
 	conda env update --prefix "${VENV_DIR}" --file=environment.yml
@@ -402,7 +402,7 @@ update-deps: update-run-dev-deps update-tox-deps update-precommit-deps
 
 # Note:
 # Bump2version v1.0.0 is incompatible with pre-commit hook fix-trailing-whitespace
-# (https://ithub.com/c4urself/bump2version/issues/124), therefore we pre-commit,
+# (https://github.com/c4urself/bump2version/issues/124), therefore we pre-commit,
 # commit, and tag manually. Once the whitespace problem is fixed, this can again
 # be done in one command:
 #  @read -p "Please annotate new tag: " msg \
@@ -489,7 +489,7 @@ test-fast: ${_INSTALL_DEV}
 	${PREFIX}pytest tests/fast
 
 .PHONY: test-medium #CMD Run only medium-fast tests in the development environment
-test-medium: venv ${_INSTALL_TEST}
+test-medium: venv ${_INSTALL_DEV}
 	@echo -e "\n[make test-medium] running medium-fast tests locally"
 	# ${PREFIX}tox -e py37 -- tests/medium
 	${PREFIX}pytest tests/medium
