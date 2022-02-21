@@ -148,30 +148,34 @@ Link the default input files if you want to use these for tests.::
 
 Create an output directory::
   exp=106c
-  dest=plot_$tag
+  dest=plot_$exp
   mkdir $dest
 
-Run all presets for pdf graphics format with the default input data::
+Run all presets for pdf graphics format, define preset as::
   preset='opr/*/all_pdf'
 
-or choose an appropriate preset (define the variable preset)::
-  For FLEXPART-IFS      Global output:        preset=opr/ifs-hres/all_pdf
-  For FLEXPART-IFS      Europe output:        preset=opr/ifs-hres-eu/all_pdf
-  For FLEXPART-COSMO    deterministic output: preset=opr/cosmo-1e-ctrl/all_pdf
-  For FLEXPART-COSMO    deterministic output: preset=opr/cosmo-2e-ctrl/all_pdf
-  For FLEXPART-COSMO-1E ensemble output:      preset=opr/cosmo-1e/all_pdf
-  For FLEXPART-COSMO-2E ensemble output:      preset=opr/cosmo-2e/all_pdf
+or run all presets for the COSMO-2E ensemble for pdf and png graphics format::
+  preset='opr/cosmo-2e/all_*'
 
-and run pyflexplot with the chosen preset::
+or choose another preset as appropriate::
+  preset=opr/ifs-hres/all_pdf       # for FLEXPART-IFS      Global output:
+  preset=opr/ifs-hres-eu/all_pdf    # for FLEXPART-IFS      Europe output:
+  preset=opr/cosmo-1e-ctrl/all_pdf  # for FLEXPART-COSMO    deterministic output:
+  preset=opr/cosmo-2e-ctrl/all_pdf  # for FLEXPART-COSMO    deterministic output:
+  preset=opr/cosmo-1e/all_pdf       # for FLEXPART-COSMO-1E ensemble output:
+  preset=opr/cosmo-2e/all_pdf       # for FLEXPART-COSMO-2E ensemble output:
+
+and run pyflexplot with the chosen preset, either interactively::
   pyflexplot --preset "$preset" --merge-pdfs --dest=$dest
 
-or as a batch job::
+or as a batch job (recommended)::
   batchPP -t 2 -T 10 -n $exp "$CONDA_PREFIX/bin/pyflexplot --preset $preset --merge-pdfs --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK"
 
 Example using operational Flexpart ensemble output::
   preset=opr/cosmo-2e/all_pdf
   basetime=2021112500
-  infile000=$(echo /store/mch/msopr/osm/COSMO-2E/FCST${basetime:2:2}/${basetime:2:8}_5??/flexpart_c/000/grid_conc_*_BEZ.nc)
+  site=BEZ
+  infile000=$(echo /store/mch/msopr/osm/COSMO-2E/FCST${basetime:2:2}/${basetime:2:8}_5??/flexpart_c/000/grid_conc_*_${site}.nc)
   infile=${infile000/\/000\//\/\{ens_member:03\}\/}
   dest=plot_${basetime:2:8}
   mkdir $dest
@@ -244,15 +248,15 @@ Copy or merge changes into dev
 Create a new version number, indicating the prerelease status (--new-version
 with release and buld tags), regardless of uncommited files (--allow-dirty)
 and without committing it as new tag (--no-commit --no-tag)::
-  bumpversion --verbose --allow-dirty --no-commit --no-tag --new-version=1.0.6-pre-1 dummy
+  bumpversion --verbose --allow-dirty --no-commit --no-tag --new-version=1.0.6.dev1 dummy
 
 
-Save environment specificatons to allow for an exact replication of
+Save environment specificatons to allow for an exact replication of the
 environment with make install::
-  make install-dev
-  conda env export --no-builds --file=environment.yml
+  make update-run-deps
 
-Remove the line specifying the pyflexplot version and the preset
+Remove the line specifying the pyflexplot version and the preset in the file
+environment.yml
 
 If plots change, create new reference plots
 Situation: make test-slow fails (tests/slow/pyflexplot/test_plots/test_*.py)

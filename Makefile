@@ -240,11 +240,11 @@ ifeq (${IGNORE_VENV}, 0)
 	@# Don't ignore an existing conda env, and if there is none, create one
 ifeq (${VENV_DIR},)
 	@# Path VENV_DIR to conda env has NOT been passed
-	$(eval VENV_DIR = $(shell conda run --name $(VENV_NAME) python -c 'import pathlib, sys; print(pathlib.Path(sys.executable).parent.parent)'))
+	VENV_DIR=$${CONDA_PREFIX}
 	@export VENV_DIR
 else  # VENV_DIR
 	@# Path VENV_DIR to conda venv has been passed
-	$(eval VENV_DIR = $(shell conda run --prefix $(VENV_DIR) python -c 'import pathlib, sys; print(pathlib.Path(sys.executable).parent.parent)'))
+	VENV_DIR=$(VENV_DIR)
 	@export VENV_DIR
 ifneq (${VENV_NAME},${DEFAULT_VENV_NAME})
 	@# Name VENV_NAME of conda env has been passed alongside path VENV_DIR
@@ -313,8 +313,7 @@ endif  # IGNORE_VENV
 .PHONY: install #CMD Install the package with pinned runtime dependencies.
 install: venv
 	@echo -e "\n[make install] installing the package"
-	# conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.txt  # pinned
-	conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.in  # unpinned
+	conda env update --prefix "${VENV_DIR}" --file=environment.yml
 	conda install pip
 	${PREFIX}python -m pip install . ${PIP_OPTS}
 	${PREFIX}pyflexplot -V
@@ -322,20 +321,10 @@ install: venv
 .PHONY: install-dev #CMD Install the package as editable with runtime and\ndevelopment dependencies.
 install-dev: venv
 	@echo -e "\n[make install-dev] installing the package as editable with development dependencies"
-	# conda install --yes --prefix "${VENV_DIR}" --file requirements/dev-requirements.txt  # pinned
-	conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.in  # unpinned
-	conda install --yes --prefix "${VENV_DIR}" --file requirements/dev-requirements.in  # unpinned
+	conda env update --prefix "${VENV_DIR}" --file=dev-environment.yml
 	conda install pip
 	${PREFIX}python -m pip install --editable . ${PIP_OPTS}
 	${PREFIX}pre-commit install
-	${PREFIX}pyflexplot -V
-
-.PHONY: install-opr #CMD Install the package with pinned runtime dependencies.
-install-opr: venv
-	@echo -e "\n[make install-opr] installing the package with pinned runtime dependencies"
-	conda env update --prefix "${VENV_DIR}" --file=environment.yml
-	conda install pip
-	${PREFIX}python -m pip install . ${PIP_OPTS}
 	${PREFIX}pyflexplot -V
 
 #==============================================================================
@@ -343,31 +332,19 @@ install-opr: venv
 #==============================================================================
 
 .PHONY: update-run-deps #CMD Update pinned runtime dependencies based on setup.py;\nshould be followed by update-dev-deps (consider update-run-dev-deps)
-update-run-deps: git
-	@echo -e "\n[make update-run-deps] not yet implemented for conda"
-	exit 1
-	# @echo -e "\n[make update-run-deps] updating pinned runtime dependencies in requirements/requirements.txt"
-	# \rm -f requirements/requirements.txt
-	# @echo -e "temporary virtual environment: ${_TMP_VENV}-run"
-	# python -m venv ${_TMP_VENV}-run
-	# ${_TMP_VENV}-run/bin/python -m pip install -U pip
-	# ${_TMP_VENV}-run/bin/python -m pip install . ${PIP_OPTS}
-	# ${_TMP_VENV}-run/bin/python -m pip freeze | \grep -v '\<file:' > requirements/requirements.txt
-	# \rm -rf ${_TMP_VENV}-run
+update-run-deps: venv git
+	@echo -e "\n[make update-run-deps] updating pinned runtime dependencies in environment.yml"
+	conda install --yes --prefix $(VENV_DIR) pip
+	conda install --yes --prefix $(VENV_DIR) --file requirements/requirements.in  # unpinned
+	conda env export --no-builds --file=environment.yml
 
 .PHONY: update-dev-deps #CMD Update pinned development dependencies based on\nrequirements/dev-requirements.in; includes runtime dependencies in\nrequirements/requirements.txt
-update-dev-deps: git
-	@echo -e "\n[make update-dev-deps] not yet implemented for conda"
-	exit 1
-	# @echo -e "\n[make update-dev-deps] updating pinned development dependencies in requirements/requirements.txt"
-	# \rm -f requirements/dev-requirements.txt
-	# @echo -e "temporary virtual environment: ${_TMP_VENV}-dev"
-	# python -m venv ${_TMP_VENV}-dev
-	# ${_TMP_VENV}-dev/bin/python -m pip install -U pip
-	# ${_TMP_VENV}-dev/bin/python -m pip install -r requirements/dev-requirements.in ${PIP_OPTS}
-	# ${_TMP_VENV}-dev/bin/python -m pip install -r requirements/requirements.txt --no-deps ${PIP_OPTS}
-	# ${_TMP_VENV}-dev/bin/python -m pip freeze > requirements/dev-requirements.txt
-	# \rm -rf ${_TMP_VENV}-dev
+update-dev-deps: venv git
+	@echo -e "\n[make update-run-deps] updating pinned runtime dependencies in dev-environment.yml"
+	conda install --yes --prefix $(VENV_DIR) pip
+	conda install --yes --prefix $(VENV_DIR) --file requirements/requirements.in  # unpinned
+	conda install --yes --prefix $(VENV_DIR) --file requirements/dev-requirements.in  # unpinned
+	conda env export --no-builds --file=dev-environment.yml
 
 # Note: Updating run and dev deps MUST be done in sequence
 .PHONY: update-run-dev-deps #CMD Update pinned runtime and development dependencies
