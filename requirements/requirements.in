@@ -4,7 +4,7 @@ geopy
 matplotlib
 netcdf4
 numpy
-pillow>=8.4.0
+pillow>=9.0.1
 pypdf2
 pytest
 scipy
