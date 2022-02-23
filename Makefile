@@ -323,9 +323,10 @@ install: venv
 .PHONY: install-dev #CMD Install the package as editable with pinned runtime and\ndevelopment dependencies.
 install-dev: venv
 	@echo -e "\n[make install-dev] installing the package as editable with development dependencies"
+	conda env update --prefix "${VENV_DIR}" --file=dev-environment.yml
 	# conda install --yes --prefix "${VENV_DIR}" --file requirements/dev-requirements.txt  # pinned
-	conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.in  # unpinned
-	conda install --yes --prefix "${VENV_DIR}" --file requirements/dev-requirements.in  # unpinned
+	# conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.in  # unpinned
+	# conda install --yes --prefix "${VENV_DIR}" --file requirements/dev-requirements.in  # unpinned
 	# ${PREFIX}python -m pip install -U pip
 	${PREFIX}python -m pip install --editable . ${PIP_OPTS}
 	${PREFIX}pre-commit install
