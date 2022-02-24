@@ -334,7 +334,7 @@ class MapAxes:
         self._ax_add_rivers("lowest", rasterized=True)
         self._ax_add_countries("geo_lower", rasterized=True)
         self._ax_add_countries("geo_upper", rasterized=True)
-        self._ax_add_cities(rasterized=False)
+        self._ax_add_cities("geo_upper", rasterized=False)
 
     def _ax_add_countries(self, zorder_key: str, rasterized: bool = False) -> None:
         edgecolor = "white" if zorder_key == "geo_lower" else "black"
@@ -412,7 +412,7 @@ class MapAxes:
             self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
 
     # pylint: disable=R0914  # too-many-locals (>15)
-    def _ax_add_cities(self, rasterized: bool = False) -> None:
+    def _ax_add_cities(self, zorder_key: str, rasterized: bool = False) -> None:
         """Add major cities, incl. all capitals."""
         # Explicitly excluded cities by name
         excluded_names = np.array(
@@ -529,7 +529,7 @@ class MapAxes:
                 fillstyle="none",
                 markeredgewidth=1 * self.config.scale_fact,
                 markersize=3 * self.config.scale_fact,
-                zorder=self.zorder["geo_upper"],
+                zorder=self.zorder[zorder_key],
                 rasterized=rasterized,
             )
             text = self.add_text(
