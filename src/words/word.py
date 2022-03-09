@@ -44,14 +44,23 @@ class Word:
         self.lang: str = lang
         self.ctx: Optional[str] = ctx
 
-    def __eq__(self, other: Any) -> bool:
-        return str(self) == str(other)
+    @property
+    def s(self) -> str:
+        return str(self)
 
-    def __str__(self) -> str:
-        return self._s
+    @property
+    def c(self) -> str:
+        """Shorthand to capitalize the first word."""
+        return self.capital(all_=False, preserve=True)
 
-    def __hash__(self) -> int:
-        return hash(str(self))
+    @property
+    # pylint: disable=C0103  # invalid-name
+    def C(self) -> str:
+        return self.capital(all_=True, preserve=True)
+
+    @property
+    def t(self) -> str:
+        return self.title(preserve=True)
 
     def capital(self, *, all_: bool = False, preserve: bool = True) -> str:
         """Capitalize the first letter of the first or of each word.
@@ -81,23 +90,14 @@ class Word:
         else:
             raise NotImplementedError(f"{type(self).__name__}.title", self.lang)
 
-    @property
-    def s(self) -> str:
-        return str(self)
+    def __eq__(self, other: Any) -> bool:
+        return str(self) == str(other)
 
-    @property
-    def c(self) -> str:
-        """Shorthand to capitalize the first word."""
-        return self.capital(all_=False, preserve=True)
+    def __str__(self) -> str:
+        return self._s
 
-    @property
-    # pylint: disable=C0103  # invalid-name
-    def C(self) -> str:
-        return self.capital(all_=True, preserve=True)
-
-    @property
-    def t(self) -> str:
-        return self.title(preserve=True)
+    def __hash__(self) -> int:
+        return hash(str(self))
 
 
 class TranslatedWord:
@@ -196,6 +196,91 @@ class TranslatedWord:
 
         self.set_active_lang(lang=active_lang, query=active_lang_query)
 
+    @property
+    def active_lang(self) -> str:
+        """Get the active language."""
+        if self._active_lang_query is not None:
+            return self._active_lang_query()
+        return self._active_lang
+
+    @property
+    def langs(self) -> list[str]:
+        """List of languages the word is defined in."""
+        return list(self._translations.keys())
+
+    def set_active_lang(
+        self, lang: Optional[str] = None, query: Callable[[], str] = None
+    ) -> None:
+        """Set the active language, either hard-coded or queryable.
+
+        Args:
+            lang (optional): Default language. Overridden by ``query`` if the
+                latter is not None. Defaults to the first key in
+                ``TranslatedWord.langs``.
+
+            query (None): Function to query the active language. Overrides
+                ``default``.
+
+        """
+        if lang is None:
+            lang = next(iter(self.langs))
+        elif lang not in self.langs:
+            raise ValueError(f"invalid language: {lang} (not among {self.langs})")
+        self._active_lang = lang
+
+        if query is not None and not callable(query):
+            raise ValueError(f"query of type {type(query).__name__} not callable")
+        self._active_lang_query = query
+
+    def get(self) -> ContextWord:
+        """Get word in the active language."""
+        return self.get_in(None)
+
+    def get_in(self, lang: Optional[str]) -> ContextWord:
+        """Get word in a certain language."""
+        if lang is None:
+            lang = self.active_lang
+        try:
+            return self._translations[lang]
+        except KeyError as e:
+            raise ValueError(
+                f"word '{self.name}' not defined in language '{lang}', only in "
+                f"{self.langs}"
+            ) from e
+
+    @overload
+    def ctx(self, name: Optional[str], as_str: Literal[False] = False) -> Word:
+        ...
+
+    @overload
+    def ctx(self, name: Optional[str], as_str: Literal[True]) -> str:
+        ...
+
+    def ctx(self, name, as_str=False):
+        return self.get_in(self.active_lang).ctx(name, as_str)
+
+    def __str__(self) -> str:
+        w = self.get().get()
+        assert isinstance(w, Word)  # SR_TMP
+        return w.s
+
+    def __repr__(self) -> str:
+        s_langs = ", ".join(
+            [f"{lang}={repr(word)}" for lang, word in self._translations.items()]
+        )
+        return (
+            f"{type(self).__name__}({self.name}, {s_langs}, lang='{self.active_lang}')"
+        )
+
+    def __eq__(self, other: Any) -> bool:
+        return str(self) == str(other)
+
+    def __getitem__(self, key: Optional[str]) -> ContextWord:
+        lang = key
+        if lang is None:
+            lang = self.active_lang
+        return self.get_in(lang)
+
     def _check_langs(
         self,
         translations: Mapping[str, Union[WordT, str, Mapping[str, Union[WordT, str]]]],
@@ -225,91 +310,6 @@ class TranslatedWord:
             if isinstance(word, Mapping):
                 ctxs += [ctx for ctx in word.keys() if ctx not in ctxs]
         return ctxs
-
-    def set_active_lang(
-        self, lang: Optional[str] = None, query: Callable[[], str] = None
-    ) -> None:
-        """Set the active language, either hard-coded or queryable.
-
-        Args:
-            lang (optional): Default language. Overridden by ``query`` if the
-                latter is not None. Defaults to the first key in
-                ``TranslatedWord.langs``.
-
-            query (None): Function to query the active language. Overrides
-                ``default``.
-
-        """
-        if lang is None:
-            lang = next(iter(self.langs))
-        elif lang not in self.langs:
-            raise ValueError(f"invalid language: {lang} (not among {self.langs})")
-        self._active_lang = lang
-
-        if query is not None and not callable(query):
-            raise ValueError(f"query of type {type(query).__name__} not callable")
-        self._active_lang_query = query
-
-    @property
-    def active_lang(self) -> str:
-        """Get the active language."""
-        if self._active_lang_query is not None:
-            return self._active_lang_query()
-        return self._active_lang
-
-    def get(self) -> ContextWord:
-        """Get word in the active language."""
-        return self.get_in(None)
-
-    def get_in(self, lang: Optional[str]) -> ContextWord:
-        """Get word in a certain language."""
-        if lang is None:
-            lang = self.active_lang
-        try:
-            return self._translations[lang]
-        except KeyError as e:
-            raise ValueError(
-                f"word '{self.name}' not defined in language '{lang}', only in "
-                f"{self.langs}"
-            ) from e
-
-    @overload
-    def ctx(self, name: Optional[str], as_str: Literal[False] = False) -> Word:
-        ...
-
-    @overload
-    def ctx(self, name: Optional[str], as_str: Literal[True]) -> str:
-        ...
-
-    def ctx(self, name, as_str=False):
-        return self.get_in(self.active_lang).ctx(name, as_str)
-
-    @property
-    def langs(self) -> list[str]:
-        """List of languages the word is defined in."""
-        return list(self._translations.keys())
-
-    def __str__(self) -> str:
-        w = self.get().get()
-        assert isinstance(w, Word)  # SR_TMP
-        return w.s
-
-    def __repr__(self) -> str:
-        s_langs = ", ".join(
-            [f"{lang}={repr(word)}" for lang, word in self._translations.items()]
-        )
-        return (
-            f"{type(self).__name__}({self.name}, {s_langs}, lang='{self.active_lang}')"
-        )
-
-    def __eq__(self, other: Any) -> bool:
-        return str(self) == str(other)
-
-    def __getitem__(self, key: Optional[str]) -> ContextWord:
-        lang = key
-        if lang is None:
-            lang = self.active_lang
-        return self.get_in(lang)
 
 
 # SR_TODO Make a subclass of Word (requires same interface)
