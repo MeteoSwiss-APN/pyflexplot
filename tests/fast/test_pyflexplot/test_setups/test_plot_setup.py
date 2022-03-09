@@ -191,8 +191,7 @@ class Test_Derive:
 
 class Test_Decompress:
     class Test_Base:
-        @property
-        def setup(self):
+        def get_setup(self):
             params = {
                 "panels": {
                     "plot_variable": "tot_deposition",
@@ -209,7 +208,7 @@ class Test_Decompress:
 
         def test_full_internal(self):
             """Full decompression fails with internal=True due to ens_member_id."""
-            group = self.setup.decompress(internal=True)
+            group = self.get_setup().decompress(internal=True)
             assert isinstance(group, PlotSetupGroup)
             res = {
                 (
@@ -231,7 +230,7 @@ class Test_Decompress:
 
         def test_full_external(self):
             """Decompress all params into separate setups."""
-            setups = self.setup.decompress(internal=False)
+            setups = self.get_setup().decompress(internal=False)
             assert len(setups) == 6
             res = {
                 (
@@ -253,7 +252,7 @@ class Test_Decompress:
 
         def test_partially_one(self):
             """Decompress only one select parameter."""
-            setups = self.setup.decompress(["dimensions.species_id"])
+            setups = self.get_setup().decompress(["dimensions.species_id"])
             assert isinstance(setups, PlotSetupGroup)
             assert all(isinstance(setup, PlotSetup) for setup in setups)
             assert len(setups) == 2
@@ -273,7 +272,9 @@ class Test_Decompress:
 
         def test_select_two(self):
             """Decompress two select parameters."""
-            setups = self.setup.decompress(["dimensions.time", "dimensions.species_id"])
+            setups = self.get_setup().decompress(
+                ["dimensions.time", "dimensions.species_id"]
+            )
             assert len(setups) == 6
             assert isinstance(setups, PlotSetupGroup)
             assert all(isinstance(setup, PlotSetup) for setup in setups)
@@ -299,10 +300,12 @@ class Test_Decompress:
             """``Dimensions.variable`` cannot be selected for decompression."""
             msg = r"^cannot decompress Dimensions.variable"
             with pytest.raises(ValueError, match=msg):
-                self.setup.decompress(["dimensions.variable"])
+                self.get_setup().decompress(["dimensions.variable"])
 
         def test_files_param(self):
-            setup = self.setup.derive({"files": {"output": ["foo.png", "bar.png"]}})
+            setup = self.get_setup().derive(
+                {"files": {"output": ["foo.png", "bar.png"]}}
+            )
             setups = setup.decompress(["files.output"], internal=False)
             assert len(setups) == 2
             assert isinstance(setups, list)
@@ -317,7 +320,7 @@ class Test_Decompress:
 
         def test_model_param(self):
             """Decompress model parameters."""
-            setup = self.setup.derive(
+            setup = self.get_setup().derive(
                 {
                     "model": {"ens_member_id": (0, 1, 2)},
                     "panels": {"ens_variable": "mean"},
@@ -332,8 +335,7 @@ class Test_Decompress:
             assert res == sol
 
     class Test_Ensemble:
-        @property
-        def setup(self):
+        def get_setup(self):
             params = {
                 "model": {"ens_member_id": [1, 2, 3, 4, 5]},
                 "panels": {
@@ -348,10 +350,10 @@ class Test_Decompress:
 
         def test_internal_fail(self):
             with pytest.raises(ValueError, match="ens_member_id"):
-                self.setup.decompress(internal=True)
+                self.get_setup().decompress(internal=True)
 
         def test_external(self):
-            setups = self.setup.decompress(internal=False)
+            setups = self.get_setup().decompress(internal=False)
             assert isinstance(setups, list)
             res = [setup.dict() for setup in setups]
             sol = [
@@ -367,7 +369,7 @@ class Test_Decompress:
             )
 
         def test_internal_skip(self):
-            setups = self.setup.decompress(skip=["ens_member_id"], internal=True)
+            setups = self.get_setup().decompress(skip=["ens_member_id"], internal=True)
             res = setups.dicts()
             sol = [
                 {
@@ -381,7 +383,7 @@ class Test_Decompress:
             )
 
         def test_external_skip(self):
-            setups = self.setup.decompress(skip=["ens_member_id"], internal=False)
+            setups = self.get_setup().decompress(skip=["ens_member_id"], internal=False)
             assert isinstance(setups, list)
             res = [setup.dict() for setup in setups]
             sol = [
@@ -407,13 +409,11 @@ class Test_Decompress:
             "panels": {"ens_variable": ["minimum", "maximum", "mean", "median"]},
         }
 
-        @property
-        def setup(self) -> PlotSetup:
+        def get_setup(self) -> PlotSetup:
             return DEFAULT_SETUP.derive(self.params)
 
-        # @pytest.mark.skip("WIP")
         def test_skip_internal(self):
-            group = self.setup.decompress(skip=["ens_member_id"], internal=True)
+            group = self.get_setup().decompress(skip=["ens_member_id"], internal=True)
             assert isinstance(group, PlotSetupGroup)
             assert len(group) == 1
             plot_setup = next(iter(group))
