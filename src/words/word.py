@@ -4,6 +4,7 @@ from __future__ import annotations
 # Standard library
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Mapping
 from typing import Optional
 from typing import overload
@@ -166,9 +167,20 @@ class TranslatedWord:
         for lang, word in translations.items():
             if isinstance(word, str):
                 word = self.cls_word(word, lang=lang)
-            if isinstance(word, (Word, ContextWord)):
+            if isinstance(word, ContextWord):
+                # Note [2022-03-09]: Not sure what should happen in this case,
+                # but it does not happen in the testsuite, anyway...
+                raise NotImplementedError(f"word is of type ContextWord: '{word}'")
+            elif isinstance(word, Word):
                 word = {"*": word}
             elif isinstance(word, Mapping):
+                if any(isinstance(v, ContextWord) for v in word.values()):
+                    # Note [2022-03-09]: Not sure what should happen in this case,
+                    # but it does not happen in the testsuite, anyway...
+                    raise NotImplementedError(
+                        f"word variant is of type ContextWord: '{word}'"
+                    )
+                word = cast(Mapping[str, Union[Word, str]], word)  # mypy
                 if set(word.keys()) != set(ctxs) and "*" not in word:
                     raise ValueError(
                         f"word '{self.name}' in language '{lang}' must either "
