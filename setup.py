@@ -51,7 +51,7 @@ metadata = {
 python = ">= 3.7"
 
 # Runtime dependencies: top-level and unpinned (only critical version restrictions)
-with open("requirements/requirements.in") as f:
+with open("requirements.in") as f:
     requirements = list(map(str, parse_requirements(f.readlines())))
 
 scripts = [

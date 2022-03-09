@@ -314,8 +314,8 @@ endif  # IGNORE_VENV
 install: venv
 	@echo -e "\n[make install] installing the package"
 	conda env update --prefix "${VENV_DIR}" --file=environment.yml
-	# conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.txt  # pinned
-	# conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.in  # unpinned
+	# conda install --yes --prefix "${VENV_DIR}" --file requirements.txt  # pinned
+	# conda install --yes --prefix "${VENV_DIR}" --file requirements.in  # unpinned
 	# ${PREFIX}python -m pip install -U pip
 	${PREFIX}python -m pip install . ${PIP_OPTS}
 	${PREFIX}pyflexplot -V
@@ -323,9 +323,9 @@ install: venv
 .PHONY: install-dev #CMD Install the package as editable with pinned runtime and\ndevelopment dependencies.
 install-dev: venv
 	@echo -e "\n[make install-dev] installing the package as editable with development dependencies"
-	# conda install --yes --prefix "${VENV_DIR}" --file requirements/dev-requirements.txt  # pinned
-	conda install --yes --prefix "${VENV_DIR}" --file requirements/requirements.in  # unpinned
-	conda install --yes --prefix "${VENV_DIR}" --file requirements/dev-requirements.in  # unpinned
+	# conda install --yes --prefix "${VENV_DIR}" --file dev-requirements.txt  # pinned
+	conda install --yes --prefix "${VENV_DIR}" --file requirements.in  # unpinned
+	conda install --yes --prefix "${VENV_DIR}" --file dev-requirements.in  # unpinned
 	# ${PREFIX}python -m pip install -U pip
 	${PREFIX}python -m pip install --editable . ${PIP_OPTS}
 	${PREFIX}pre-commit install
@@ -339,27 +339,27 @@ install-dev: venv
 update-run-deps: git
 	@echo -e "\n[make update-run-deps] not yet implemented for conda"
 	exit 1
-	# @echo -e "\n[make update-run-deps] updating pinned runtime dependencies in requirements/requirements.txt"
-	# \rm -f requirements/requirements.txt
+	# @echo -e "\n[make update-run-deps] updating pinned runtime dependencies in requirements.txt"
+	# \rm -f requirements.txt
 	# @echo -e "temporary virtual environment: ${_TMP_VENV}-run"
 	# python -m venv ${_TMP_VENV}-run
 	# ${_TMP_VENV}-run/bin/python -m pip install -U pip
 	# ${_TMP_VENV}-run/bin/python -m pip install . ${PIP_OPTS}
-	# ${_TMP_VENV}-run/bin/python -m pip freeze | \grep -v '\<file:' > requirements/requirements.txt
+	# ${_TMP_VENV}-run/bin/python -m pip freeze | \grep -v '\<file:' > requirements.txt
 	# \rm -rf ${_TMP_VENV}-run
 
-.PHONY: update-dev-deps #CMD Update pinned development dependencies based on\nrequirements/dev-requirements.in; includes runtime dependencies in\nrequirements/requirements.txt
+.PHONY: update-dev-deps #CMD Update pinned development dependencies based on\ndev-requirements.in; includes runtime dependencies in\nrequirements.txt
 update-dev-deps: git
 	@echo -e "\n[make update-dev-deps] not yet implemented for conda"
 	exit 1
-	# @echo -e "\n[make update-dev-deps] updating pinned development dependencies in requirements/requirements.txt"
-	# \rm -f requirements/dev-requirements.txt
+	# @echo -e "\n[make update-dev-deps] updating pinned development dependencies in requirements.txt"
+	# \rm -f dev-requirements.txt
 	# @echo -e "temporary virtual environment: ${_TMP_VENV}-dev"
 	# python -m venv ${_TMP_VENV}-dev
 	# ${_TMP_VENV}-dev/bin/python -m pip install -U pip
-	# ${_TMP_VENV}-dev/bin/python -m pip install -r requirements/dev-requirements.in ${PIP_OPTS}
-	# ${_TMP_VENV}-dev/bin/python -m pip install -r requirements/requirements.txt --no-deps ${PIP_OPTS}
-	# ${_TMP_VENV}-dev/bin/python -m pip freeze > requirements/dev-requirements.txt
+	# ${_TMP_VENV}-dev/bin/python -m pip install -r dev-requirements.in ${PIP_OPTS}
+	# ${_TMP_VENV}-dev/bin/python -m pip install -r requirements.txt --no-deps ${PIP_OPTS}
+	# ${_TMP_VENV}-dev/bin/python -m pip freeze > dev-requirements.txt
 	# \rm -rf ${_TMP_VENV}-dev
 
 # Note: Updating run and dev deps MUST be done in sequence
@@ -368,17 +368,17 @@ update-run-dev-deps:
 	$(MAKE) update-run-deps
 	$(MAKE) update-dev-deps
 
-.PHONY: update-tox-deps #CMD Update pinned tox testing dependencies based on\nrequirements/tox-requirements.in
+.PHONY: update-tox-deps #CMD Update pinned tox testing dependencies based on\ntox-requirements.in
 update-tox-deps: git
 	@echo -e "\n[make update-tox-deps] not yet implemented for conda"
 	exit 1
-	# \rm -f requirements/tox-requirements.txt
-	# @echo -e "\n[make update-tox-deps] updating pinned tox testing dependencies in requirements/tox-requirements.txt"
+	# \rm -f tox-requirements.txt
+	# @echo -e "\n[make update-tox-deps] updating pinned tox testing dependencies in tox-requirements.txt"
 	# @echo -e "temporary virtual environment: ${_TMP_VENV}-tox"
 	# python -m venv ${_TMP_VENV}-tox
 	# ${_TMP_VENV}-tox/bin/python -m pip install -U pip
-	# ${_TMP_VENV}-tox/bin/python -m pip install -r requirements/tox-requirements.in ${PIP_OPTS}
-	# ${_TMP_VENV}-tox/bin/python -m pip freeze > requirements/tox-requirements.txt
+	# ${_TMP_VENV}-tox/bin/python -m pip install -r tox-requirements.in ${PIP_OPTS}
+	# ${_TMP_VENV}-tox/bin/python -m pip freeze > tox-requirements.txt
 	# \rm -rf ${_TMP_VENV}-tox
 
 .PHONY: update-precommit-deps #CMD Update pinned pre-commit dependencies specified in\n.pre-commit-config.yaml
