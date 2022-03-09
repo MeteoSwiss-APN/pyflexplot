@@ -26,7 +26,7 @@ def add_to_preset_paths(path: Union[Path, str], first: bool = True) -> None:
         first (optional): Add the new path ahead of existing ones.
 
     """
-    global preset_paths  # pylint: disable=W0603  # global-statement
+    global preset_paths
     path = Path(path)
     _check_dir_exists(path)
     idx = 0 if first else -1
@@ -35,7 +35,7 @@ def add_to_preset_paths(path: Union[Path, str], first: bool = True) -> None:
 
 def collect_preset_paths() -> Iterator[Path]:
     """Collect all setup file paths as specified in ``preset_paths``."""
-    global preset_paths  # pylint: disable=W0603  # global-statement
+    global preset_paths
     for path in preset_paths:
         _check_dir_exists(path)
         yield Path(path)

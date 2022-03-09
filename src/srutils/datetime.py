@@ -39,6 +39,7 @@ def derive_datetime_fmt(raw: Union[int, str]) -> str:
     try:
         fmt = fmts[n]
     except KeyError as e:
+        # pylint: disable=C0209  # consider-using-f-string (v2.11.1)
         raise ValueError(
             f"raw datetime '{raw}' has unexpected length {n}; choices: "
             + ", ".join(starmap("{} ('{}'))".format, fmts.items()))
