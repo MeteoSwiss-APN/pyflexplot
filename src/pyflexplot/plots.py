@@ -1749,14 +1749,14 @@ def colors_from_cmap(cmap, n_levels, extend):
     return colors
 
 
-def get_cloud_timing_levels(simulation_duration_hours: int) -> list[int]:
+def get_cloud_timing_levels(simulation_duration_hours: int) -> np.ndarray:
     """Derive levels for cloud timing plots from simulation duration."""
     if simulation_duration_hours <= 21:
         return np.arange(0, simulation_duration_hours + 1, 3)
     levels = [0, 3, 6, 9, 12, 18] + list(range(24, simulation_duration_hours, 12))
     if levels[-1] < simulation_duration_hours:
         levels += [simulation_duration_hours]
-    return levels
+    return np.array(levels)
 
 
 def levels_from_time_stats(n_levels: int, val_max: float) -> np.ndarray:
