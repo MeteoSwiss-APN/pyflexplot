@@ -89,8 +89,9 @@ class CoordinateTransformer:
             check_same_sized_iterables(x, y)
             assert isinstance(x, np.ndarray)  # mypy
             assert isinstance(y, np.ndarray)  # mypy
-            # pylint: disable=E0633  # unpacking-non-sequence
-            x, y = np.array([self.axes_to_geo(xi, yi) for xi, yi in zip(x, y)]).T
+            if len(x) > 0:
+                # pylint: disable=E0633  # unpacking-non-sequence
+                x, y = np.array([self.axes_to_geo(xi, yi) for xi, yi in zip(x, y)]).T
             return (x, y)
 
         x = float(x)
@@ -162,9 +163,10 @@ class CoordinateTransformer:
         """Transform from data to geographic coordinates."""
         if isiterable(x) or isiterable(y):
             check_same_sized_iterables(x, y)
-            # pylint: disable=E1101  # no-member [pylint 2.7.4]
-            # (pylint 2.7.4 does not support dataclasses.field)
-            x, y = self.proj_geo.transform_points(self.proj_data, x, y)[:, :2].T
+            if len(x) > 0:
+                # pylint: disable=E1101  # no-member [pylint 2.7.4]
+                # (pylint 2.7.4 does not support dataclasses.field)
+                x, y = self.proj_geo.transform_points(self.proj_data, x, y)[:, :2].T
             return (x, y)
         # pylint: disable=E1101  # no-member [pylint 2.7.4]
         # (pylint 2.7.4 does not support dataclasses.field)
@@ -204,8 +206,9 @@ class CoordinateTransformer:
             check_same_sized_iterables(x, y)
             assert isinstance(x, np.ndarray)  # mypy
             assert isinstance(y, np.ndarray)  # mypy
-            # pylint: disable=E0633  # unpacking-non-sequence
-            x, y = np.array([self.geo_to_axes(xi, yi) for xi, yi in zip(x, y)]).T
+            if len(x) > 0:
+                # pylint: disable=E0633  # unpacking-non-sequence
+                x, y = np.array([self.geo_to_axes(xi, yi) for xi, yi in zip(x, y)]).T
             return (x, y)
 
         check_valid_coords((x, y), self.invalid_ok, self.invalid_warn)
@@ -250,9 +253,10 @@ class CoordinateTransformer:
         """Transform from geographic to data coordinates."""
         if isiterable(x) or isiterable(y):
             check_same_sized_iterables(x, y)
-            # pylint: disable=E1101  # no-member [pylint 2.7.4]
-            # (pylint 2.7.4 does not support dataclasses.field)
-            x, y = self.proj_data.transform_points(self.proj_geo, x, y)[:, :2].T
+            if len(x) > 0:
+                # pylint: disable=E1101  # no-member [pylint 2.7.4]
+                # (pylint 2.7.4 does not support dataclasses.field)
+                x, y = self.proj_data.transform_points(self.proj_geo, x, y)[:, :2].T
             return (x, y)
         # pylint: disable=E1101  # no-member [pylint 2.7.4]
         # (pylint 2.7.4 does not support dataclasses.field)
@@ -271,9 +275,10 @@ class CoordinateTransformer:
         """Transform from geographical to map coordinates."""
         if isiterable(x) or isiterable(y):
             check_same_sized_iterables(x, y)
-            # pylint: disable=E1101  # no-member [pylint 2.7.4]
-            # (pylint 2.7.4 does not support dataclasses.field)
-            x, y = self.proj_map.transform_points(self.proj_geo, x, y)[:, :2].T
+            if len(x) > 0:
+                # pylint: disable=E1101  # no-member [pylint 2.7.4]
+                # (pylint 2.7.4 does not support dataclasses.field)
+                x, y = self.proj_map.transform_points(self.proj_geo, x, y)[:, :2].T
             return (x, y)
         # pylint: disable=E1101  # no-member [pylint 2.7.4]
         # (pylint 2.7.4 does not support dataclasses.field)
@@ -326,9 +331,10 @@ class CoordinateTransformer:
         """Transform from map to geographical coordinates."""
         if isiterable(x) or isiterable(y):
             check_same_sized_iterables(x, y)
-            # pylint: disable=E1101  # no-member [pylint 2.7.4]
-            # (pylint 2.7.4 does not support dataclasses.field)
-            x, y = self.proj_geo.transform_points(self.proj_map, x, y)[:, :2].T
+            if len(x) > 0:
+                # pylint: disable=E1101  # no-member [pylint 2.7.4]
+                # (pylint 2.7.4 does not support dataclasses.field)
+                x, y = self.proj_geo.transform_points(self.proj_map, x, y)[:, :2].T
             return (x, y)
         # pylint: disable=E1101  # no-member [pylint 2.7.4]
         # (pylint 2.7.4 does not support dataclasses.field)
