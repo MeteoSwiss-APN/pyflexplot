@@ -3,8 +3,9 @@ include CONTRIBUTING.rst
 include HISTORY.rst
 include LICENSE
 include README.rst
+include *requirements.in
+include *environment.yml
 
-recursive-include requirements *
 recursive-include src/*/data *
 recursive-include src py.typed
 recursive-include tests *
