@@ -142,7 +142,7 @@ class BoxedPlot:
         return self._fig
 
     def write(self, file_path: Union[Path, str]) -> None:
-        if file_path.endswith(".eps"):
+        if str(file_path).endswith(".eps"):
             print(
                 f"warning ({__file__}::{type(self).__name__}.write):"
                 " plots in EPS format may not look correct because EPS cannot"
