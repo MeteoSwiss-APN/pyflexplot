@@ -44,11 +44,11 @@ metadata = {
         "Intended Audience :: Developers",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.9",
     ],
 }
 
-python = ">= 3.7"
+python = ">= 3.9"
 
 # Runtime dependencies: top-level and unpinned (only critical version restrictions)
 with open("requirements.in") as f:
