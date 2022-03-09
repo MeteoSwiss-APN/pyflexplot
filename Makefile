@@ -485,31 +485,31 @@ spellcheck: ${_INSTALL_DEV}
 .PHONY: test-fast #CMD Run only fast tests in the development environment
 test-fast: ${_INSTALL_DEV}
 	@echo -e "\n[make test-fast] running fast tests locally"
-	# ${PREFIX}tox -e py37 -- tests/fast
+	# ${PREFIX}tox -e pytest -- tests/fast
 	${PREFIX}pytest tests/fast
 
 .PHONY: test-medium #CMD Run only medium-fast tests in the development environment
 test-medium: venv ${_INSTALL_TEST}
 	@echo -e "\n[make test-medium] running medium-fast tests locally"
-	# ${PREFIX}tox -e py37 -- tests/medium
+	# ${PREFIX}tox -e pytest -- tests/medium
 	${PREFIX}pytest tests/medium
 
 .PHONY: test-slow #CMD Run only slow tests in the development environment
 test-slow: ${_INSTALL_DEV}
 	@echo -e "\n[make test-slow] running slow tests locally"
-	# ${PREFIX}tox -e py37 -- tests/slow
+	# ${PREFIX}tox -e pytest -- tests/slow
 	${PREFIX}pytest tests/slow
 
 .PHONY: test #CMD Run all tests in the development environment
 test: ${_INSTALL_DEV}
 	@echo -e "\n[make test] running all tests locally"
-	# ${PREFIX}tox -e py37
+	# ${PREFIX}tox -e pytest
 	${PREFIX}pytest tests
 
 .PHONY: test-iso #CMD Run all tests in an isolated environment
 test-iso: ${_INSTALL_DEV}
 	@echo -e "\n[make test-iso] running all tests in isolation"
-	${PREFIX}tox -e py37
+	${PREFIX}tox -e pytest
 
 .PHONY: test-check #CMD Run tests and checks in an isolated environment
 test-check: ${_INSTALL_DEV}
