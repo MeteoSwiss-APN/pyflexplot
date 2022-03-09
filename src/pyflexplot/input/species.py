@@ -347,7 +347,7 @@ def get_species(*, name=None):
     """Identify one or more ``Species`` objects by an attribute."""
     if isinstance(name, (Tuple, List)):
         return tuple(get_species(name=name_i) for name_i in name)
-    global SPECIES  # pylint: disable=W0603  # global-statement
+    global SPECIES
     attr, value = "name", cast(str, name)
     species: Species
     for species in SPECIES:

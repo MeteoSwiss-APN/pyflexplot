@@ -194,6 +194,7 @@ def cast_value(
         "microseconds",
     ]
     if timedelta_unit not in timedelta_unit_choices:
+        # pylint: disable=C0209  # consider-using-f-string (v2.11.1)
         raise ValueError(
             f"invalid timedelta_unit '{timedelta_unit}'; choices: "
             + ", ".join(map("'{}'".format, timedelta_unit_choices))
