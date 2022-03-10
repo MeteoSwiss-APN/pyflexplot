@@ -675,6 +675,13 @@ def create_map_config(
         "lang": lang,
         "scale_fact": scale_fact,
     }
+    conf_global_scale: Dict[str, Any] = {
+        "geo_res": "110m",
+        "geo_res_cities": "110m",
+        "geo_res_rivers": "110m",
+        "min_city_pop": 10_000_000,
+        "ref_dist_on": False,
+    }
     conf_continental_scale: Dict[str, Any] = {
         "geo_res": "50m",
         "geo_res_cities": "110m",
@@ -711,7 +718,7 @@ def create_map_config(
         elif model_name == "IFS-HRES-EU":
             config_dct.update(conf_continental_scale)
         elif model_name == "IFS-HRES":
-            raise NotImplementedError("global IFS-HRES domain")
+            config_dct.update(conf_global_scale)
     elif domain_type in ["release_site", "cloud", "alps"]:
         config_dct.update(conf_regional_scale)
     elif domain_type == "ch":
