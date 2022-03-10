@@ -181,18 +181,16 @@ class CloudDomain(Domain):
         """
         self.config: CloudDomainConfig
         super().__init__(lat, lon, config)
-
-        if mask is not None:
-            shape = (self.lat.size, self.lon.size)
-            if mask.shape != shape:
-                raise ValueError(
-                    "inconsistent shapes of mask and lat/lon"
-                    f": {mask.shape} != ({shape[0]}, {shape[1]})"
-                )
-            if mask is None:
-                mask = np.zeros([self.lat.size, self.lon.size], dtype=np.bool_)
-        assert mask is not None  # mypy
-        self.mask: np.ndarray = mask
+        self.cloud_bbox: Optional[GeoMaskBoundingBox] = (
+            None
+            if mask is None or not mask.any()
+            else GeoMaskBoundingBox(
+                mask,
+                self.lat,
+                self.lon,
+                periodic_lon=self.config.periodic_lon,
+            )
+        )
 
     # pylint: disable=R0912  # too-many-branches (>12)
     # pylint: disable=R0914  # too-many-locals (>15)
@@ -208,7 +206,7 @@ class CloudDomain(Domain):
         d_lat_min: Optional[float] = self.config.min_size_lat
         d_lon_min: Optional[float] = self.config.min_size_lon
 
-        if not self.mask.any():
+        if self.cloud_bbox is None:
             # In absence of cloud, default to release site domain
             domain = ReleaseSiteDomain(
                 self.lat,
@@ -223,42 +221,13 @@ class CloudDomain(Domain):
             )
             return domain.find_bbox_corners()
 
-        # Latitude
-        mask_lat = self.mask.any(axis=1)
-        if not any(mask_lat):
-            lllat = self.lat.min()
-            urlat = self.lat.max()
-        else:
-            lllat = self.lat[mask_lat].min()
-            urlat = self.lat[mask_lat].max()
+        lllon, urlon, lllat, urlat = self.cloud_bbox.get_extent()
+        crossing_dateline = self.cloud_bbox.crossing_dateline
+
         lllat = max([lllat, lat_min])
         urlat = min([urlat, lat_max])
-
-        # Longitude
-        mask_lon = self.mask.any(axis=0)
-        if mask_lon.all():
-            lllon = self.lon.min()
-            urlon = self.lon.max()
-            crossing_dateline = False
-        elif not self.config.periodic_lon:
-            if not any(mask_lon):
-                lllon = self.lon.min()
-                urlon = self.lon.max()
-            else:
-                lllon = self.lon[mask_lon].min()
-                urlon = self.lon[mask_lon].max()
-            lllon = max([lllon, lon_min])
-            urlon = min([urlon, lon_max])
-            crossing_dateline = False
-        else:
-            gaps = find_gaps(mask_lon, periodic=True)
-            largest_gap = next(iter(sorted(gaps, reverse=True)))
-            _, idx_gap_start, idx_gap_end = largest_gap
-            idx_lllon = idx_gap_end + 1 if idx_gap_end < mask_lon.size - 1 else 0
-            idx_urlon = idx_gap_start - 1 if idx_gap_start > 1 else mask_lon.size - 1
-            lllon = self.lon[idx_lllon]
-            urlon = self.lon[idx_urlon]
-            crossing_dateline = idx_lllon > idx_urlon
+        lllon = max([lllon, lon_min])
+        urlon = min([urlon, lon_max])
 
         # Increase latitudinal size if minimum specified
         if d_lat_min is not None:
@@ -324,6 +293,96 @@ class CloudDomain(Domain):
         assert lat_min <= lllat <= lat_max
         assert lat_min <= urlat <= lat_max
         return lllon, urlon, lllat, urlat
+
+
+class GeoMaskBoundingBox:
+    """Bounding box of a geographical mask."""
+
+    class EmptyMaskError(ValueError):
+        """Cloud mask is empty."""
+
+    def __init__(
+        self,
+        mask: np.ndarray,
+        lat: np.ndarray,
+        lon: np.ndarray,
+        *,
+        periodic_lon: bool = False,
+    ) -> None:
+        """Create a new instance."""
+        shape = (lat.size, lon.size)
+        if mask.shape != shape:
+            raise ValueError(
+                "inconsistent shapes of mask and lat/lon"
+                f": {mask.shape} != ({shape[0]}, {shape[1]})"
+            )
+        if not mask.any():
+            raise self.EmptyCloudMaskError(shape)
+        self.mask: np.ndarray = mask
+        self.lat: np.ndarray = lat
+        self.lon: np.ndarray = lon
+        self.periodic_lon: bool = periodic_lon
+
+        self.mask_lat: np.ndarray = self.mask.any(axis=1)
+        self.mask_lon: np.ndarray = mask.any(axis=0)
+
+        self.lllat: float
+        self.urlat: float
+        self.lllat, self.urlat = self._get_lat_extent()
+
+        self.lllon: float
+        self.urlon: float
+        self.crossing_dateline: bool
+        (self.lllon, self.urlon), self.crossing_dateline = self._get_lon_extent()
+
+    def get_extent(self) -> tuple[float, float, float, float]:
+        """Get ``(lllon, urlon, lllat, urlat)``."""
+        return (self.lllon, self.urlon, self.lllat, self.urlat)
+
+    def get_lat_extent(self) -> tuple[float, float]:
+        """Get ``(lllat, urlat)``."""
+        return (self.lllat, self.urlat)
+
+    def get_lon_extent(self) -> tuple[float, float]:
+        """Get ``(lllon, urlon)``."""
+        return (self.lllon, self.urlon)
+
+    def _get_lat_extent(self) -> tuple[float, float]:
+        """Return ``(lllat, urlat)``."""
+        if not any(self.mask_lat):
+            lllat = self.lat.min()
+            urlat = self.lat.max()
+        else:
+            lllat = self.lat[self.mask_lat].min()
+            urlat = self.lat[self.mask_lat].max()
+        return (lllat, urlat)
+
+    def _get_lon_extent(self) -> tuple[tuple[float, float], bool]:
+        """Return ``((lllon, urlon), crossing_dateline)``."""
+        if self.mask_lon.all():
+            lllon = self.lon.min()
+            urlon = self.lon.max()
+            crossing_dateline = False
+        elif not self.periodic_lon:
+            if not any(self.mask_lon):
+                lllon = self.lon.min()
+                urlon = self.lon.max()
+            else:
+                lllon = self.lon[self.mask_lon].min()
+                urlon = self.lon[self.mask_lon].max()
+            crossing_dateline = False
+        else:
+            gaps = find_gaps(self.mask_lon, periodic=True)
+            largest_gap = next(iter(sorted(gaps, reverse=True)))
+            _, idx_gap_start, idx_gap_end = largest_gap
+            idx_lllon = idx_gap_end + 1 if idx_gap_end < self.mask_lon.size - 1 else 0
+            idx_urlon = (
+                idx_gap_start - 1 if idx_gap_start > 1 else self.mask_lon.size - 1
+            )
+            lllon = self.lon[idx_lllon]
+            urlon = self.lon[idx_urlon]
+            crossing_dateline = idx_lllon > idx_urlon
+        return (lllon, urlon), crossing_dateline
 
 
 @summarizable
