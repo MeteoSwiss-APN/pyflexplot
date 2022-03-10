@@ -295,6 +295,7 @@ class CloudDomain(Domain):
         return lllon, urlon, lllat, urlat
 
 
+# pylint: disable=R0902  # too-many-instance-attributes (>7)
 class GeoMaskBoundingBox:
     """Bounding box of a geographical mask."""
 
