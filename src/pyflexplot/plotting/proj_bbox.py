@@ -28,11 +28,11 @@ class Projections:
     geo: Projection
 
     @classmethod
-    def create_regular(cls, *, clon: float = 0.0) -> "Projections":
+    def create_regular(cls) -> "Projections":
         # pylint: disable=E0110  # abstract-class-instatiated (PlateCarree)
         return cls(
             data=PlateCarree(central_longitude=0.0),
-            map=PlateCarree(central_longitude=clon),
+            map=PlateCarree(central_longitude=0.0),
             geo=PlateCarree(central_longitude=0.0),
         )
 
