@@ -1,8 +1,11 @@
 """Bounding box."""
+from __future__ import annotations
+
 # Standard library
 import dataclasses as dc
 from copy import copy
 from typing import Iterator
+from typing import Optional
 from typing import Tuple
 
 # Third-party
@@ -28,7 +31,14 @@ class Projections:
     geo: Projection
 
     @classmethod
-    def create_regular(cls) -> "Projections":
+    def from_proj_data(cls, proj_data: Projection) -> Projections:
+        """Derive a projections set from the data projection."""
+        if isinstance(proj_data, RotatedPole):
+            return cls.create_rotated(proj=proj_data)
+        return cls.create_regular()
+
+    @classmethod
+    def create_regular(cls) -> Projections:
         # pylint: disable=E0110  # abstract-class-instatiated (PlateCarree)
         return cls(
             data=PlateCarree(central_longitude=0.0),
@@ -38,9 +48,15 @@ class Projections:
 
     @classmethod
     def create_rotated(
-        cls, *, pollat: float = 90.0, pollon: float = 180.0
-    ) -> "Projections":
+        cls,
+        *,
+        pollat: float = 90.0,
+        pollon: float = 180.0,
+        proj: Optional[RotatedPole] = None,
+    ) -> Projections:
         # pylint: disable=E0110  # abstract-class-instatiated (PlateCarree, RotatedPole)
+        if proj is not None:
+            return cls(data=proj, map=proj, geo=PlateCarree(central_longitude=0.0))
         return cls(
             data=RotatedPole(pole_latitude=pollat, pole_longitude=pollon),
             map=RotatedPole(pole_latitude=pollat, pole_longitude=pollon),
@@ -129,7 +145,7 @@ class ProjectedBoundingBox:
         self._curr_lat0 = lat0
         self._curr_lat1 = lat1
 
-    def to(self, proj: str) -> "ProjectedBoundingBox":
+    def to(self, proj: str) -> ProjectedBoundingBox:
         if proj == "axes":
             return self.to_axes()
         elif proj == "data":
@@ -141,7 +157,7 @@ class ProjectedBoundingBox:
         else:
             raise self._error(f"to('{proj}'")
 
-    def to_axes(self) -> "ProjectedBoundingBox":
+    def to_axes(self) -> ProjectedBoundingBox:
         if self.coord_type == "data":
             coords = np.concatenate(self.trans.data_to_axes(self.lon, self.lat))
         elif self.coord_type == "geo":
@@ -153,7 +169,7 @@ class ProjectedBoundingBox:
         self.set("axes", *coords)
         return self
 
-    def to_data(self) -> "ProjectedBoundingBox":
+    def to_data(self) -> ProjectedBoundingBox:
         if self.coord_type == "axes":
             coords = np.concatenate(self.trans.axes_to_data(self.lon, self.lat))
         elif self.coord_type == "geo":
@@ -165,7 +181,7 @@ class ProjectedBoundingBox:
         self.set("data", *coords)
         return self
 
-    def to_geo(self) -> "ProjectedBoundingBox":
+    def to_geo(self) -> ProjectedBoundingBox:
         if self.coord_type == "axes":
             coords = np.concatenate(self.trans.axes_to_geo(self.lon, self.lat))
         elif self.coord_type == "data":
@@ -177,7 +193,7 @@ class ProjectedBoundingBox:
         self.set("geo", *coords)
         return self
 
-    def to_map(self) -> "ProjectedBoundingBox":
+    def to_map(self) -> ProjectedBoundingBox:
         if self.coord_type == "axes":
             coords = np.concatenate(self.trans.axes_to_map(self.lon, self.lat))
         elif self.coord_type == "data":
@@ -190,7 +206,7 @@ class ProjectedBoundingBox:
         return self
 
     # pylint: disable=R0914  # too-many-locals
-    def zoom(self, fact, rel_offset) -> "ProjectedBoundingBox":
+    def zoom(self, fact, rel_offset) -> ProjectedBoundingBox:
         """Zoom into or out of the domain.
 
         Args:
