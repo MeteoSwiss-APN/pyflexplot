@@ -172,7 +172,7 @@ class Field:
                 pollon=self.mdata.simulation.grid_north_pole_lon,
             )
         else:
-            return Projections.create_regular(clon=self.mdata.release.lon)
+            return Projections.create_regular()
 
 
 @summarizable
