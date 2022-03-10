@@ -198,7 +198,7 @@ class CloudDomain(Domain):
     # pylint: disable=R0914  # too-many-locals (>15)
     # pylint: disable=R0915  # too-many-statements (>50)
     def find_bbox_corners(self) -> Tuple[float, float, float, float]:
-        """Return corners of domain: [lllon, lllat, urlon, urlat]."""
+        """Return corners of domain: [lllon, urlon, lllat, urlat]."""
         lat_min: float = self.lat[0]
         lat_max: float = self.lat[-1]
         lon_min: float = self.lon[0]
@@ -209,6 +209,7 @@ class CloudDomain(Domain):
         d_lon_min: Optional[float] = self.config.min_size_lon
 
         if not self.mask.any():
+            # In absence of cloud, default to release site domain
             domain = ReleaseSiteDomain(
                 self.lat,
                 self.lon,
@@ -318,6 +319,10 @@ class CloudDomain(Domain):
             urlat += dd_lat
             lllat += dd_lat
 
+        assert lon_min <= lllon <= lon_max
+        assert lon_min <= urlon <= lon_max
+        assert lat_min <= lllat <= lat_max
+        assert lat_min <= urlat <= lat_max
         return lllon, urlon, lllat, urlat
 
 
