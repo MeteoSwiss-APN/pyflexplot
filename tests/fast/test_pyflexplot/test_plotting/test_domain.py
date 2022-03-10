@@ -137,6 +137,45 @@ class Test_GlobalCloudDomain:
             )
             assert bbox == (135, -145, 15, 75)
 
+    class Test_NonContinuousAcrossPoleAndDateline(General):
+        """Non-continuous cloud stretching across North Pole and dateline."""
+
+        bbox_dateline = (-4, 2, 15, 17)
+        bbox_pole_east = (3, 12, 16, 18)
+        bbox_pole_west = (21, 30, 16, 18)
+
+        def test_dateline(self):
+            """Subcloud away from the pole stretching across dateline."""
+            bbox = self.get_bbox_corners([self.bbox_dateline], periodic_lon=True)
+            assert bbox == (145, -165, 65, 75)
+
+        def test_pole_east(self):
+            """Part east of the dateline of the cloud over the pole."""
+            bbox = self.get_bbox_corners([self.bbox_pole_east], periodic_lon=True)
+            assert bbox == (-145, -65, 75, 85)
+
+        def test_pole_west(self):
+            """Part west of the dateline of the cloud over the pole."""
+            bbox = self.get_bbox_corners([self.bbox_pole_west], periodic_lon=True)
+            assert bbox == (35, 115, 75, 85)
+
+        def test_combined(self):
+            """Combine all subclouds."""
+            bbox = self.get_bbox_corners(
+                [self.bbox_dateline, self.bbox_pole_west, self.bbox_pole_east],
+                periodic_lon=True,
+            )
+            assert bbox == (35, -65, 65, 85)
+
+        def test_combined_aspect(self):
+            """Combine all subclouds and fix aspect ratio."""
+            bbox = self.get_bbox_corners(
+                [self.bbox_dateline, self.bbox_pole_west, self.bbox_pole_east],
+                periodic_lon=True,
+                aspect=2,
+            )
+            assert bbox == (35, -65, -45, 85)
+
 
 @dc.dataclass
 class FindGapsConfig:
