@@ -269,7 +269,7 @@ def get_domain(field: Field, aspect: float) -> Domain:
     assert field.mdata is not None  # mypy
     release_lat = field.mdata.release.lat
     release_lon = field.mdata.release.lon
-    field_proj = field.projs.data
+    field_proj = field.proj
     mask_nz = field.time_props.mask_nz
     domain: Optional[Domain] = None
     if domain_type == "full":

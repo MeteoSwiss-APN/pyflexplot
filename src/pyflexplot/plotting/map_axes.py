@@ -148,6 +148,8 @@ class MapAxes:
         self.element_handles: List[Tuple[str, Any]] = []
         self.elements: List[Dict[str, Any]] = []
 
+        self.projs: Projections = Projections.from_proj_data(field.proj)
+
         self._water_color: ColorType = "lightskyblue"
 
         self.zorder: Dict[str, int]
@@ -157,7 +159,6 @@ class MapAxes:
         def _create_ax(
             fig: Figure,
             rect: RectType,
-            projs: Projections,
             domain: Domain,
         ) -> Axes:
             """Initialize Axes."""
@@ -167,22 +168,26 @@ class MapAxes:
                     category=RuntimeWarning,
                     message="numpy.ufunc size changed",
                 )
-                ax: Axes = fig.add_axes(rect, projection=projs.map)
+                ax: Axes = fig.add_axes(rect, projection=self.projs.map)
             ax.set_adjustable("datalim")
             ax.spines["geo"].set_edgecolor("none")
             ax.set_aspect("auto")
-            bbox = domain.get_bbox(ax, projs, "map")
-            ax.set_extent(bbox, projs.map)
+            bbox = domain.get_bbox(ax, self.projs, "map")
+            ax.set_extent(bbox, self.projs.map)
             return ax
 
-        self.ax: Axes = _create_ax(self.fig, self.rect, field.projs, self.domain)
+        self.ax: Axes = _create_ax(
+            self.fig,
+            self.rect,
+            self.domain,
+        )
 
         self.trans = CoordinateTransformer(
             trans_axes=self.ax.transAxes,
             trans_data=self.ax.transData,
-            proj_geo=field.projs.geo,
-            proj_map=field.projs.map,
-            proj_data=field.projs.data,
+            proj_geo=self.projs.geo,
+            proj_map=self.projs.map,
+            proj_data=self.projs.data,
         )
 
         self.ref_dist_box: Optional[
