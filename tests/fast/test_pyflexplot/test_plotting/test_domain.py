@@ -39,7 +39,7 @@ class Test_GlobalCloudDomain:
 
         def get_bbox_corners(self, *mask_args, **config):
             domain = self.get_domain(*mask_args, **config)
-            return domain.find_bbox_corners()
+            return domain.get_bbox_extent()
 
     class Continuous(General):
         """Continuous cloud."""

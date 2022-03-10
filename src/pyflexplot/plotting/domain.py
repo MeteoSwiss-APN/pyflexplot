@@ -94,7 +94,7 @@ class Domain:
         self, ax: Axes, projs: Projections, curr_proj: str = "data"
     ) -> ProjectedBoundingBox:
         """Get bounding box of domain."""
-        lllon, urlon, lllat, urlat = self.find_bbox_corners()
+        lllon, urlon, lllat, urlat = self.get_bbox_extent()
         bbox = ProjectedBoundingBox(
             ax=ax,
             projs=projs,
@@ -107,7 +107,7 @@ class Domain:
             bbox.to_axes().zoom(self.config.zoom_fact, self.config.rel_offset)
         return bbox.to(curr_proj)
 
-    def find_bbox_corners(self) -> Tuple[float, float, float, float]:
+    def get_bbox_extent(self) -> Tuple[float, float, float, float]:
         """Return corners of domain: [lllon, lllat, urlon, urlat]."""
         lllat = self.lat[0]
         urlat = self.lat[-1]
@@ -195,7 +195,7 @@ class CloudDomain(Domain):
     # pylint: disable=R0912  # too-many-branches (>12)
     # pylint: disable=R0914  # too-many-locals (>15)
     # pylint: disable=R0915  # too-many-statements (>50)
-    def find_bbox_corners(self) -> Tuple[float, float, float, float]:
+    def get_bbox_extent(self) -> Tuple[float, float, float, float]:
         """Return corners of domain: [lllon, urlon, lllat, urlat]."""
         lat_min: float = self.lat[0]
         lat_max: float = self.lat[-1]
@@ -219,7 +219,7 @@ class CloudDomain(Domain):
                     "release_lon": self.config.release_lon,
                 },
             )
-            return domain.find_bbox_corners()
+            return domain.get_bbox_extent()
 
         lllon, urlon, lllat, urlat = self.cloud_bbox.get_extent()
         crossing_dateline = self.cloud_bbox.crossing_dateline
@@ -481,7 +481,7 @@ class ReleaseSiteDomain(Domain):
     def get_release_lon(self) -> float:
         return self.config.release_lon or self.lon.mean()
 
-    def find_bbox_corners(self) -> Tuple[float, float, float, float]:
+    def get_bbox_extent(self) -> Tuple[float, float, float, float]:
         """Return corners of domain: [lllon, lllat, urlon, urlat]."""
         d_lat = self.config.min_size_lat
         d_lon = self.config.min_size_lon
