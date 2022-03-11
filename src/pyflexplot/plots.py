@@ -677,6 +677,7 @@ def create_map_config(
         "aspect": aspect,
         "lang": lang,
         "scale_fact": scale_fact,
+        "exclude_cities": ["Incheon"],
     }
     conf_global_scale: Dict[str, Any] = {
         "d_lat_grid": 20.0,
