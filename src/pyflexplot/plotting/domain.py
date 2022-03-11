@@ -326,9 +326,6 @@ class CloudDomain(Domain):
             dd_lat = lat_min - lllat
             urlat += dd_lat
             lllat += dd_lat
-        # print(
-        #     f"{(lllat, urlat)=}, {(lllon, urlon)=}, ({urlat-lllat=}, {urlon-lllon=})"
-        # )  # SR_DBG
 
         assert lon_min <= lllon <= lon_max
         assert lon_min <= urlon <= lon_max
