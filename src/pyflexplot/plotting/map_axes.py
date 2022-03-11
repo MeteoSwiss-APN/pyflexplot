@@ -47,6 +47,10 @@ class MapAxesConfig:
     Args:
         aspect (optional): Aspect ratio; width by height.
 
+        d_lat_grid (optional): Latitudinal grid line interval.
+
+        d_lon_grid (optional): Longitudinal grid line interval.
+
         geo_res (optional): Resolution of geographic map elements.
 
         geo_res_cities (optional): Scale for cities shown on map. Defaults to
@@ -59,10 +63,10 @@ class MapAxesConfig:
 
         lw_frame (optional): Line width of frames.
 
+        min_city_pop (optional): Minimum population of cities shown.
+
         projection (optional): Map projection. Defaults to that of the input
             data.
-
-        min_city_pop (optional): Minimum population of cities shown.
 
         ref_dist_config (optional): Reference distance indicator setup.
 
@@ -74,13 +78,15 @@ class MapAxesConfig:
     """
 
     aspect: float = 1.0
+    d_lat_grid: float = 10.0
+    d_lon_grid: float = 10.0
     geo_res: str = "50m"
     geo_res_cities: str = "none"
     geo_res_rivers: str = "none"
     lang: str = "en"
     lw_frame: float = 1.0
-    projection: str = "data"
     min_city_pop: int = 0
+    projection: str = "data"
     ref_dist_config: Optional[Union[RefDistIndConfig, Mapping[str, Any]]] = None
     ref_dist_on: bool = True
     scale_fact: float = 1.0
@@ -329,8 +335,12 @@ class MapAxes:
         gl = self.ax.gridlines(
             linestyle=":", linewidth=1, color="black", zorder=self.zorder["grid"]
         )
-        gl.xlocator = mpl.ticker.FixedLocator(np.arange(-180, 180, 2))
-        gl.ylocator = mpl.ticker.FixedLocator(np.arange(-90, 90.1, 2))
+        gl.xlocator = mpl.ticker.FixedLocator(
+            np.arange(-180, 180, self.config.d_lon_grid)
+        )
+        gl.ylocator = mpl.ticker.FixedLocator(
+            np.arange(-90, 90.1, self.config.d_lat_grid)
+        )
 
     def _ax_add_geography(self) -> None:
         """Add geographic elements: coasts, countries, colors, etc."""

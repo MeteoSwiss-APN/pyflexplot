@@ -679,6 +679,8 @@ def create_map_config(
         "scale_fact": scale_fact,
     }
     conf_global_scale: Dict[str, Any] = {
+        "d_lat_grid": 20.0,
+        "d_lon_grid": 20.0,
         "geo_res": "110m",
         "geo_res_cities": "110m",
         "geo_res_rivers": "110m",
@@ -686,6 +688,8 @@ def create_map_config(
         "ref_dist_on": False,
     }
     conf_continental_scale: Dict[str, Any] = {
+        "d_lat_grid": 5.0,
+        "d_lon_grid": 5.0,
         "geo_res": "50m",
         "geo_res_cities": "110m",
         "geo_res_rivers": "110m",
@@ -696,6 +700,8 @@ def create_map_config(
         },
     }
     conf_regional_scale: Dict[str, Any] = {
+        "d_lat_grid": 2.0,
+        "d_lon_grid": 2.0,
         "geo_res": "50m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
@@ -706,6 +712,8 @@ def create_map_config(
         },
     }
     conf_country_scale: Dict[str, Any] = {
+        "d_lat_grid": 2.0,
+        "d_lon_grid": 2.0,
         "geo_res": "10m",
         "geo_res_cities": "10m",
         "geo_res_rivers": "10m",
