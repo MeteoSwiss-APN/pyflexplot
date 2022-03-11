@@ -107,6 +107,17 @@ class Domain:
         clat = 0.5 * (lllat + urlat)
         return (clon, clat)
 
+    def get_bbox_size(self) -> tuple[float, float]:
+        """Return the domain size as the distance between the bbox corners."""
+        lllon, urlon, lllat, urlat = self.get_bbox_extent()
+        dlon = urlon - lllon
+        if self.crosses_dateline():
+            dlon += 360
+        assert 0 < dlon <= 360
+        dlat = urlat - lllat
+        assert 0 < dlat <= 180
+        return (dlon, dlat)
+
     def crosses_dateline(self) -> bool:
         """Determine whether domain crosses dateline."""
         lllon, urlon, _, _ = self.get_bbox_extent()
