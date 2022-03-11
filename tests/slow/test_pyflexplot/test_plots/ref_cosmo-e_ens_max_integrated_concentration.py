@@ -494,13 +494,15 @@ plot_summary = {
             "config": {
                 "type": "MapAxesConfig",
                 "aspect": 1.447058823529412,
+                "d_lat_grid": 2.0,
+                "d_lon_grid": 2.0,
                 "geo_res": "10m",
                 "geo_res_cities": "10m",
                 "geo_res_rivers": "10m",
                 "lang": "de",
                 "lw_frame": 1.0,
-                "projection": "data",
                 "min_city_pop": 0,
+                "projection": "data",
                 "ref_dist_config": {
                     "type": "RefDistIndConfig",
                     "dist": 25,
