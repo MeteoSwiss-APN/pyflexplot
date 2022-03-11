@@ -487,6 +487,7 @@ plot_summary = {
             "type": "MapAxes",
             "config": {
                 "type": "MapAxesConfig",
+                "all_capital_cities": True,
                 "aspect": 1.447058823529412,
                 "d_lat_grid": 2.0,
                 "d_lon_grid": 2.0,
@@ -496,6 +497,7 @@ plot_summary = {
                 "lang": "en",
                 "lw_frame": 1.0,
                 "min_city_pop": 0,
+                "only_capital_cities": False,
                 "projection": "data",
                 "ref_dist_config": {
                     "type": "RefDistIndConfig",

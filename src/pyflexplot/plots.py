@@ -684,7 +684,9 @@ def create_map_config(
         "geo_res": "110m",
         "geo_res_cities": "110m",
         "geo_res_rivers": "110m",
-        "min_city_pop": 10_000_000,
+        "all_capital_cities": False,
+        "only_capital_cities": False,
+        "min_city_pop": 3_000_000,
         "ref_dist_on": False,
     }
     conf_continental_scale: Dict[str, Any] = {
@@ -693,6 +695,8 @@ def create_map_config(
         "geo_res": "50m",
         "geo_res_cities": "110m",
         "geo_res_rivers": "110m",
+        "all_capital_cities": True,
+        "only_capital_cities": False,
         "min_city_pop": 1_000_000,
         "ref_dist_config": {
             **ref_dist_config,
@@ -705,6 +709,8 @@ def create_map_config(
         "geo_res": "50m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
+        "all_capital_cities": True,
+        "only_capital_cities": False,
         "min_city_pop": 300_000,
         "ref_dist_config": {
             **ref_dist_config,
@@ -717,6 +723,8 @@ def create_map_config(
         "geo_res": "10m",
         "geo_res_cities": "10m",
         "geo_res_rivers": "10m",
+        "all_capital_cities": True,
+        "only_capital_cities": False,
         "min_city_pop": 0,
         "ref_dist_config": {
             **ref_dist_config,
