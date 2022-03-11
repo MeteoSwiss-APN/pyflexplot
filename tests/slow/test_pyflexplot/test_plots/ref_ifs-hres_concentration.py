@@ -492,6 +492,7 @@ plot_summary = {
                 "aspect": 1.447058823529412,
                 "d_lat_grid": 2.0,
                 "d_lon_grid": 2.0,
+                "exclude_cities": ["Incheon"],
                 "geo_res": "10m",
                 "geo_res_cities": "10m",
                 "geo_res_rivers": "10m",

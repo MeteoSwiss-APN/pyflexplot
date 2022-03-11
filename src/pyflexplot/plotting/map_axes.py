@@ -53,6 +53,8 @@ class MapAxesConfig:
 
         d_lon_grid (optional): Longitudinal grid line interval.
 
+        exclude_cities (optional): Exclude cities by name.
+
         geo_res (optional): Resolution of geographic map elements.
 
         geo_res_cities (optional): Scale for cities shown on map. Defaults to
@@ -85,6 +87,7 @@ class MapAxesConfig:
     aspect: float = 1.0
     d_lat_grid: float = 10.0
     d_lon_grid: float = 10.0
+    exclude_cities: list[str] = dc.field(default_factory=list)
     geo_res: str = "50m"
     geo_res_cities: str = "none"
     geo_res_rivers: str = "none"
@@ -435,18 +438,12 @@ class MapAxes:
             self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
 
     # pylint: disable=R0914  # too-many-locals (>15)
+    # pylint: disable=R0915  # too-many-statements (>50)
     def _ax_add_cities(self, zorder_key: str, rasterized: bool = False) -> None:
         """Add major cities, incl. all capitals."""
-        # Explicitly excluded cities by name
-        excluded_names = np.array(
-            [
-                "Incheon",
-            ],
-            dtype=np.str_,
-        )
-
         all_capitals = self.config.all_capital_cities
         only_capitals = self.config.only_capital_cities
+        excluded_names = np.array(self.config.exclude_cities, dtype=np.str_)
 
         def get_name(city: Record) -> str:
             """Get city name in current language, hand-correcting some."""
