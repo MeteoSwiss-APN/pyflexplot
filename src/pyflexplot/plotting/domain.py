@@ -90,11 +90,6 @@ class Domain:
         self.lon = lon
         self.config = config
 
-    def crosses_dateline(self) -> bool:
-        """Determine whether domain crosses dateline."""
-        lllon, urlon, _, _ = self.get_bbox_extent()
-        return bool(lllon > urlon)  # np.bool_ => bool (?)
-
     def get_bbox_extent(self) -> Tuple[float, float, float, float]:
         """Return domain corners ``(lllon, lllat, urlon, urlat)``."""
         lllat = self.lat[0]
@@ -102,6 +97,20 @@ class Domain:
         lllon = self.lon[0]
         urlon = self.lon[-1]
         return lllon, urlon, lllat, urlat
+
+    def get_center(self) -> Tuple[float, float]:
+        """Return the domain center as ``(clon, clat)``."""
+        lllon, urlon, lllat, urlat = self.get_bbox_extent()
+        clon = 0.5 * (lllon + urlon)
+        if self.crosses_dateline():
+            clon += 180.0
+        clat = 0.5 * (lllat + urlat)
+        return (clon, clat)
+
+    def crosses_dateline(self) -> bool:
+        """Determine whether domain crosses dateline."""
+        lllon, urlon, _, _ = self.get_bbox_extent()
+        return bool(lllon > urlon)  # np.bool_ => bool (?)
 
     def get_bbox(
         self, ax: Axes, projs: Projections, curr_proj: str = "data"
