@@ -1,6 +1,7 @@
 """Boxed plots."""
 # Standard library
 import dataclasses as dc
+import sys
 import warnings
 from pathlib import Path
 from typing import Any
@@ -141,6 +142,15 @@ class BoxedPlot:
         return self._fig
 
     def write(self, file_path: Union[Path, str]) -> None:
+        if str(file_path).endswith(".eps"):
+            print(
+                f"warning ({__file__}::{type(self).__name__}.write):"
+                " plots in EPS format may not look correct because EPS cannot"
+                " handle transparency, so some transparent areas may turn out solid"
+                " white and thus obscure parts of other layers; consider creating an"
+                " EPS plot by converting from PNG or PDF",
+                file=sys.stderr,
+            )
         self.fig.savefig(
             file_path,
             facecolor=self.fig.get_facecolor(),

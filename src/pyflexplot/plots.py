@@ -177,17 +177,19 @@ def create_plot(
     plot_config = create_plot_config(
         plot_setup, labels, simulation_duration_hours, simulation_time_steps, val_max
     )
-    map_configs: List[MapAxesConfig] = [
-        create_map_config(
+    aspect: float = plot_config.layout.get_aspect("center")
+    domains: List[Domain] = []
+    map_configs: List[MapAxesConfig] = []
+    for field in field_group:
+        domain = get_domain(field, aspect)
+        domains.append(domain)
+        map_config = create_map_config(
             field_group.plot_setup,
             field.panel_setup,
-            plot_config.layout.get_aspect("center"),
+            domain,
+            aspect,
         )
-        for field in field_group
-    ]
-    domains: List[Domain] = []
-    for field, map_config in zip(field_group, map_configs):
-        domains.append(get_domain(field, map_config.aspect))
+        map_configs.append(map_config)
     plot = BoxedPlot(plot_config)
     plot.add_map_plot_panels(field_group, domains, map_configs)
 
@@ -269,7 +271,7 @@ def get_domain(field: Field, aspect: float) -> Domain:
     assert field.mdata is not None  # mypy
     release_lat = field.mdata.release.lat
     release_lon = field.mdata.release.lon
-    field_proj = field.projs.data
+    field_proj = field.proj
     mask_nz = field.time_props.mask_nz
     domain: Optional[Domain] = None
     if domain_type == "full":
@@ -643,7 +645,7 @@ def plot_add_text_boxes(
 
 
 def create_map_config(
-    plot_setup: PlotSetup, panel_setup: PlotPanelSetup, aspect: float
+    plot_setup: PlotSetup, panel_setup: PlotPanelSetup, domain: Domain, aspect: float
 ) -> MapAxesConfig:
     model_name = plot_setup.model.name
     scale_fact = plot_setup.layout.scale_fact
@@ -651,6 +653,7 @@ def create_map_config(
     domain_type = panel_setup.domain
     lang = panel_setup.lang
     n_panels = len(plot_setup.panels)
+    domain_width, _ = domain.get_bbox_size()
 
     if plot_type == "multipanel":
         # Shrink city labels etc.
@@ -674,11 +677,27 @@ def create_map_config(
         "aspect": aspect,
         "lang": lang,
         "scale_fact": scale_fact,
+        "exclude_cities": ["Incheon"],
+    }
+    conf_global_scale: Dict[str, Any] = {
+        "d_lat_grid": 20.0,
+        "d_lon_grid": 20.0,
+        "geo_res": "110m",
+        "geo_res_cities": "110m",
+        "geo_res_rivers": "110m",
+        "all_capital_cities": False,
+        "only_capital_cities": False,
+        "min_city_pop": 3_000_000,
+        "ref_dist_on": False,
     }
     conf_continental_scale: Dict[str, Any] = {
+        "d_lat_grid": 5.0,
+        "d_lon_grid": 5.0,
         "geo_res": "50m",
         "geo_res_cities": "110m",
         "geo_res_rivers": "110m",
+        "all_capital_cities": True,
+        "only_capital_cities": False,
         "min_city_pop": 1_000_000,
         "ref_dist_config": {
             **ref_dist_config,
@@ -686,9 +705,13 @@ def create_map_config(
         },
     }
     conf_regional_scale: Dict[str, Any] = {
+        "d_lat_grid": 2.0,
+        "d_lon_grid": 2.0,
         "geo_res": "50m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
+        "all_capital_cities": True,
+        "only_capital_cities": False,
         "min_city_pop": 300_000,
         "ref_dist_config": {
             **ref_dist_config,
@@ -696,9 +719,13 @@ def create_map_config(
         },
     }
     conf_country_scale: Dict[str, Any] = {
+        "d_lat_grid": 2.0,
+        "d_lon_grid": 2.0,
         "geo_res": "10m",
         "geo_res_cities": "10m",
         "geo_res_rivers": "10m",
+        "all_capital_cities": True,
+        "only_capital_cities": False,
         "min_city_pop": 0,
         "ref_dist_config": {
             **ref_dist_config,
@@ -711,11 +738,23 @@ def create_map_config(
         elif model_name == "IFS-HRES-EU":
             config_dct.update(conf_continental_scale)
         elif model_name == "IFS-HRES":
-            raise NotImplementedError("global IFS-HRES domain")
-    elif domain_type in ["release_site", "cloud", "alps"]:
-        config_dct.update(conf_regional_scale)
+            config_dct.update(conf_global_scale)
     elif domain_type == "ch":
         config_dct.update(conf_country_scale)
+    elif domain_type in ["release_site", "alps"]:
+        config_dct.update(conf_regional_scale)
+    elif domain_type == "cloud":
+        if model_name == "IFS-HRES":
+            if domain_width < 30:
+                config_dct.update(conf_country_scale)
+            elif domain_width < 60:
+                config_dct.update(conf_regional_scale)
+            elif domain_width < 150:
+                config_dct.update(conf_continental_scale)
+            else:
+                config_dct.update(conf_global_scale)
+        else:
+            config_dct.update(conf_regional_scale)
     else:
         raise NotImplementedError(
             f"map axes config for model '{model_name}' and domain '{domain_type}'"
@@ -1749,14 +1788,14 @@ def colors_from_cmap(cmap, n_levels, extend):
     return colors
 
 
-def get_cloud_timing_levels(simulation_duration_hours: int) -> list[int]:
+def get_cloud_timing_levels(simulation_duration_hours: int) -> np.ndarray:
     """Derive levels for cloud timing plots from simulation duration."""
     if simulation_duration_hours <= 21:
         return np.arange(0, simulation_duration_hours + 1, 3)
     levels = [0, 3, 6, 9, 12, 18] + list(range(24, simulation_duration_hours, 12))
     if levels[-1] < simulation_duration_hours:
         levels += [simulation_duration_hours]
-    return levels
+    return np.array(levels)
 
 
 def levels_from_time_stats(n_levels: int, val_max: float) -> np.ndarray:

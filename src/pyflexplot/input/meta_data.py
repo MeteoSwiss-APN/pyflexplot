@@ -316,7 +316,6 @@ class MetaData:
         add_ts0: bool = True,
     ) -> "MetaData":
         """Collect meta data from file."""
-        assert isinstance(dimensions.variable, str)  # SR_DBG
         return cls(
             release=ReleaseMetaData.from_file(fi, dimensions),
             simulation=SimulationMetaData.from_file(

@@ -97,6 +97,7 @@ class PlotSetup(BaseSetup):
             simulation_type = self.model.simulation_type
             ens_variables = sorted(set(self.panels.collect("ens_variable")))
             if simulation_type == "deterministic" and ens_variables != ["none"]:
+                # pylint: disable=C0209  # consider-using-f-string (v2.11.1)
                 raise ValueError(
                     "ens_variable(s) not 'none' for deterministic simulation: "
                     + ", ".join(map("'{}'".format, ens_variables))
@@ -402,6 +403,8 @@ class PlotSetup(BaseSetup):
 
     # Explicitly inherit to prevent @dataclass from changing it
     def __eq__(self, other: Any) -> bool:
+        # pylint: disable=W0235  # useless-super-delegation (v2.11.1)
+        # see also https://github.com/PyCQA/pylint/issues/3651
         return super().__eq__(other)
 
     def __hash__(self) -> int:

@@ -12,12 +12,14 @@ from typing import Union
 
 # Third-party
 import numpy as np
+from cartopy.crs import PlateCarree
+from cartopy.crs import Projection
+from cartopy.crs import RotatedPole
 
 # First-party
 from srutils.str import join_multilines
 
 # Local
-from ..plotting.proj_bbox import Projections
 from ..setups.model_setup import ModelSetup
 from ..setups.plot_panel_setup import PlotPanelSetup
 from ..setups.plot_setup import PlotSetup
@@ -72,7 +74,7 @@ from .meta_data import MetaData
             "time_props": self.time_props,
             "panel_setup": self.panel_setup,
             "model_setup": self.model_setup,
-            "projs": self.projs,
+            "proj": self.proj,
         }
     )
 )
@@ -121,7 +123,16 @@ class Field:
         except Exception as e:
             raise ValueError(f"{type(e).__name__}: {e}") from e
 
-        self.projs: Projections = self._init_projs()
+        # pylint: disable=E0110  # abstract-class-instatiated (PlateCarree/RotatedPole)
+        self.proj: Projection
+        if self.mdata.simulation.grid_is_rotated:
+            self.proj = RotatedPole(
+                pole_latitude=self.mdata.simulation.grid_north_pole_lat,
+                pole_longitude=self.mdata.simulation.grid_north_pole_lon,
+            )
+        else:
+            self.proj = PlateCarree(central_longitude=0.0)
+        self._proj_geo = PlateCarree(central_longitude=0.0)
 
     def check_consistency(self):
         """Check consistency of field, dimensions, etc."""
@@ -147,8 +158,8 @@ class Field:
         assert len(self.fld.shape) == 2  # pylint
         # pylint: disable=W0632  # unbalanced-tuple-unpacking
         jmax, imax = np.unravel_index(np.nanargmax(self.fld), self.fld.shape)
-        p_lon, p_lat = self.projs.geo.transform_point(
-            self.lon[imax], self.lat[jmax], self.projs.data
+        p_lon, p_lat = self._proj_geo.transform_point(
+            self.lon[imax], self.lat[jmax], self.proj
         )
         return (p_lat, p_lon)
 
@@ -160,19 +171,10 @@ class Field:
             f"mdata={self.mdata},",
             f"time_stats={self.time_props},",
             f"var_setups={self.panel_setup},",
-            f"projs={self.projs},",
+            f"projs={self.proj},",
         ]
         body = join_multilines(lines, indent=2)
         return "\n".join([f"{type(self).__name__}(", body, ")"])
-
-    def _init_projs(self) -> Projections:
-        if self.mdata.simulation.grid_is_rotated:
-            return Projections.create_rotated(
-                pollat=self.mdata.simulation.grid_north_pole_lat,
-                pollon=self.mdata.simulation.grid_north_pole_lon,
-            )
-        else:
-            return Projections.create_regular(clon=self.mdata.release.lon)
 
 
 @summarizable

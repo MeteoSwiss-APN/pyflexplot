@@ -493,6 +493,7 @@ def assert_nested_equal(
                     return
                 msg = f"unequal floats not even close: {obj1} vs. {obj2}"
                 if kwargs_close:
+                    # pylint: disable=C0209  # consider-using-f-string
                     msg += " ({})".format(
                         ", ".join([f"{k}={sfmt(v)}" for k, v in kwargs_close.items()]),
                     )

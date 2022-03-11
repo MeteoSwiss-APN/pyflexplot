@@ -16,4 +16,5 @@ rstcheck
 sphinx
 sphinx-autobuild
 tox
+tox-conda
 types-toml

@@ -45,7 +45,15 @@ class MapAxesConfig:
     """Configuration of ``MapAxesPlot``.
 
     Args:
+        all_capital_cities (optional): Show all capital cities, regardless of
+            population.
         aspect (optional): Aspect ratio; width by height.
+
+        d_lat_grid (optional): Latitudinal grid line interval.
+
+        d_lon_grid (optional): Longitudinal grid line interval.
+
+        exclude_cities (optional): Exclude cities by name.
 
         geo_res (optional): Resolution of geographic map elements.
 
@@ -59,10 +67,12 @@ class MapAxesConfig:
 
         lw_frame (optional): Line width of frames.
 
+        min_city_pop (optional): Minimum population of cities shown.
+
+        only_capital_cities (optional): Only show capital cities.
+
         projection (optional): Map projection. Defaults to that of the input
             data.
-
-        min_city_pop (optional): Minimum population of cities shown.
 
         ref_dist_config (optional): Reference distance indicator setup.
 
@@ -73,14 +83,19 @@ class MapAxesConfig:
 
     """
 
+    all_capital_cities: bool = True
     aspect: float = 1.0
+    d_lat_grid: float = 10.0
+    d_lon_grid: float = 10.0
+    exclude_cities: list[str] = dc.field(default_factory=list)
     geo_res: str = "50m"
     geo_res_cities: str = "none"
     geo_res_rivers: str = "none"
     lang: str = "en"
     lw_frame: float = 1.0
-    projection: str = "data"
     min_city_pop: int = 0
+    only_capital_cities: bool = False
+    projection: str = "data"
     ref_dist_config: Optional[Union[RefDistIndConfig, Mapping[str, Any]]] = None
     ref_dist_on: bool = True
     scale_fact: float = 1.0
@@ -148,6 +163,10 @@ class MapAxes:
         self.element_handles: List[Tuple[str, Any]] = []
         self.elements: List[Dict[str, Any]] = []
 
+        clon, _ = domain.get_center()
+        self._clon: float = clon
+        self.projs: Projections = Projections.from_proj_data(field.proj, clon=clon)
+
         self._water_color: ColorType = "lightskyblue"
 
         self.zorder: Dict[str, int]
@@ -157,7 +176,6 @@ class MapAxes:
         def _create_ax(
             fig: Figure,
             rect: RectType,
-            projs: Projections,
             domain: Domain,
         ) -> Axes:
             """Initialize Axes."""
@@ -167,22 +185,26 @@ class MapAxes:
                     category=RuntimeWarning,
                     message="numpy.ufunc size changed",
                 )
-                ax: Axes = fig.add_axes(rect, projection=projs.map)
+                ax: Axes = fig.add_axes(rect, projection=self.projs.map)
             ax.set_adjustable("datalim")
             ax.spines["geo"].set_edgecolor("none")
             ax.set_aspect("auto")
-            bbox = domain.get_bbox(ax, projs, "map")
-            ax.set_extent(bbox, projs.map)
+            bbox = domain.get_bbox(ax, self.projs, "map")
+            ax.set_extent(bbox, self.projs.map)
             return ax
 
-        self.ax: Axes = _create_ax(self.fig, self.rect, field.projs, self.domain)
+        self.ax: Axes = _create_ax(
+            self.fig,
+            self.rect,
+            self.domain,
+        )
 
         self.trans = CoordinateTransformer(
             trans_axes=self.ax.transAxes,
             trans_data=self.ax.transData,
-            proj_geo=field.projs.geo,
-            proj_map=field.projs.map,
-            proj_data=field.projs.data,
+            proj_geo=self.projs.geo,
+            proj_map=self.projs.map,
+            proj_data=self.projs.data,
         )
 
         self.ref_dist_box: Optional[
@@ -322,8 +344,12 @@ class MapAxes:
         gl = self.ax.gridlines(
             linestyle=":", linewidth=1, color="black", zorder=self.zorder["grid"]
         )
-        gl.xlocator = mpl.ticker.FixedLocator(np.arange(-180, 180, 2))
-        gl.ylocator = mpl.ticker.FixedLocator(np.arange(-90, 90.1, 2))
+        gl.xlocator = mpl.ticker.FixedLocator(
+            np.arange(-180, 180, self.config.d_lon_grid)
+        )
+        gl.ylocator = mpl.ticker.FixedLocator(
+            np.arange(-90, 90.1, self.config.d_lat_grid)
+        )
 
     def _ax_add_geography(self) -> None:
         """Add geographic elements: coasts, countries, colors, etc."""
@@ -334,7 +360,7 @@ class MapAxes:
         self._ax_add_rivers("lowest", rasterized=True)
         self._ax_add_countries("geo_lower", rasterized=True)
         self._ax_add_countries("geo_upper", rasterized=True)
-        self._ax_add_cities(rasterized=False)
+        self._ax_add_cities("geo_upper", rasterized=False)
 
     def _ax_add_countries(self, zorder_key: str, rasterized: bool = False) -> None:
         edgecolor = "white" if zorder_key == "geo_lower" else "black"
@@ -412,15 +438,12 @@ class MapAxes:
             self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
 
     # pylint: disable=R0914  # too-many-locals (>15)
-    def _ax_add_cities(self, rasterized: bool = False) -> None:
+    # pylint: disable=R0915  # too-many-statements (>50)
+    def _ax_add_cities(self, zorder_key: str, rasterized: bool = False) -> None:
         """Add major cities, incl. all capitals."""
-        # Explicitly excluded cities by name
-        excluded_names = np.array(
-            [
-                "Incheon",
-            ],
-            dtype=np.str_,
-        )
+        all_capitals = self.config.all_capital_cities
+        only_capitals = self.config.only_capital_cities
+        excluded_names = np.array(self.config.exclude_cities, dtype=np.str_)
 
         def get_name(city: Record) -> str:
             """Get city name in current language, hand-correcting some."""
@@ -483,7 +506,14 @@ class MapAxes:
         # Select cities of interest
         capitals = np_is_capital(cities).astype(np.bool_)
         populations = np_get_population(cities).astype(np.int32)
-        selected = capitals | (populations > self.config.min_city_pop)
+        if all_capitals and only_capitals:
+            selected = capitals
+        elif all_capitals and not only_capitals:
+            selected = capitals | (populations > self.config.min_city_pop)
+        elif not all_capitals and only_capitals:
+            selected = capitals & (populations > self.config.min_city_pop)
+        elif not all_capitals and not only_capitals:
+            selected = populations > self.config.min_city_pop
         cities = cities[selected]
 
         # Pre-select cities in and around domain
@@ -529,7 +559,7 @@ class MapAxes:
                 fillstyle="none",
                 markeredgewidth=1 * self.config.scale_fact,
                 markersize=3 * self.config.scale_fact,
-                zorder=self.zorder["geo_upper"],
+                zorder=self.zorder[zorder_key],
                 rasterized=rasterized,
             )
             text = self.add_text(

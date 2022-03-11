@@ -90,11 +90,44 @@ class Domain:
         self.lon = lon
         self.config = config
 
+    def get_bbox_extent(self) -> Tuple[float, float, float, float]:
+        """Return domain corners ``(lllon, lllat, urlon, urlat)``."""
+        lllat = self.lat[0]
+        urlat = self.lat[-1]
+        lllon = self.lon[0]
+        urlon = self.lon[-1]
+        return lllon, urlon, lllat, urlat
+
+    def get_center(self) -> Tuple[float, float]:
+        """Return the domain center as ``(clon, clat)``."""
+        lllon, urlon, lllat, urlat = self.get_bbox_extent()
+        clon = 0.5 * (lllon + urlon)
+        if self.crosses_dateline():
+            clon += 180.0
+        clat = 0.5 * (lllat + urlat)
+        return (clon, clat)
+
+    def get_bbox_size(self) -> tuple[float, float]:
+        """Return the domain size as the distance between the bbox corners."""
+        lllon, urlon, lllat, urlat = self.get_bbox_extent()
+        dlon = urlon - lllon
+        if self.crosses_dateline():
+            dlon += 360
+        assert 0 < dlon <= 360
+        dlat = urlat - lllat
+        assert 0 < dlat <= 180
+        return (dlon, dlat)
+
+    def crosses_dateline(self) -> bool:
+        """Determine whether domain crosses dateline."""
+        lllon, urlon, _, _ = self.get_bbox_extent()
+        return bool(lllon > urlon)  # np.bool_ => bool (?)
+
     def get_bbox(
         self, ax: Axes, projs: Projections, curr_proj: str = "data"
     ) -> ProjectedBoundingBox:
         """Get bounding box of domain."""
-        lllon, urlon, lllat, urlat = self.find_bbox_corners()
+        lllon, urlon, lllat, urlat = self.get_bbox_extent()
         bbox = ProjectedBoundingBox(
             ax=ax,
             projs=projs,
@@ -106,14 +139,6 @@ class Domain:
         if self.config.zoom_fact != 1.0:
             bbox.to_axes().zoom(self.config.zoom_fact, self.config.rel_offset)
         return bbox.to(curr_proj)
-
-    def find_bbox_corners(self) -> Tuple[float, float, float, float]:
-        """Return corners of domain: [lllon, lllat, urlon, urlat]."""
-        lllat = self.lat[0]
-        urlat = self.lat[-1]
-        lllon = self.lon[0]
-        urlon = self.lon[-1]
-        return lllon, urlon, lllat, urlat
 
 
 @summarizable
@@ -181,24 +206,35 @@ class CloudDomain(Domain):
         """
         self.config: CloudDomainConfig
         super().__init__(lat, lon, config)
+        self.cloud_bbox: Optional[GeoMaskBoundingBox] = (
+            None
+            if mask is None or not mask.any()
+            else GeoMaskBoundingBox(
+                mask,
+                self.lat,
+                self.lon,
+                periodic_lon=self.config.periodic_lon,
+            )
+        )
+        self._crosses_dateline: Optional[bool] = None
 
-        if mask is not None:
-            shape = (self.lat.size, self.lon.size)
-            if mask.shape != shape:
-                raise ValueError(
-                    "inconsistent shapes of mask and lat/lon"
-                    f": {mask.shape} != ({shape[0]}, {shape[1]})"
-                )
-            if mask is None:
-                mask = np.zeros([self.lat.size, self.lon.size], dtype=np.bool_)
-        assert mask is not None  # mypy
-        self.mask: np.ndarray = mask
+    def get_bbox_extent(self) -> Tuple[float, float, float, float]:
+        """Return domain corners ``(lllon, lllat, urlon, urlat)``."""
+        extent, self._crosses_dateline = self._get_bbox_extent()
+        return extent
+
+    def crosses_dateline(self) -> bool:
+        """Determine whether domain crosses dateline."""
+        if self._crosses_dateline is None:
+            *_, self._crosses_dateline = self._get_bbox_extent()
+        assert isinstance(self._crosses_dateline, bool)
+        return self._crosses_dateline
 
     # pylint: disable=R0912  # too-many-branches (>12)
     # pylint: disable=R0914  # too-many-locals (>15)
     # pylint: disable=R0915  # too-many-statements (>50)
-    def find_bbox_corners(self) -> Tuple[float, float, float, float]:
-        """Return corners of domain: [lllon, lllat, urlon, urlat]."""
+    def _get_bbox_extent(self) -> tuple[tuple[float, float, float, float], bool]:
+        """Return ``((lllon, lllat, urlon, urlat), crosses_dateline)``."""
         lat_min: float = self.lat[0]
         lat_max: float = self.lat[-1]
         lon_min: float = self.lon[0]
@@ -208,7 +244,8 @@ class CloudDomain(Domain):
         d_lat_min: Optional[float] = self.config.min_size_lat
         d_lon_min: Optional[float] = self.config.min_size_lon
 
-        if not self.mask.any():
+        if self.cloud_bbox is None:
+            # In absence of cloud, default to release site domain
             domain = ReleaseSiteDomain(
                 self.lat,
                 self.lon,
@@ -220,44 +257,16 @@ class CloudDomain(Domain):
                     "release_lon": self.config.release_lon,
                 },
             )
-            return domain.find_bbox_corners()
+            return domain.get_bbox_extent(), domain.crosses_dateline()
 
-        # Latitude
-        mask_lat = self.mask.any(axis=1)
-        if not any(mask_lat):
-            lllat = self.lat.min()
-            urlat = self.lat.max()
-        else:
-            lllat = self.lat[mask_lat].min()
-            urlat = self.lat[mask_lat].max()
+        lllon, urlon, lllat, urlat = self.cloud_bbox.get_extent()
+        crosses_dateline = self.cloud_bbox.crosses_dateline
+        assert isinstance(crosses_dateline, bool)
+
         lllat = max([lllat, lat_min])
         urlat = min([urlat, lat_max])
-
-        # Longitude
-        mask_lon = self.mask.any(axis=0)
-        if mask_lon.all():
-            lllon = self.lon.min()
-            urlon = self.lon.max()
-            crossing_dateline = False
-        elif not self.config.periodic_lon:
-            if not any(mask_lon):
-                lllon = self.lon.min()
-                urlon = self.lon.max()
-            else:
-                lllon = self.lon[mask_lon].min()
-                urlon = self.lon[mask_lon].max()
-            lllon = max([lllon, lon_min])
-            urlon = min([urlon, lon_max])
-            crossing_dateline = False
-        else:
-            gaps = find_gaps(mask_lon, periodic=True)
-            largest_gap = next(iter(sorted(gaps, reverse=True)))
-            _, idx_gap_start, idx_gap_end = largest_gap
-            idx_lllon = idx_gap_end + 1 if idx_gap_end < mask_lon.size - 1 else 0
-            idx_urlon = idx_gap_start - 1 if idx_gap_start > 1 else mask_lon.size - 1
-            lllon = self.lon[idx_lllon]
-            urlon = self.lon[idx_urlon]
-            crossing_dateline = idx_lllon > idx_urlon
+        lllon = max([lllon, lon_min])
+        urlon = min([urlon, lon_max])
 
         # Increase latitudinal size if minimum specified
         if d_lat_min is not None:
@@ -269,7 +278,7 @@ class CloudDomain(Domain):
 
         # Increase longitudinal size if minimum specified
         if d_lon_min is not None:
-            if crossing_dateline:
+            if crosses_dateline:
                 d_lon = lllon - urlon
                 if d_lon < d_lon_min:
                     dd_lon = min([d_lon_min - d_lon, d_lon_max - d_lon])
@@ -285,7 +294,7 @@ class CloudDomain(Domain):
         if self.config.aspect:
             # Adjust self.aspect ratio to avoid distortion
             aspect = self.config.aspect
-            if crossing_dateline:
+            if crosses_dateline:
                 d_lat = urlat - lllat
                 d_lon = 360.0 - (lllon - urlon)
                 if d_lon < d_lat * aspect:
@@ -318,7 +327,102 @@ class CloudDomain(Domain):
             urlat += dd_lat
             lllat += dd_lat
 
-        return lllon, urlon, lllat, urlat
+        assert lon_min <= lllon <= lon_max
+        assert lon_min <= urlon <= lon_max
+        assert lat_min <= lllat <= lat_max
+        assert lat_min <= urlat <= lat_max
+        return (lllon, urlon, lllat, urlat), crosses_dateline
+
+
+# pylint: disable=R0902  # too-many-instance-attributes (>7)
+class GeoMaskBoundingBox:
+    """Bounding box of a geographical mask."""
+
+    class EmptyMaskError(ValueError):
+        """Cloud mask is empty."""
+
+    def __init__(
+        self,
+        mask: np.ndarray,
+        lat: np.ndarray,
+        lon: np.ndarray,
+        *,
+        periodic_lon: bool = False,
+    ) -> None:
+        """Create a new instance."""
+        shape = (lat.size, lon.size)
+        if mask.shape != shape:
+            raise ValueError(
+                "inconsistent shapes of mask and lat/lon"
+                f": {mask.shape} != ({shape[0]}, {shape[1]})"
+            )
+        if not mask.any():
+            raise self.EmptyMaskError(shape)
+        self.mask: np.ndarray = mask
+        self.lat: np.ndarray = lat
+        self.lon: np.ndarray = lon
+        self.periodic_lon: bool = periodic_lon
+
+        self.mask_lat: np.ndarray = self.mask.any(axis=1)
+        self.mask_lon: np.ndarray = mask.any(axis=0)
+
+        self.lllat: float
+        self.urlat: float
+        self.lllat, self.urlat = self._get_lat_extent()
+
+        self.lllon: float
+        self.urlon: float
+        self.crosses_dateline: bool
+        (self.lllon, self.urlon), self.crosses_dateline = self._get_lon_extent()
+
+    def get_extent(self) -> tuple[float, float, float, float]:
+        """Get ``(lllon, urlon, lllat, urlat)``."""
+        return (self.lllon, self.urlon, self.lllat, self.urlat)
+
+    def get_lat_extent(self) -> tuple[float, float]:
+        """Get ``(lllat, urlat)``."""
+        return (self.lllat, self.urlat)
+
+    def get_lon_extent(self) -> tuple[float, float]:
+        """Get ``(lllon, urlon)``."""
+        return (self.lllon, self.urlon)
+
+    def _get_lat_extent(self) -> tuple[float, float]:
+        """Return ``(lllat, urlat)``."""
+        if not any(self.mask_lat):
+            lllat = self.lat.min()
+            urlat = self.lat.max()
+        else:
+            lllat = self.lat[self.mask_lat].min()
+            urlat = self.lat[self.mask_lat].max()
+        return (lllat, urlat)
+
+    def _get_lon_extent(self) -> tuple[tuple[float, float], bool]:
+        """Return ``((lllon, urlon), crosses_dateline)``."""
+        if self.mask_lon.all():
+            lllon = self.lon.min()
+            urlon = self.lon.max()
+            crosses_dateline = False
+        elif not self.periodic_lon:
+            if not any(self.mask_lon):
+                lllon = self.lon.min()
+                urlon = self.lon.max()
+            else:
+                lllon = self.lon[self.mask_lon].min()
+                urlon = self.lon[self.mask_lon].max()
+            crosses_dateline = False
+        else:
+            gaps = find_gaps(self.mask_lon, periodic=True)
+            largest_gap = next(iter(sorted(gaps, reverse=True)))
+            _, idx_gap_start, idx_gap_end = largest_gap
+            idx_lllon = idx_gap_end + 1 if idx_gap_end < self.mask_lon.size - 1 else 0
+            idx_urlon = (
+                idx_gap_start - 1 if idx_gap_start > 1 else self.mask_lon.size - 1
+            )
+            lllon = self.lon[idx_lllon]
+            urlon = self.lon[idx_urlon]
+            crosses_dateline = idx_lllon > idx_urlon
+        return (lllon, urlon), crosses_dateline
 
 
 @summarizable
@@ -411,14 +515,8 @@ class ReleaseSiteDomain(Domain):
                 " non-zero"
             )
 
-    def get_release_lat(self) -> float:
-        return self.config.release_lat or self.lat.mean()
-
-    def get_release_lon(self) -> float:
-        return self.config.release_lon or self.lon.mean()
-
-    def find_bbox_corners(self) -> Tuple[float, float, float, float]:
-        """Return corners of domain: [lllon, lllat, urlon, urlat]."""
+    def get_bbox_extent(self) -> Tuple[float, float, float, float]:
+        """Return domain corners ``(lllon, lllat, urlon, urlat)``."""
         d_lat = self.config.min_size_lat
         d_lon = self.config.min_size_lon
         if d_lon and not d_lat:
@@ -445,6 +543,12 @@ class ReleaseSiteDomain(Domain):
             urlat = self.get_release_lat() + 0.5 * d_lat
             urlon = self.get_release_lon() + 0.5 * d_lon
         return lllon, urlon, lllat, urlat
+
+    def get_release_lat(self) -> float:
+        return self.config.release_lat or self.lat.mean()
+
+    def get_release_lon(self) -> float:
+        return self.config.release_lon or self.lon.mean()
 
 
 def find_gaps(

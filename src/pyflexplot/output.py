@@ -93,6 +93,7 @@ class FilePathFormatter:
             multipanel_param = setup.layout.multipanel_param
             if ens_variable == "percentile":
                 if plot_type == "multipanel" and multipanel_param == "ens_params.pctl":
+                    # pylint: disable=C0209  # consider-using-f-string (v2.11.1)
                     s_pctl = "+".join(
                         map("{:g}".format, setup.panels.collect("ens_params.pctl"))
                     )

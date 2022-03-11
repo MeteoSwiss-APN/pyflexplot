@@ -64,10 +64,8 @@ Ready to contribute? Here's how to set up `pyflexplot` for local development.
 3. Install your local copy into a virtualenv. This is how you set up your fork for local development::
 
     $ cd pyflexplot/
-    $ mkvirtualenv flexplot-dev
-    $ pip install -r requirements/dev-requirements.txt
-
-    $ python setup.py develop # or
+    $ conda env create -n pyflexplot-dev --file=dev-environment.yml
+    $ conda activate pyflexplot-dev
     $ pip install -e .
 
 4. Create a branch for local development::
@@ -80,8 +78,6 @@ Ready to contribute? Here's how to set up `pyflexplot` for local development.
 
     $ black src
     $ tox  # runs pytest, pylint, flake8
-
-   To get black, flake8, tox etc., just install them into your virtualenv (``pip install -r requirements/dev-requirements.txt``).
 
 6. Commit your changes and push your branch to GitHub::
 
@@ -137,6 +133,11 @@ Project Structure
      - Configuration file of bumpversion.
    * - CONTRIBUTION.rst
      - Contains all the information you need when you contribute to this project.
+   * - dev-environment.yml
+       Exported conda environment specifying pinned runtime and development dependencies.
+       Is based on the pinned runtime dependencies in ``environment.yml`` and the unpinned development dependencies in ``dev-requirements.in``.
+   * - Exported conda environment specifying pinned runtime dependencies.
+       Is based on the unpinned runtime dependencies in ``requirements.in``.
    * - .gitignore
      - Files and directories ignored by git.
    * - HISTORY.rst
@@ -159,7 +160,7 @@ Project Structure
        It lists features and contains a quick start.
    * - setup.py
      - Script used to build the package.
-       It reads the unpinned top-level requirements from ``requirements/requirements.in`` into the variable ``requirements``.
+       It reads the unpinned top-level requirements from ``requirements.in`` into the variable ``requirements``.
    * - tox.ini
      - A configuration file for tox carring out the test for different Python verions.
        The listed versions should be the same as in the file ``setup.py``.
@@ -170,26 +171,12 @@ Project Structure
        Handled by bumpversion.
    * - docs/
      - Directory containing the documentation.
-   * - requirements/
-     - Directory containing requirements files with various types of dependencies.
-   * - requirements/dev-requirements.in
+   * - dev-requirements.in
      - A text file containing top-level unpinned development dependencies (critical version restrictions only).
        It is managed manually.
-   * - requirements/dev-requirements.txt
-     - A text file containing recursive pinned development and runtime dependencies (all versions specified), a superset of those in ``requirements/requirements.txt``.
-       It is created automatically with ``pip freeze`` or the pip-tools command ``pip-compile``.
-   * - requirements/requirements.in
+   * - requirements.in
      - A text file containing top-level unpinned runtime dependencies (critical version restrictions only).
        It is managed manually and read in ``setup.py``.
-   * - requirements/requirements.txt
-     - A text file containing recursive pinned runtime dependencies (all versions specified).
-       It is created automatically with ``pip freeze`` or the pip-tools command ``pip-compile``.
-   * - requirements/tox-requirements.in
-     - A text file containing top-level unpinned testing dependencies (critical version restrictions only) used by tox as specified in ``tox.ini``.
-       It is managed manually.
-   * - requirements/tox-requirements.txt
-     - A text file containing recursive pinned testing dependencies (critical version restrictions only) used by tox.
-       It is created automatically with ``pip freeze`` or the pip-tools command ``pip-compile``.
    * - scripts/
      - Directory containing some small helper scripts.
    * - src/
@@ -207,13 +194,11 @@ Managing dependencies
 Generally, projects make use of other libraries, be it as (production) dependencies (e.g., ``import numpy`` in source code)
 Which libraries -- and any critical restrictions of their versions -- have to be listed in different places in the project:
 
-* Unpinned top-level runtime dependencies, which are required to run the application/library, belong in ``requirements/requirements.in`` (from which they are read in ``setup.py``).
+* Unpinned top-level runtime dependencies, which are required to run the application/library, belong in ``requirements.in`` (from which they are read in ``setup.py``).
   The versions of unpinned dependencies are only restricted as necessary, e.g., if a minimum version is required for a certain feature or bugfix.
-* Unpinned top-level development dependencies, which are additional packages required during development, belong in ``requirements/dev-requirements.in``.
-* Unpinned top-level testing dependencies, which are packages required by the testing framework ``tox`` to run unit tests, linters etc. as specified in ``tox.ini``, belong in ``requirements/tox-requirements.in``.
-* Pinned runtime, development and testing dependencies belong in ``requirements/requirements.txt``, ``requirements/dev-requirements.txt`` and ``requirements/tox-requirements.txt``, respectively.
-  Pinned dependencies are recursive, i.e., include all dependencies of dependencies, and restricted to a specific version.
-  This ensures a reproducible environment that is guaranteed to work.
+* Unpinned top-level development dependencies, which are additional packages required during development, belong in ``dev-requirements.in``.
+* Pinned runtime and development dependencies, created with ``conda env export``, belong in ``environment.yml`` and ``dev-environment.yml``, respectively.
+  This allows for the creation of reproducible conda environments.
 
 How to provide executable scripts
 ---------------------------------
