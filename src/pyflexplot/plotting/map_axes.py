@@ -45,6 +45,8 @@ class MapAxesConfig:
     """Configuration of ``MapAxesPlot``.
 
     Args:
+        all_capital_cities (optional): Show all capital cities, regardless of
+            population.
         aspect (optional): Aspect ratio; width by height.
 
         d_lat_grid (optional): Latitudinal grid line interval.
@@ -65,6 +67,8 @@ class MapAxesConfig:
 
         min_city_pop (optional): Minimum population of cities shown.
 
+        only_capital_cities (optional): Only show capital cities.
+
         projection (optional): Map projection. Defaults to that of the input
             data.
 
@@ -77,6 +81,7 @@ class MapAxesConfig:
 
     """
 
+    all_capital_cities: bool = True
     aspect: float = 1.0
     d_lat_grid: float = 10.0
     d_lon_grid: float = 10.0
@@ -86,6 +91,7 @@ class MapAxesConfig:
     lang: str = "en"
     lw_frame: float = 1.0
     min_city_pop: int = 0
+    only_capital_cities: bool = False
     projection: str = "data"
     ref_dist_config: Optional[Union[RefDistIndConfig, Mapping[str, Any]]] = None
     ref_dist_on: bool = True
@@ -439,6 +445,9 @@ class MapAxes:
             dtype=np.str_,
         )
 
+        all_capitals = self.config.all_capital_cities
+        only_capitals = self.config.only_capital_cities
+
         def get_name(city: Record) -> str:
             """Get city name in current language, hand-correcting some."""
             name = city.attributes[f"name_{self.config.lang}"]
@@ -500,7 +509,14 @@ class MapAxes:
         # Select cities of interest
         capitals = np_is_capital(cities).astype(np.bool_)
         populations = np_get_population(cities).astype(np.int32)
-        selected = capitals | (populations > self.config.min_city_pop)
+        if all_capitals and only_capitals:
+            selected = capitals
+        elif all_capitals and not only_capitals:
+            selected = capitals | (populations > self.config.min_city_pop)
+        elif not all_capitals and only_capitals:
+            selected = capitals & (populations > self.config.min_city_pop)
+        elif not all_capitals and not only_capitals:
+            selected = populations > self.config.min_city_pop
         cities = cities[selected]
 
         # Pre-select cities in and around domain
