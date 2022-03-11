@@ -177,17 +177,19 @@ def create_plot(
     plot_config = create_plot_config(
         plot_setup, labels, simulation_duration_hours, simulation_time_steps, val_max
     )
-    map_configs: List[MapAxesConfig] = [
-        create_map_config(
+    aspect: float = plot_config.layout.get_aspect("center")
+    domains: List[Domain] = []
+    map_configs: List[MapAxesConfig] = []
+    for field in field_group:
+        domain = get_domain(field, aspect)
+        domains.append(domain)
+        map_config = create_map_config(
             field_group.plot_setup,
             field.panel_setup,
-            plot_config.layout.get_aspect("center"),
+            domain,
+            aspect,
         )
-        for field in field_group
-    ]
-    domains: List[Domain] = []
-    for field, map_config in zip(field_group, map_configs):
-        domains.append(get_domain(field, map_config.aspect))
+        map_configs.append(map_config)
     plot = BoxedPlot(plot_config)
     plot.add_map_plot_panels(field_group, domains, map_configs)
 
@@ -643,7 +645,7 @@ def plot_add_text_boxes(
 
 
 def create_map_config(
-    plot_setup: PlotSetup, panel_setup: PlotPanelSetup, aspect: float
+    plot_setup: PlotSetup, panel_setup: PlotPanelSetup, domain: Domain, aspect: float
 ) -> MapAxesConfig:
     model_name = plot_setup.model.name
     scale_fact = plot_setup.layout.scale_fact
@@ -651,6 +653,7 @@ def create_map_config(
     domain_type = panel_setup.domain
     lang = panel_setup.lang
     n_panels = len(plot_setup.panels)
+    domain_width, _ = domain.get_bbox_size()
 
     if plot_type == "multipanel":
         # Shrink city labels etc.
@@ -719,10 +722,22 @@ def create_map_config(
             config_dct.update(conf_continental_scale)
         elif model_name == "IFS-HRES":
             config_dct.update(conf_global_scale)
-    elif domain_type in ["release_site", "cloud", "alps"]:
-        config_dct.update(conf_regional_scale)
     elif domain_type == "ch":
         config_dct.update(conf_country_scale)
+    elif domain_type in ["release_site", "alps"]:
+        config_dct.update(conf_regional_scale)
+    elif domain_type == "cloud":
+        if model_name == "IFS-HRES":
+            if domain_width < 30:
+                config_dct.update(conf_country_scale)
+            elif domain_width < 60:
+                config_dct.update(conf_regional_scale)
+            elif domain_width < 150:
+                config_dct.update(conf_continental_scale)
+            else:
+                config_dct.update(conf_global_scale)
+        else:
+            config_dct.update(conf_regional_scale)
     else:
         raise NotImplementedError(
             f"map axes config for model '{model_name}' and domain '{domain_type}'"
