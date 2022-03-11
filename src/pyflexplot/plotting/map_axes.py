@@ -148,7 +148,9 @@ class MapAxes:
         self.element_handles: List[Tuple[str, Any]] = []
         self.elements: List[Dict[str, Any]] = []
 
-        self.projs: Projections = Projections.from_proj_data(field.proj)
+        clon, _ = domain.get_center()
+        self._clon: float = clon
+        self.projs: Projections = Projections.from_proj_data(field.proj, clon=clon)
 
         self._water_color: ColorType = "lightskyblue"
 

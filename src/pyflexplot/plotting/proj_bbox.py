@@ -31,18 +31,18 @@ class Projections:
     geo: Projection
 
     @classmethod
-    def from_proj_data(cls, proj_data: Projection) -> Projections:
+    def from_proj_data(cls, proj_data: Projection, clon: float = 0.0) -> Projections:
         """Derive a projections set from the data projection."""
         if isinstance(proj_data, RotatedPole):
             return cls.create_rotated(proj=proj_data)
-        return cls.create_regular()
+        return cls.create_regular(clon_map=clon)
 
     @classmethod
-    def create_regular(cls) -> Projections:
+    def create_regular(cls, clon_map: float = 0.0) -> Projections:
         # pylint: disable=E0110  # abstract-class-instatiated (PlateCarree)
         return cls(
             data=PlateCarree(central_longitude=0.0),
-            map=PlateCarree(central_longitude=0.0),
+            map=PlateCarree(central_longitude=clon_map),
             geo=PlateCarree(central_longitude=0.0),
         )
 
