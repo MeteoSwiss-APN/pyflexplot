@@ -327,6 +327,11 @@ class CloudDomain(Domain):
             urlat += dd_lat
             lllat += dd_lat
 
+        lllon = min([lllon, lon_max])  # emergency bugfix
+        lllon = max([lllon, lon_min])  # emergency bugfix
+        urlon = min([urlon, lon_max])  # emergency bugfix
+        urlon = max([urlon, lon_min])  # emergency bugfix
+
         assert lon_min <= lllon <= lon_max
         assert lon_min <= urlon <= lon_max
         assert lat_min <= lllat <= lat_max
