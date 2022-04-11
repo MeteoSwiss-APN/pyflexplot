@@ -25,7 +25,7 @@ class Test_GlobalCloudDomain:
         def get_mask(self, bboxes):
             mask = np.zeros([self.lat.size, self.lon.size], np.bool_)
             for idx_lllon, idx_urlon, idx_lllat, idx_urlat in bboxes:
-                if idx_lllon < 0:
+                if idx_lllon < 0 or idx_lllon > idx_urlon:
                     mask[idx_lllat:idx_urlat, idx_lllon:] = True
                     mask[idx_lllat:idx_urlat, :idx_urlon] = True
                 else:
@@ -117,6 +117,13 @@ class Test_GlobalCloudDomain:
             ddlon2 = 70 / 2
             assert bbox == (175 - ddlon2, -165 + ddlon2, 15, 75)
 
+        def test_min_lon(self):
+            """Adjust longitude upward to minimum."""
+            bbox = self.get_bbox_corners(
+                -2, 2, 5, 15, periodic_lon=True, min_size_lon=60
+            )
+            assert bbox == (150.0, -150.0, -35.0, 55.0)
+
     class Test_NonContinuousNearDateline(General):
         """Non-continuous cloud around the dateline."""
 
@@ -175,6 +182,19 @@ class Test_GlobalCloudDomain:
                 aspect=2,
             )
             assert bbox == (35, -65, -45, 85)
+
+    class Test_GrowingAcrossdateline(Continuous):
+        """Cloud so close to the dateline that adjustment pushes it over it."""
+
+        lat = np.arange(-89.5, 89.6, 1.0)
+        lon = np.arange(-179.5, 179.6, 1.0)
+
+        def test(self):
+            """Based on a real case that crashed v0.1.7."""
+            bbox = self.get_bbox_corners(
+                -356, -358, 120, 179, periodic_lon=True, aspect=1.45, min_size_lon=20.0
+            )
+            assert bbox == (-175.5, -178.5, -89.5, 89.5)
 
 
 class Test_CloudDomain_RealCase:
