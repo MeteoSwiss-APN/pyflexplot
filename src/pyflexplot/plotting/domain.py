@@ -278,18 +278,11 @@ class CloudDomain(Domain):
 
         # Increase longitudinal size if minimum specified
         if d_lon_min is not None:
-            if crosses_dateline:
-                d_lon = lllon - urlon
-                if d_lon < d_lon_min:
-                    dd_lon = min([d_lon_min - d_lon, d_lon_max - d_lon])
-                    lllon += 0.5 * dd_lon
-                    urlon -= 0.5 * dd_lon
-            else:
-                d_lon = urlon - lllon
-                if d_lon < d_lon_min:
-                    dd_lon = min([d_lon_min - d_lon, d_lon_max - d_lon])
-                    lllon -= 0.5 * dd_lon
-                    urlon += 0.5 * dd_lon
+            d_lon = (urlon - lllon) % 360.0
+            if d_lon < d_lon_min:
+                dd_lon = min([d_lon_min - d_lon, d_lon_max - d_lon])
+                lllon -= 0.5 * dd_lon
+                urlon += 0.5 * dd_lon
 
         if self.config.aspect:
             # Adjust self.aspect ratio to avoid distortion
@@ -327,10 +320,6 @@ class CloudDomain(Domain):
             urlat += dd_lat
             lllat += dd_lat
 
-        assert lon_min <= lllon <= lon_max
-        assert lon_min <= urlon <= lon_max
-        assert lat_min <= lllat <= lat_max
-        assert lat_min <= urlat <= lat_max
         return (lllon, urlon, lllat, urlat), crosses_dateline
 
 
