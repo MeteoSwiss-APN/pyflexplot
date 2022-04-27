@@ -123,38 +123,38 @@ Usage
 Run pyflexplot
 --------------
 
-Activate the conda environment::
+Activate the conda environment ::
   conda activate pyflexplot
 
-To use all allocated cpus, add the following option to the pyflexplot command::
+To use all allocated cpus, add the following option to the pyflexplot command ::
   --num-procs=$SLURM_CPUS_PER_TASK
 
 If you want to run the following examples interatcively,
-you may want do allocate parallel resources, e.g. 10 cores::
+you may want do allocate parallel resources, e.g. 10 cores ::
   salloc -c 10
 
-Important: Free resources when done!::
+Important: Free resources when done! ::
   exit
 
 Examples how to run pyflexplot
 ------------------------------
 
-Example using default input file
+Example using default input file.
 This example assumes you are in the pyflexplot directory.
 
-Default input files are searched for in ./data
-Link the default input files if you want to use these for tests.::
+Default input files are searched for in ./data.
+Link the default input files if you want to use these for tests. ::
   ln -s /store/mch/msopr/pyflexplot_testdata data
 
-Create an output directory::
-  exp=106c
-  dest=plot_$tag
+Create an output directory ::
+  exp=test
+  dest=plot_$exp
   mkdir $dest
 
-Run all presets for pdf graphics format with the default input data::
+Run all presets for pdf graphics format with the default input data ::
   preset='opr/*/all_pdf'
 
-or choose an appropriate preset (define the variable preset)::
+or choose an appropriate preset (define the variable preset) ::
   For FLEXPART-IFS      Global output:        preset=opr/ifs-hres/all_pdf
   For FLEXPART-IFS      Europe output:        preset=opr/ifs-hres-eu/all_pdf
   For FLEXPART-COSMO    deterministic output: preset=opr/cosmo-1e-ctrl/all_pdf
@@ -162,73 +162,65 @@ or choose an appropriate preset (define the variable preset)::
   For FLEXPART-COSMO-1E ensemble output:      preset=opr/cosmo-1e/all_pdf
   For FLEXPART-COSMO-2E ensemble output:      preset=opr/cosmo-2e/all_pdf
 
-and run pyflexplot with the chosen preset::
+and run pyflexplot with the chosen preset interactively ::
   pyflexplot --preset "$preset" --merge-pdfs --dest=$dest
 
-or as a batch job::
-  batchPP -t 2 -T 10 -n $exp "$CONDA_PREFIX/bin/pyflexplot --preset $preset --merge-pdfs --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK"
+or as a batch job (recommended) ::
+  batchPP -t 2 -T 10 -n pfp_$exp "$CONDA_PREFIX/bin/pyflexplot --preset $preset --merge-pdfs --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK"
 
-Example using operational Flexpart ensemble output::
+Example using operational Flexpart ensemble output ::
+  exp=test-2e
   preset=opr/cosmo-2e/all_pdf
   basetime=2021112500
   infile000=$(echo /store/mch/msopr/osm/COSMO-2E/FCST${basetime:2:2}/${basetime:2:8}_5??/flexpart_c/000/grid_conc_*_BEZ.nc)
   infile=${infile000/\/000\//\/\{ens_member:03\}\/}
   dest=plot_${basetime:2:8}
   mkdir $dest
-  batchPP -t 1 -T 10 -n pfp-2e "$CONDA_PREFIX/bin/pyflexplot --preset $preset --merge-pdfs --setup infile $infile --setup base_time $basetime --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK"
+  batchPP -t 1 -T 10 -n pfp-$exp "$CONDA_PREFIX/bin/pyflexplot --preset $preset --merge-pdfs --setup infile $infile --setup base_time $basetime --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK"
 
-
-Examples using arbitrary FLEXPART output files.
-
-If the FLEXPART output was produced by the test-fp script, define
-the corresponding location for the numbered job directories.::
-  FP_JOBS=$SCRATCH/flexpart/job
-
-Find the flexpart output file by the job number::
-  job=....
-  infile=FP_JOBS/$job/output/*.nc
-
-The following examples use Flexpart output from::
+The following expamles use FLEXPART output generated with the test-fp script
+in the test subdirectory of the flexpart repository of MeteoSwiss. Define FP_JOBS
+as path to the FLEXPART output files, e.g. ::
   FP_JOBS=/scratch/kaufmann/flexpart/job
 
 Write output to a location where you have write access, e.g.::
   FP_OUT=$SCRATCH/flexpart/job
 
-After defining preset and job, create the output directory
-and submit job with::
-  infile=$FP_JOBS/$job/output/*.nc
-  basetime=$(cat $FP_JOBS/$job/output/plot_info)
-  dest=$FP_OUT/$job/plots
+After additionally defining preset and exp, create the output directory
+and submit a job with::
+  infile=$(echo $FP_JOBS/$exp/output/*.nc)
+  basetime=$(cat $FP_JOBS/$exp/output/plot_info)
+  dest=$FP_OUT/$exp/plots
   mkdir -p $dest
-  batchPP -t 1 -T 10 -n plot$job "$CONDA_PREFIX/bin/pyflexplot --preset $preset --merge-pdfs --setup infile $infile --setup base_time $basetime --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK"
 
+and submit the job with the batchPP command as above
 
-Example FLEXPART with COSMO-2E Control Run::
+Example: FLEXPART with COSMO-2E Control Run ::
   preset=opr/cosmo-2e-ctrl/all_pdf
-  job=1074
+  exp=1074
 
-Submit pyflexplot job
-
-Example FLEXPART with COSMO-1E Control Run::
+Example: FLEXPART with COSMO-1E Control Run ::
   preset=opr/cosmo-1e-ctrl/all_pdf
-  job=1076
+  exp=1076
 
-Submit job with same commands as above
-
-Example: FLEXPART with COSMO-2E Ensemble Run
-For ensembles, the infile needs to be a pattern rather than a single file::
+Example: FLEXPART with COSMO-2E Ensemble Run.
+For ensembles, the infile needs to be a pattern rather than a single file ::
   preset=opr/cosmo-2e/all_pdf
-  FP_JOBS=/scratch/kaufmann/flexpart/job
-  FP_OUT=$SCRATCH/flexpart/job
-  job=short-bug
-  infile000=$(echo $FP_JOBS/$job/output/000/*.nc)
+  exp=short-bug
+  infile000=$(echo $FP_JOBS/$exp/output/000/*.nc)
   infile=${infile000/\/000\//\/\{ens_member:03\}\/}
-  basetime=2021090612
-  dest=$FP_OUT/$job/plots
-  mkdir -p $dest
+
+Example: New test case with clound crossing dateline from both sides ::
+  exp=test
+  preset=opr/ifs-hres/all_pdf
+  infile=data/ifs-hres/grid_conc_20220406180000_Chmelnyzkyj.nc
+  basetime=2022040612
+  dest=plot_$exp
+  mkdir $dest
 
 submit job with batchPP command above
-after job completion, list and vizualize results with::
+
+After job completion, list and vizualize results with ::
   ls $dest/*pdf
   evince $dest/*pdf
 
@@ -236,19 +228,19 @@ after job completion, list and vizualize results with::
 Commit a new version
 --------------------
 
-Bring all changes to the dev branch if they are not already there.::
+Bring all changes to the dev branch if they are not already there. ::
   git checkout dev
 
 Copy or merge changes into dev
 
 Create a new version number, indicating the prerelease status (--new-version
 with release and buld tags), regardless of uncommited files (--allow-dirty)
-and without committing it as new tag (--no-commit --no-tag)::
+and without committing it as new tag (--no-commit --no-tag) ::
   bumpversion --verbose --allow-dirty --no-commit --no-tag --new-version=1.0.6-pre-1 dummy
 
 
 Save environment specificatons to allow for an exact replication of
-environment with make install::
+environment with make install ::
   make install-dev
   conda env export --no-builds --file=environment.yml
 
@@ -258,39 +250,39 @@ If plots change, create new reference plots
 Situation: make test-slow fails (tests/slow/pyflexplot/test_plots/test_*.py)
 Reason: Plot references (summary dicts; tests/slow/pyflexplot/test_plots/ref_*.py)
         have changed
-Steps: In ``tests/slow/test_pyflexplot/test_plots/shared.py``, uncomment the line::
+Steps: In ``tests/slow/test_pyflexplot/test_plots/shared.py``, uncomment the line ::
 
        _TestBase = _TestCreateReference
 
 at the end of the file and re-install if not installed with install-dev.
 
-Rerun test to generate new reference::
+Rerun test to generate new reference ::
   make test-slow
 
-Revert tests/slow/pyflexplot/test_plots/shared.py::
+Revert tests/slow/pyflexplot/test_plots/shared.py ::
   git checkout tests/slow/test_pyflexplot/test_plots/shared.py
 
-Inspect the changes to the reference::
+Inspect the changes to the reference ::
   git diff tests/slow/test_pyflexplot/test_plots
 
-Stage and commit all changes in dev::
+Stage and commit all changes in dev ::
   git add ...
   git commit ...
 
 Merge changes into master
-(unless you have merged them from master)::
+(unless you have merged them from master) ::
   git checkout master
   git merge dev
 
 Increase version, commit, push to github including tag
 Choose target according to change level:
-bump-patch, bump-minor, bump-major::
+bump-patch, bump-minor, bump-major ::
   make bump-patch MSG=<message>
 
-Push commit and associated tag to GitHub::
+Push commit and associated tag to GitHub ::
   git push
   git push --tag
 
-Continue development, preferably in the dev branch::
+Continue development, preferably in the dev branch ::
   git checkout dev
   git merge master
