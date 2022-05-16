@@ -142,6 +142,10 @@ class ProjectedBoundingBox:
     def set(self, coord_type, lon0, lon1, lat0, lat1):
         if not all(np.isfinite(c) for c in (lon0, lon1, lat0, lat1)):
             raise ValueError(f"invalid coordinates: ({lon0}, {lon1}, {lat0}, {lat1}")
+        if np.isclose(lon0, lon1):
+            raise ValueError(f"longitudes are too close: ({lon0}, {lon1})")
+        if np.isclose(lat0, lat1):
+            raise ValueError(f"latitudes are too close: ({lat0}, {lat1})")
         self._curr_coord_type = coord_type
         self._curr_lon0 = lon0
         self._curr_lon1 = lon1
