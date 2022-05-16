@@ -6,11 +6,13 @@ from typing import Tuple
 
 # Third-party
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 # First-party
 from pyflexplot.plotting.domain import CloudDomain
 from pyflexplot.plotting.domain import find_gaps
+from pyflexplot.plotting.domain import GeoMaskBoundingBox
 
 
 class Test_GlobalCloudDomain:
@@ -431,3 +433,76 @@ class FindGapsConfig:
 def test_find_gaps(cfg):
     gaps = find_gaps(cfg.mask, periodic=cfg.periodic)
     assert gaps == cfg.gaps
+
+
+class Test_GeoMaskBoundingBox:
+    """Bounding box around a geographical mask."""
+
+    class Test_Extent:
+        """Extent of a cloud in lat/lon space."""
+
+        lat: npt.NDArray[np.float_] = np.arange(-90.0, 90.1, 20.0)
+        lon: npt.NDArray[np.float_] = np.arange(-170.0, 170.1, 20.0)
+
+        def get_empty_mask(self, v: bool = False) -> npt.NDArray[np.bool_]:
+            """Create an empty mask filled with an initial value."""
+            shape = (self.lat.size, self.lon.size)
+            return np.full(shape, v, np.bool_)
+
+        def test_empty_fail(self) -> None:
+            """There's no cloud, so an exception is raised."""
+            with pytest.raises(GeoMaskBoundingBox.EmptyMaskError):
+                GeoMaskBoundingBox(self.get_empty_mask(), lat=self.lat, lon=self.lon)
+
+        def test_point(self) -> None:
+            """A point cloud."""
+            mask = self.get_empty_mask()
+            mask[4, 4] = True
+            bb = GeoMaskBoundingBox(mask, lat=self.lat, lon=self.lon)
+            assert bb.get_lat_extent() == (-10.0, -10.0)
+            assert bb.get_lon_extent() == (-90.0, -90.0)
+
+        def test_simple(self) -> None:
+            """A simple cloud."""
+            mask = self.get_empty_mask()
+            mask[3:7, 4] = True
+            mask[4, 2:6] = True
+            bb = GeoMaskBoundingBox(mask, lat=self.lat, lon=self.lon)
+            assert bb.get_lat_extent() == (-30.0, 30.0)
+            assert bb.get_lon_extent() == (-130.0, -70.0)
+
+        def test_zonal(self) -> None:
+            """A cloud spanning the whole globe zonally."""
+            mask = self.get_empty_mask()
+            mask[3:7, 4] = True
+            mask[4, :] = True
+            bb = GeoMaskBoundingBox(mask, lat=self.lat, lon=self.lon)
+            assert bb.get_lat_extent() == (-30.0, 30.0)
+            assert bb.get_lon_extent() == (-170.0, 170.0)
+
+        def test_dateline_small(self) -> None:
+            """A small cloud spanning across the date line."""
+            mask = self.get_empty_mask()
+            mask[6:8, -3:] = True
+            mask[6:8, :2] = True
+            bb = GeoMaskBoundingBox(mask, lat=self.lat, lon=self.lon, periodic_lon=True)
+            assert bb.get_lat_extent() == (30.0, 50.0)
+            assert bb.get_lon_extent() == (130.0, -150.0)
+
+        def test_dateline_large(self) -> None:
+            """A large cloud spanning across the date line."""
+            mask = self.get_empty_mask()
+            mask[6:8, :] = True
+            mask[6:8, 3:5] = False
+            bb = GeoMaskBoundingBox(mask, lat=self.lat, lon=self.lon, periodic_lon=True)
+            assert bb.get_lat_extent() == (30.0, 50.0)
+            assert bb.get_lon_extent() == (-70.0, -130.0)
+
+        def test_dateline_xlarge(self) -> None:
+            """An extra-large cloud (except one point) spanning across the date line."""
+            mask = self.get_empty_mask()
+            mask[6:8, :] = True
+            mask[6:8, 4] = False
+            bb = GeoMaskBoundingBox(mask, lat=self.lat, lon=self.lon, periodic_lon=True)
+            assert bb.get_lat_extent() == (30.0, 50.0)
+            assert bb.get_lon_extent() == (-70.0, -110.0)
