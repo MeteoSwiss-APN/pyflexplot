@@ -4,15 +4,21 @@ from __future__ import annotations
 # Standard library
 import dataclasses as dc
 import warnings
+from collections.abc import Sequence
 from typing import overload
+from typing import Union
 
 # Third-party
 import numpy as np
+import numpy.typing as npt
 from cartopy.crs import PlateCarree
 from cartopy.crs import Projection
 
 # First-party
 from srutils.iter import isiterable
+
+# Custom types
+FloatArray1DLike_T = Union[Sequence[float], npt.NDArray[np.float_]]
 
 
 @dc.dataclass
@@ -62,8 +68,8 @@ class CoordinateTransformer:
 
     @overload
     def axes_to_data(
-        self, x: np.ndarray, y: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def axes_to_data(self, x, y):
@@ -79,16 +85,14 @@ class CoordinateTransformer:
 
     @overload
     def axes_to_geo(
-        self, x: np.ndarray, y: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def axes_to_geo(self, x, y):
         """Transform from axes to geographic coordinates."""
         if isiterable(x) or isiterable(y):
             check_same_sized_iterables(x, y)
-            assert isinstance(x, np.ndarray)  # mypy
-            assert isinstance(y, np.ndarray)  # mypy
             if len(x) > 0:
                 # pylint: disable=E0633  # unpacking-non-sequence
                 x, y = np.array([self.axes_to_geo(xi, yi) for xi, yi in zip(x, y)]).T
@@ -121,8 +125,8 @@ class CoordinateTransformer:
 
     @overload
     def axes_to_map(
-        self, x: np.ndarray, y: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def axes_to_map(self, x, y):
@@ -138,8 +142,8 @@ class CoordinateTransformer:
 
     @overload
     def data_to_axes(
-        self, x: np.ndarray, y: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def data_to_axes(self, x, y):
@@ -155,8 +159,8 @@ class CoordinateTransformer:
 
     @overload
     def data_to_geo(
-        self, x: np.ndarray, y: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def data_to_geo(self, x, y):
@@ -179,8 +183,8 @@ class CoordinateTransformer:
 
     @overload
     def data_to_map(
-        self, x: np.ndarray, y: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def data_to_map(self, x, y):
@@ -196,16 +200,14 @@ class CoordinateTransformer:
 
     @overload
     def geo_to_axes(
-        self, x: np.ndarray, y: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def geo_to_axes(self, x, y):
         """Transform from geographic to axes coordinates."""
         if isiterable(x) or isiterable(y):
             check_same_sized_iterables(x, y)
-            assert isinstance(x, np.ndarray)  # mypy
-            assert isinstance(y, np.ndarray)  # mypy
             if len(x) > 0:
                 # pylint: disable=E0633  # unpacking-non-sequence
                 x, y = np.array([self.geo_to_axes(xi, yi) for xi, yi in zip(x, y)]).T
@@ -245,8 +247,8 @@ class CoordinateTransformer:
 
     @overload
     def geo_to_data(
-        self, x: np.ndarray, y: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def geo_to_data(self, x, y):
@@ -268,7 +270,9 @@ class CoordinateTransformer:
         ...
 
     @overload
-    def geo_to_map(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def geo_to_map(
+        self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def geo_to_map(self, x, y):
@@ -291,8 +295,8 @@ class CoordinateTransformer:
 
     @overload
     def map_to_axes(
-        self, x: np.ndarray, y: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def map_to_axes(self, x, y):
@@ -308,8 +312,8 @@ class CoordinateTransformer:
 
     @overload
     def map_to_data(
-        self, x: np.ndarray, y: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+        self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def map_to_data(self, x, y):
@@ -324,7 +328,9 @@ class CoordinateTransformer:
         ...
 
     @overload
-    def map_to_geo(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def map_to_geo(
+        self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def map_to_geo(self, x, y):
@@ -364,7 +370,7 @@ def check_valid_coords(xy: tuple[float, float], allow, warn):
 
 
 @overload
-def check_valid_coords(xy: tuple[np.ndarray, np.ndarray], allow, warn):
+def check_valid_coords(xy: tuple[FloatArray1DLike_T, FloatArray1DLike_T], allow, warn):
     ...
 
 
@@ -377,7 +383,7 @@ def check_valid_coords(xy, allow: bool, warn: bool) -> None:
             warnings.warn(f"invalid coordinates: {xy}")
 
 
-def check_same_sized_iterables(x: np.ndarray, y: np.ndarray) -> None:
+def check_same_sized_iterables(x: FloatArray1DLike_T, y: FloatArray1DLike_T) -> None:
     """Check that x and y are iterables of the same size."""
     if isiterable(x) and not isiterable(y):
         raise ValueError("x is iterable but y is not", (x, y))
