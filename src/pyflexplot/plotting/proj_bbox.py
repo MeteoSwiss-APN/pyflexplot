@@ -15,6 +15,9 @@ from cartopy.crs import Projection
 from cartopy.crs import RotatedPole
 from matplotlib.axes import Axes
 
+# First-party
+from srutils.format import indent
+
 # Local
 from ..utils.logging import log
 from ..utils.summarize import summarizable
@@ -293,7 +296,7 @@ class ProjectedBoundingBox:
                     f"lon1={self.lon1:.2f}",
                     f"lat0={self.lat0:.2f}",
                     f"lat1={self.lat1:.2f}",
-                    f"trans={self.trans}",
+                    f"trans={indent(str(self.trans), 2).strip()}",
                 ]
             )
             + ",\n)"

@@ -341,6 +341,22 @@ class CoordinateTransformer:
         x, y = self.proj_geo.transform_point(x, y, self.proj_map, trap=True)
         return (x, y)
 
+    def __repr__(self) -> str:
+        """Return a string representation."""
+        return "\n".join(
+            [
+                f"{type(self).__name__}(",
+                f"  trans_axes=<{type(self.trans_axes).__name__} object>,",
+                f"  trans_data=<{type(self.trans_data).__name__} object>,",
+                f"  proj_map=<{type(self.proj_map).__name__} object>,",
+                f"  proj_data=<{type(self.proj_data).__name__} object>,",
+                f"  proj_geo=<{type(self.proj_geo).__name__} object>,",
+                f"  invalid_ok={self.invalid_ok},",
+                f"  invalid_warn={self.invalid_ok},",
+                ")",
+            ]
+        )
+
 
 @overload
 def check_valid_coords(xy: tuple[float, float], allow, warn):

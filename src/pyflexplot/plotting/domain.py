@@ -413,6 +413,27 @@ class GeoMaskBoundingBox:
             crosses_dateline = idx_lllon > idx_urlon
         return (lllon, urlon), crosses_dateline
 
+    def __repr__(self) -> str:
+        """Return a string representation."""
+        mask = f"<{self.mask.shape}, true={self.mask.sum()}/{self.mask.size}>"
+        lat = (
+            f"<{self.lat.shape}, "
+            f"[{self.lat[0]}, {self.lat[1]}, ..., {self.lat[-2]}, {self.lat[-1]}]>"
+        )
+        lon = (
+            f"<{self.lon.shape}, "
+            f"[{self.lon[0]}, {self.lon[1]}, ..., {self.lon[-2]}, {self.lon[-1]}]>"
+        )
+        return "\n".join(
+            [
+                f"{type(self).__name__}(",
+                f"  mask={mask},",
+                f"  lat={lat}",
+                f"  lon={lon}",
+                ")",
+            ]
+        )
+
 
 @summarizable
 @dc.dataclass
