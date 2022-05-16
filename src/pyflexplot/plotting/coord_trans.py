@@ -134,6 +134,17 @@ class CoordinateTransformer:
         # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.axes_to_geo(x, y)
         x, y = self.geo_to_map(x_geo, y_geo)
+        if (
+            isinstance(self.proj_map, PlateCarree)
+            and not isinstance(x, float)
+            and len(x) == 2
+            and np.isclose(x[0], x[1])
+            and np.isclose(np.abs(x[0]), 180)
+        ):
+            # Fix edge case where lon range (-180, 180) is turned into (-180, -180)
+            # during the transformation
+            x[0] = -180.0
+            x[1] = +180.0
         return (x, y)
 
     @overload

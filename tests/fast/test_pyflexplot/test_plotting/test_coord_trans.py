@@ -111,5 +111,5 @@ def test_global_axes_to_map() -> None:
     )
     lon, lat = (-180.0, 180.0), (-90.0, 90.0)
     coords = trans.axes_to_map(lon, lat)
-    assert np.allclose(coords.lon, lon)
-    assert np.allclose(coords.lat, lat)
+    assert np.allclose(coords[0], lon)
+    assert np.allclose(coords[1], lat)

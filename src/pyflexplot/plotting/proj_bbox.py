@@ -210,10 +210,6 @@ class ProjectedBoundingBox:
             coords = np.concatenate(self.trans.geo_to_map(self.lon, self.lat))
         else:
             raise self._error("to_map")
-        if np.isclose(coords[0], coords[1]) and np.isclose(np.abs(coords[0]), 180):
-            # Sometimes, lon range (-180, 180) is turned into (-180, -180) above
-            coords[0] = -180.0
-            coords[1] = 180.0
         self.set("map", *coords)
         return self
 
