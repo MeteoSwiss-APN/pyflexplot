@@ -3,7 +3,9 @@
 import dataclasses as dc
 
 # Third-party
+import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
+import numpy as np
 import pytest
 
 # First-party
@@ -43,3 +45,15 @@ class TestRegLatLon:
         bbox = self.bbox(cfg)
         bbox.to_data()
         # breakpoint()
+
+
+def test_global() -> None:
+    """Test transformation of global bbox.
+
+    Implemented to reproduce a bug in production.
+
+    """
+    ax = plt.figure().add_axes((0.0, 0.05, 0.7872, 0.85), projection=ccrs.PlateCarree())
+    bb = ProjectedBoundingBox(ax=ax, projs=Projections.create_regular()).to_axes()
+    bb.to_map()  # Here, the bug triggered an exception
+    assert np.allclose(bb, (-180, 180, -90, 90))
