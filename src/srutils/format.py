@@ -1,5 +1,6 @@
 """Format objects as strings."""
 # Standard library
+from collections.abc import Sequence
 from typing import Any
 from typing import Collection
 from typing import List
@@ -106,7 +107,7 @@ def ordinal(i: Union[int, float, str], fmt: str = "", lang: str = "en") -> str:
     return f"{i}{sfx}"
 
 
-def nested_repr(obj: Any) -> str:
+def nested_repr(obj: Any, params: Optional[Sequence[str]] = None) -> str:
     """Format (optionally) nested object representations on multiple lines.
 
     Example:
@@ -118,14 +119,27 @@ def nested_repr(obj: Any) -> str:
         )
 
     """
+    if params is None:
+        try:
+            params = obj.get_params()
+        except AttributeError as e:
+            raise ValueError(
+                f"cannot derive params from {type(obj).__name__} obj"
+                "; consider passing params instead"
+            ) from e
     s_attrs_lst: List[str] = []
-    for param in obj.get_params():
+    for param in params:
         s_value = sfmt(getattr(obj, param))
         if "\n" in s_value:
             s_value = s_value.replace("\n", "\n  ")
         s_attrs_lst.append(f"{param}={s_value}")
     s_attrs = ",\n  ".join(s_attrs_lst)
     return f"{type(obj).__name__}(\n  {s_attrs},\n)"
+
+
+def indent(s: str, n: int = 1) -> str:
+    """Increase the indent level of a multiline string."""
+    return " " * n + ("\n" + " " * n).join(s.split("\n"))
 
 
 # pylint: disable=R0913  # too-many-arguments

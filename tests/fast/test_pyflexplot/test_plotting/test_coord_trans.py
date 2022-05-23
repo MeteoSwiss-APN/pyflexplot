@@ -11,6 +11,7 @@ from cartopy.crs import PlateCarree
 
 # First-party
 from pyflexplot.plotting.coord_trans import CoordinateTransformer
+from pyflexplot.plotting.proj_bbox import Projections
 
 
 @dc.dataclass
@@ -90,3 +91,25 @@ class TestRegLatLon:
     def test_geo_to_data(self, cfg):
         trans = self.trans(cfg)
         assert np.allclose(trans.geo_to_data(*cfg.xy_in), cfg.xy_out)
+
+
+def test_global_axes_to_map() -> None:
+    """Convert a global domain from axes to map coordinates.
+
+    Implemented to reproduce a bug in production.
+
+    """
+    ax = plt.figure().add_axes((0.0, 0.05, 0.7872, 0.85), projection=PlateCarree())
+    projs = Projections.create_regular()
+    trans = CoordinateTransformer(
+        trans_axes=ax.transAxes,
+        trans_data=ax.transData,
+        proj_geo=projs.geo,
+        proj_map=projs.map,
+        proj_data=projs.data,
+        invalid_ok=False,
+    )
+    lon, lat = (-180.0, 180.0), (-90.0, 90.0)
+    coords = trans.axes_to_map(lon, lat)
+    assert np.allclose(coords[0], lon)
+    assert np.allclose(coords[1], lat)

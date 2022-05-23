@@ -15,6 +15,9 @@ from cartopy.crs import Projection
 from cartopy.crs import RotatedPole
 from matplotlib.axes import Axes
 
+# First-party
+from srutils.format import indent
+
 # Local
 from ..utils.logging import log
 from ..utils.summarize import summarizable
@@ -106,6 +109,7 @@ class ProjectedBoundingBox:
             proj_data=projs.data,
             invalid_ok=False,
         )
+        self._ax: Axes = ax
 
     @property
     def lon(self) -> np.ndarray:
@@ -139,6 +143,10 @@ class ProjectedBoundingBox:
     def set(self, coord_type, lon0, lon1, lat0, lat1):
         if not all(np.isfinite(c) for c in (lon0, lon1, lat0, lat1)):
             raise ValueError(f"invalid coordinates: ({lon0}, {lon1}, {lat0}, {lat1}")
+        if np.isclose(lon0, lon1):
+            raise ValueError(f"longitudes are too close: ({lon0}, {lon1})")
+        if np.isclose(lat0, lat1):
+            raise ValueError(f"latitudes are too close: ({lat0}, {lat1})")
         self._curr_coord_type = coord_type
         self._curr_lon0 = lon0
         self._curr_lon1 = lon1
@@ -293,7 +301,7 @@ class ProjectedBoundingBox:
                     f"lon1={self.lon1:.2f}",
                     f"lat0={self.lat0:.2f}",
                     f"lat1={self.lat1:.2f}",
-                    f"trans={self.trans}",
+                    f"trans={indent(str(self.trans), 2).strip()}",
                 ]
             )
             + ",\n)"
