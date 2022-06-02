@@ -4,9 +4,8 @@ local/
 # Default test data link
 data
 
-# Plot test directory
-test_preset_plots/
-plot_*/
+# Non-permanent data, e.g. test output
+scratch/
 
 # Batch processing log files
 log/
