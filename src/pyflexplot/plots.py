@@ -745,7 +745,7 @@ def create_map_config(
         config_dct.update(conf_regional_scale)
     elif domain_type == "cloud":
         if model_name == "IFS-HRES":
-            if domain_width < 30:
+            if domain_width < 20:
                 config_dct.update(conf_country_scale)
             elif domain_width < 60:
                 config_dct.update(conf_regional_scale)

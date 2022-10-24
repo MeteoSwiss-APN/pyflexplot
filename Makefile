@@ -323,9 +323,19 @@ install: venv
 .PHONY: install-dev #CMD Install the package as editable with pinned runtime and\ndevelopment dependencies.
 install-dev: venv
 	@echo -e "\n[make install-dev] installing the package as editable with development dependencies"
+	conda install --yes --prefix "${VENV_DIR}" --file dev-requirements.yml  # pinned
+	# conda install --yes --prefix "${VENV_DIR}" --file requirements.in  # unpinned
+	# conda install --yes --prefix "${VENV_DIR}" --file dev-requirements.in  # unpinned
+	# ${PREFIX}python -m pip install -U pip
+	${PREFIX}python -m pip install --editable . ${PIP_OPTS}
+	${PREFIX}pre-commit install
+	${PREFIX}pyflexplot -V
+
+.PHONY: install-dev-unpinned #CMD Install the package as editable with unpinned runtime and\ndevelopment dependencies.
+install-dev-unpinned: venv
+	@echo -e "\n[make install-dev] installing the package as editable with development dependencies"
 	# conda install --yes --prefix "${VENV_DIR}" --file dev-requirements.txt  # pinned
-	conda install --yes --prefix "${VENV_DIR}" --file requirements.in  # unpinned
-	conda install --yes --prefix "${VENV_DIR}" --file dev-requirements.in  # unpinned
+	conda install --yes --prefix "${VENV_DIR}" --file requirements.in --file dev-requirements.in  # unpinned
 	# ${PREFIX}python -m pip install -U pip
 	${PREFIX}python -m pip install --editable . ${PIP_OPTS}
 	${PREFIX}pre-commit install
