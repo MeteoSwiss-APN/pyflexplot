@@ -1,0 +1,33 @@
+pipelineJob('pyflexplot_PR') {
+  parameters {
+        stringParam('sha1', 'main')
+  }
+  definition {
+    cpsScm {
+      scm {
+        git {
+          remote {
+            github('MeteoSwiss-APN/pyflexplot')
+            refspec('+refs/pull/*:refs/remotes/origin/pr/*')
+            credentials('466e4dd5-80af-4935-828f-a9fff24b46de')
+          }
+          branch('${sha1}')
+        }
+      }
+      triggers {
+        githubPullRequest {
+          orgWhitelist('MeteoSwiss-APN')
+          triggerPhrase('launch jenkins.*')
+          onlyTriggerPhrase()
+          useGitHubHooks()
+          extensions {
+            commitStatus {
+              context('MeteoSwiss Jenkins - pull request')
+            }
+          }
+        }
+      }
+      scriptPath('jenkins/Jenkinsfile')
+    }
+  }
+}

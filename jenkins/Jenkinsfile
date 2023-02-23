@@ -1,0 +1,130 @@
+pipeline {
+    options {
+    // the variable $WORKSPACE is assigned dynamically at the beginning of every stage
+    // and might change depending on the number of concurrent builds active.
+    // We can only allow 1 concurrent build to have a consistent access to $WORKSPACE
+    // Otherwise we should use stash/unstash for the miniconda installation
+        disableConcurrentBuilds()
+    }
+    environment {
+       PATH = "$WORKSPACE/miniconda/bin:$PATH"
+    }
+    agent {
+        label 'tsa'
+    }
+
+    post {
+        always{
+            echo 'Cleaning up workspace'
+            deleteDir()
+        }
+    }
+    stages {
+        stage('setup miniconda') {
+            steps {
+                sh '''#!/usr/bin/env bash
+                set -e
+                bash tools/setup_miniconda.sh -p ${WORKSPACE}
+                '''
+            }
+        }
+        stage('build package') {
+            steps {
+                sh '''#!/usr/bin/env bash
+                set -e
+                cd ${WORKSPACE}/pyflexplot
+                source ${WORKSPACE}/miniconda/etc/profile.d/conda.sh
+                conda init bash --no-user --install --system
+                conda activate
+                bash tools/setup_env.sh -n pyflexplot -u
+                conda activate pyflexplot
+                pip install --no-deps .
+                '''
+            }
+        }
+        stage('test') {
+            steps {
+                sh '''#!/usr/bin/env bash
+                source $WORKSPACE/miniconda/etc/profile.d/conda.sh
+                conda init bash --no-user --install --system
+                conda activate pyflexplot
+                cd ${WORKSPACE}/pyflexplot
+                pytest tests
+                '''
+            }
+        }
+        stage('dev-environment') {
+            steps {
+                sh '''#!/usr/bin/env bash
+                set -e
+                source $WORKSPACE/miniconda/etc/profile.d/conda.sh
+                conda init bash --no-user --install --system
+                conda activate
+                cd ${WORKSPACE}/pyflexplot
+                bash tools/setup_env.sh -n dev-pyflexplot -u
+                conda activate dev-pyflexplot
+                pip install --no-deps --editable .
+                '''
+            }
+        }
+        stage('dev-test') {
+            steps {
+                sh '''#!/usr/bin/env bash
+                source $WORKSPACE/miniconda/etc/profile.d/conda.sh
+                conda init bash --no-user --install --system
+                conda activate dev-pyflexplot
+                cd ${WORKSPACE}/pyflexplot
+                pytest tests
+                '''
+            }
+        }
+        stage('pinned-environment') {
+            steps {
+                sh '''#!/usr/bin/env bash
+                set -e
+                source $WORKSPACE/miniconda/etc/profile.d/conda.sh
+                conda init bash --no-user --install --system
+                conda activate
+                cd ${WORKSPACE}/pyflexplot
+                bash tools/setup_env.sh -n pinned-pyflexplot
+                conda activate pinned-pyflexplot
+                pip install --no-deps .
+                '''
+            }
+        }
+        stage('pinned-test') {
+            steps {
+                sh '''#!/usr/bin/env bash
+                source $WORKSPACE/miniconda/etc/profile.d/conda.sh
+                conda activate pinned-pyflexplot
+                cd ${WORKSPACE}/pyflexplot
+                pytest tests
+                '''
+            }
+        }
+        stage('pinned-dev-environment') {
+            steps {
+                sh '''#!/usr/bin/env bash
+                set -e
+                source $WORKSPACE/miniconda/etc/profile.d/conda.sh
+                conda init bash --no-user --install --system
+                conda activate
+                cd ${WORKSPACE}/pyflexplot
+                bash tools/setup_env.sh -n pinned-dev-pyflexplot
+                conda activate pinned-dev-pyflexplot
+                pip install --no-deps --editable .
+                '''
+            }
+        }
+        stage('pinned-dev-test') {
+            steps {
+                sh '''#!/usr/bin/env bash
+                source $WORKSPACE/miniconda/etc/profile.d/conda.sh
+                conda activate pinned-dev-pyflexplot
+                cd ${WORKSPACE}/pyflexplot
+                pytest tests
+                '''
+            }
+        }
+    }
+}

@@ -1,0 +1,17 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: a1078ae
+_src_path: git@github.com:MeteoSwiss-APN/mch-python-blueprint.git
+email: stefan.ruedisuehli@env.ethz.ch
+full_name: Stefan Ruedisuehli
+github_username: MeteoSwiss-APN
+module_name: pyflexplot
+project_doc_url: https://github.io/MeteoSwiss-APN/pyflexplot
+project_github: https://github.com/MeteoSwiss-APN/pyflexplot
+project_keywords: Dispersion, Flexpart, COSMO, mapping, visualization
+project_name: PyFlexPlot
+project_short_description: Stefan Ruedisuehli's PyFlexPlot
+project_slug: pyflexplot
+project_ssh_url: git+ssh://git@github.com/MeteoSwiss-APN/pyflexplot.git
+python_version: '3.10'
+version: 1.0.10
+year: '2023'
