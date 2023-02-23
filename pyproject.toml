@@ -80,6 +80,9 @@ known_third_party = [
 known_first_party = [
     # Add first-party modules that may be misclassified by isort
     "pyflexplot",
+    "srtools",
+    "srutils",
+    "words",
 ]
 
 [tool.mypy]
@@ -89,6 +92,17 @@ known_first_party = [
 # See https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
 module = [
     # Add external modules w/o type hints here
+    # Todo: replace by "type: ignore [import]" directives in code
+    "cartopy.*",
+    "click.*",
+    "geopy.*",
+    "IPython.*",
+    "matplotlib.*",
+    "netCDF4.*",
+    "PyPDF2.*",
+    "scipy.*",
+    "shapely.*",
+    "tomlkit.*",
 ]
 ignore_missing_imports = true
 
@@ -140,9 +154,20 @@ disable = [
     "R1720", # Unnecessary "elif" after "raise" (no-else-raise)
     "R1724", # Unnecessary "elif" after "continue" (no-else-continue)
     "W1116", # Second argument of isinstance is not a type (isinstance-second-argument-not-valid-type)
+    # Migrated from old blueprint, check if still needed
+    "W0602", # Using global for '...' but no assignment is done (global-variable-not-assigned)
+    "E0401", # Inable to import '...' (import-error)
+    # -> Wrongly triggered for relative imports (pylint v2.11.1, 2022-03-09)
+    # -> TODO Re-enable once fixed (see https://github.com/PyCQA/pylint/issues/3651)
+    "C0330", # Wrong hanging indentation before block (add 4 spaces)
+    "R0801", # Similar lines in 2 files (duplicate-code)
 ]
 # Ignore (sub-)modules that trigger errors like E1101 (no-member) or E0611 (no-name-in-module)
-ignored-modules = []
+ignored-modules = [
+    # Migrated from old blueprint, todo: replace by pylint disable directives in code
+    "cartopy",  # E1101 (no-member) (PlateCarree)
+    "netCDF4",  # E1101 (no-member)
+]
 
 [tool.pydocstyle]
 # All codes: http://www.pydocstyle.org/en/stable/error_codes.html
@@ -157,7 +182,7 @@ ignore = [
     # "D107", # Missing docstring in __init__
     "D203", # Blank line required before class docstring
     "D213", # Multi-line docstring summary should start at the second line
-    # "D405", # Section name should be properly capitalized
+    "D405", # Section name should be properly capitalized
     "D406", # Section name should end with a newline
     "D407", # Missing dashed underline after section
 ]
