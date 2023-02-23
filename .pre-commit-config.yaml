@@ -71,14 +71,14 @@ repos:
 # SR formatters changed something. A potential solution could be to write a
 # SR small bash script run-linters.sh that runs flake8, pylint and run-mypy.sh
 # SR in that order and aborts on error.
--   repo: local
-    hooks:
-    -   id: pylint
-        name: pylint
-        description: Check Python code for correctness, consistency and adherence to best practices
-        language: system
-        entry: pylint
-        types: [python]
+#-   repo: local
+#    hooks:
+#    -   id: pylint
+#        name: pylint
+#        description: Check Python code for correctness, consistency and adherence to best practices
+#        language: system
+#        entry: pylint
+#        types: [python]
 -   repo: local
     hooks:
     -   id: flake8

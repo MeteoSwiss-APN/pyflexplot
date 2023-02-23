@@ -163,11 +163,11 @@ disable = [
     "R0801", # Similar lines in 2 files (duplicate-code)
 ]
 # Ignore (sub-)modules that trigger errors like E1101 (no-member) or E0611 (no-name-in-module)
-ignored-modules = [
-    # Migrated from old blueprint, todo: replace by pylint disable directives in code
-    "cartopy",  # E1101 (no-member) (PlateCarree)
-    "netCDF4",  # E1101 (no-member)
-]
+#ignored-modules = [
+#    # Migrated from old blueprint, todo: replace by pylint disable directives in code
+#    "cartopy",  # E1101 (no-member) (PlateCarree)
+#    "netCDF4",  # E1101 (no-member)
+#]
 
 [tool.pydocstyle]
 # All codes: http://www.pydocstyle.org/en/stable/error_codes.html
