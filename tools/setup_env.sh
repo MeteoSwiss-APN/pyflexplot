@@ -20,7 +20,7 @@ HELP=false
 help_msg="Usage: $(basename "${0}") [-n NAME] [-p VER] [-u] [-e] [-m] [-h]
 
 Options:
- -n NAME    Env name [default: ${DEFAULT_ENV_NAME}
+ -n NAME    Env name [default: ${DEFAULT_ENV_NAME}]
  -p VER     Python version [default: ${PYVERSION}]
  -u         Use unpinned requirements (minimal version restrictions)
  -e         Export environment files (requires -u)

@@ -7,7 +7,7 @@ simulation results stored in NetCDF format.
 Installation
 ------------
 
-See README.rst for installation instructions.
+See [README.md](README.md) for installation instructions.
 
 Testing
 -------
@@ -92,7 +92,7 @@ job=1033
 preset=opr/$model/all_png
 infile=$(cd $data ; echo $job/output/grid_conc_*.nc)
 ```
-Run pyflexplot-test with above variables
+Run `pyflexplot-test` with above variables
 ```
 pyflexplot-test --num-procs=$SLURM_CPUS_PER_TASK \
     --old-rev=$old_rev --new-rev=$new_rev \
@@ -132,9 +132,9 @@ pyflexplot-test --num-procs=$SLURM_CPUS_PER_TASK --old-rev=$old_rev --new-rev=$n
     --work-dir=/scratch/kaufmann/pyflexplot-test/work/cosmo-2e/default
 ```
 Release allocated resources
-```
-exit
-```
+
+    exit
+
 
 Run pyflexplot
 --------------
@@ -164,7 +164,7 @@ Examples how to run pyflexplot
 Example using default input file.
 This example assumes you are in the pyflexplot directory.
 
-Default input files are searched for in ./data.
+Default input files are searched for in  `./data`.
 Link the default input files if you want to use these for tests.
 
     ln -s /store/mch/msopr/pyflexplot_testdata data
@@ -253,7 +253,7 @@ For ensembles, the infile needs to be a pattern rather than a single file
     infile000=$(echo $FP_JOBS/$exp/output/000/*.nc)
     infile=${infile000/\/000\//\/\{ens_member:03\}\/}
 
-Example: New test case with clound crossing dateline from both sides
+Example: New test case with cloud crossing dateline from both sides
 
     exp=test
     preset=opr/ifs-hres/all_pdf
