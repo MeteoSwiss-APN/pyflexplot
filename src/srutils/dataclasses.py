@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses as dc
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+from typing import Any, get_args
 from typing import Callable
 from typing import Collection
 from typing import get_type_hints
@@ -133,6 +133,12 @@ def cast_field_value(cls: Type, name: str, value: Any, **kwargs: Any) -> Any:
             exc = InvalidParameterValueError
             msg = f"value incompatible with type {type_name}"
         elif isinstance(e, UnsupportedTypeError):
+            for arg in get_args(type_):
+                try:
+                    if isinstance(value, arg):
+                        return value
+                except TypeError as e:
+                    pass
             exc = InvalidParameterNameError
             msg = f"type {type_name} not supported"
         else:
