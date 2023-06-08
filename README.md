@@ -86,8 +86,8 @@ and in pull requests to the main branch.
 
 ### Jenkins
 
-Two jenkins plans are available in the `jenkins/` folder. On the one hand `jenkins/Jenkinsfile` controls the nightly (weekly, monthly, ...) builds, on the other hand
-`jenkins/JenkinsJobPR` controls the pipeline invoked with the command `launch jenkins` in pull requests on GitHub. Your jenkins pipeline will not be set up
+A jenkinsfile is available in the `jenkins/` folder. It can be used for a multibranch jenkins project, which builds
+both commits on branches and PRs. Your jenkins pipeline will not be set up
 automatically. If you need to run your tests on CSCS machines, contact DevOps to help you with the setup of the pipelines. Otherwise, you can ignore the jenkinsfiles
 and exclusively run your tests and checks on GitHub actions.
 

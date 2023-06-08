@@ -578,7 +578,6 @@ def test_multiple(datadir, config):  # noqa:F811
     for var_setups in decompress_twice(
         setups, "dimensions.time", skip=["model.ens_member_id"]
     ):
-
         # Read input fields
         var_setups_dicts_pre = var_setups.dicts()
         field_groups = read_fields(

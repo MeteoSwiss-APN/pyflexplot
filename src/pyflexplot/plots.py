@@ -1640,7 +1640,6 @@ def format_vertical_level_range(
     value_top: Union[float, Sequence[float]],
     unit: str,
 ) -> Optional[str]:
-
     if (value_bottom, value_top) == (-1, -1):
         return None
 
@@ -1723,7 +1722,6 @@ def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -
 
 
 def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
-
     color_under = "darkgray"
     color_over = "lightgray"
 

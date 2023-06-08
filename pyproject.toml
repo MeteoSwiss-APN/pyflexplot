@@ -156,7 +156,7 @@ disable = [
     "W1116", # Second argument of isinstance is not a type (isinstance-second-argument-not-valid-type)
     # Migrated from old blueprint, check if still needed
     "W0602", # Using global for '...' but no assignment is done (global-variable-not-assigned)
-    "E0401", # Inable to import '...' (import-error)
+    "E0401", # Unable to import '...' (import-error)
     # -> Wrongly triggered for relative imports (pylint v2.11.1, 2022-03-09)
     # -> TODO Re-enable once fixed (see https://github.com/PyCQA/pylint/issues/3651)
     "C0330", # Wrong hanging indentation before block (add 4 spaces)
@@ -194,4 +194,5 @@ ignore_directives = [
 ]
 
 [tool.codespell]
-ignore-words-list = "ue,fo"
+ignore-words-list = "ende,ue,fo,activ,nd,feld,nd"
+skip = "requirements/*,*.pdf"

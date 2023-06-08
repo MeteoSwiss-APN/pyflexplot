@@ -599,7 +599,6 @@ class LevelRangeFormatterAnd(LevelRangeFormatter):
         )
 
     def _format_closed(self, lvl0: float, lvl1: float) -> Components:
-
         if self.include == "lower":
             op0_fmtd = r"$\tt \geq$"
             op1_fmtd = r"$\tt <$ "

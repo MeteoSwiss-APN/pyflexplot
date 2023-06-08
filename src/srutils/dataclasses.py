@@ -5,9 +5,10 @@ from __future__ import annotations
 import dataclasses as dc
 from datetime import datetime
 from datetime import timedelta
-from typing import Any, get_args
+from typing import Any
 from typing import Callable
 from typing import Collection
+from typing import get_args
 from typing import get_type_hints
 from typing import Iterable
 from typing import Optional

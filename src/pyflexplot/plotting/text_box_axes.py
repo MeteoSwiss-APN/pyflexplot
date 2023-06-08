@@ -424,7 +424,6 @@ class TextBoxAxes:
 
     @staticmethod
     def _prepare_line_colors(blocks, colors, default_color):
-
         if colors is None:
             colors_blocks = [None] * len(blocks)
         elif len(colors) == len(blocks):

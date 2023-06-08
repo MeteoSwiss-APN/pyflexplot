@@ -190,7 +190,6 @@ class FilePathFormatter:
             rxs = r"{" + key + r"(:[^}]*)?}"
             re.finditer(rxs, path)
             for m in re.finditer(rxs, path):
-
                 # Obtain format specifier (if there is one)
                 try:
                     f = m.group(1) or ""

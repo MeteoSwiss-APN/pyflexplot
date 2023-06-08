@@ -223,7 +223,6 @@ class Test_ContextDependent_ManyToMany_BracketInterface:
 
 
 class Test_Interface_AddWords:
-
     sol = {
         ("train", None, "en"): "train",
         ("train", None, "de"): "Zug",
