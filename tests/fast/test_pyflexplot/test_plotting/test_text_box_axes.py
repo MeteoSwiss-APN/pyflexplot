@@ -24,7 +24,6 @@ class Test_TextBoxAxes_Summarize:
             "type": "Figure",
             "bbox": {"type": "TransformedBbox", "bounds": (0.0, 0.0, 100.0, 100.0)},
             "axes": [{},
-                #{"type": "AxesSubplot"},
                 {
                     "type": "Axes",
                     "bbox": {
