@@ -21,7 +21,7 @@ def truncate_cmap(
 
     """
     if isinstance(cmap, str):
-        cmap = mpl.cm.get_cmap(cmap)
+        cmap = mpl.pyplot.get_cmap(cmap)
     return mpl.colors.LinearSegmentedColormap.from_list(
         f"truncated({cmap.name}, {minval:.2f}, {maxval:.2f})",
         cmap(np.linspace(minval, maxval, n)),

@@ -902,7 +902,10 @@ def create_panel_config(
             n_colors += 1
         if extend in ["max", "both"] and not color_over:
             n_colors += 1
-        cmap = mpl.cm.get_cmap(cmap, lut=n_colors)
+        cmap = mpl.pyplot.get_cmap(cmap)
+        if n_colors > 1:
+            cmap = mpl.colors.ListedColormap(cmap(np.linspace(0, 1, n_colors)))
+
         colors: list[ColorType]
         try:
             colors = cmap.colors.tolist()
