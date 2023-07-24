@@ -79,7 +79,6 @@ class TextBoxElementText(TextBoxElement):
         self.replace_edge_spaces = replace_edge_spaces
         self.edge_spaces_replacement_char = edge_spaces_replacement_char
         self.kwargs = kwargs
-        print("TEXTBOXELEMENTTEXT ", s, self.kwargs.keys())
         # SR_TMP < TODO consider removing this
         # Add alignment parameters, unless specified in input kwargs
         self.kwargs["ha"] = self.kwargs.get(
