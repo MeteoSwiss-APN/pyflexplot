@@ -331,7 +331,7 @@ def cast_value(
     elif "Optional" in type_name:
         if value in [None, "None"]:
             return None
-        inner_type = [i for i in get_args(type_) if not i==type(None)][0]
+        inner_type = [i for i in get_args(type_) if not i == type(None)][0]
         try:
             return cast_value(inner_type, value, **kwargs)
         except IncompatibleTypesError:
@@ -364,15 +364,15 @@ def cast_value(
     elif "Tuple" in type_name:
         value = prepare_wrapped_value(value, type_name, tuple)
         inner_types = [t for t in get_args(type_) if t is not Ellipsis]
-        if len(inner_types)==0:
+        if len(inner_types) == 0:
             return prepare_wrapped_value(value, type_name)
-        if len(inner_types)==1:
+        if len(inner_types) == 1:
             inner_type = inner_types[0]
             inner_values = [
                 cast_value(inner_type, inner_value, **kwargs) for inner_value in value
             ]
             return tuple(inner_values)
-        elif len(inner_types)>1:
+        elif len(inner_types) > 1:
             inner_values = [
                 cast_value(inner_type, inner_value, **kwargs)
                 for inner_type, inner_value in zip(inner_types, value)
@@ -382,12 +382,12 @@ def cast_value(
     elif "List" in type_name:
         value = prepare_wrapped_value(value, type_name, list)
         inner_type = get_args(type_)[0]
-        return [cast_value(inner_type, inner_value, **kwargs) for inner_value in value]        
+        return [cast_value(inner_type, inner_value, **kwargs) for inner_value in value]
 
     elif "Sequence" in type_name:
         value = prepare_wrapped_value(value, type_name)
         inner_types = get_args(type_)
-        if len(inner_types)==0:
+        if len(inner_types) == 0:
             return prepare_wrapped_value(value, type_name)
         inner_type = inner_types[0]
         cls: Callable[[Iterable], Sequence] = (

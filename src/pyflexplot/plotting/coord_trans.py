@@ -142,10 +142,14 @@ class CoordinateTransformer:
         ):
             # Fix edge case where lon range (-180, 180) can invert to (180, -180)
             # during the transformation
-            if np.isclose(np.abs(x_map[0]), 180, atol=0.5) and np.isclose(x_map[0], -x[0], atol=0.5):
-                x_map[0] = np.sign(x[0])*180.0
-            if np.isclose(np.abs(x_map[1]), 180, atol=0.5) and np.isclose(x_map[1], -x[1], atol=0.5):
-                x_map[1] = np.sign(x[1])*180.0
+            if np.isclose(np.abs(x_map[0]), 180, atol=0.5) and np.isclose(
+                x_map[0], -x[0], atol=0.5
+            ):
+                x_map[0] = np.sign(x[0]) * 180.0
+            if np.isclose(np.abs(x_map[1]), 180, atol=0.5) and np.isclose(
+                x_map[1], -x[1], atol=0.5
+            ):
+                x_map[1] = np.sign(x[1]) * 180.0
         return (x_map, y_map)
 
     @overload
