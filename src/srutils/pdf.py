@@ -7,10 +7,10 @@ import os
 from typing import Sequence
 
 # Third-party
-from PyPDF2 import PdfFileReader
-from PyPDF2 import PdfFileWriter
-from PyPDF2.pdf import PageObject
-from PyPDF2.utils import PdfReadError
+from pypdf import PdfReader
+from pypdf import PdfWriter
+from pypdf._page import PageObject
+from pypdf.errors import PdfReadError
 
 
 @dc.dataclass
@@ -21,9 +21,9 @@ class MultiPagePDF:
 
     def write(self, path: str) -> None:
         """Write the file to disk."""
-        writer = PdfFileWriter()
+        writer = PdfWriter()
         for page in self.pages:
-            writer.addPage(page)
+            writer.add_page(page)
         dir_path = os.path.dirname(path)
         if dir_path:
             os.makedirs(dir_path, exist_ok=True)
@@ -36,11 +36,11 @@ class MultiPagePDF:
         pages: list[PageObject] = []
         for path_i in paths:
             try:
-                file = PdfFileReader(path_i)
+                file = PdfReader(path_i)
             except (ValueError, TypeError, PdfReadError) as e:
                 # Occur sporadically; likely a file system issue
                 raise PdfReadError(path_i) from e
-            page = file.getPage(0)
+            page = file.pages[0]
             pages.append(page)
         return pages
 
