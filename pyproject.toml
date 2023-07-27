@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyflexplot"
-version = "1.0.11"
+version = "1.0.12"
 description = "Stefan Ruedisuehli's PyFlexPlot"
 readme = "README.md"
 keywords = [
@@ -22,9 +22,9 @@ classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     {name="Stefan Ruedisuehli", email="stefan.ruedisuehli@env.ethz.ch"},
 ]
