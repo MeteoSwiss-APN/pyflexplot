@@ -133,20 +133,24 @@ class CoordinateTransformer:
         """Transform from axes to map coordinates."""
         # pylint: disable=E0633  # unpacking-non-sequence
         x_geo, y_geo = self.axes_to_geo(x, y)
-        x, y = self.geo_to_map(x_geo, y_geo)
+        x_map, y_map = self.geo_to_map(x_geo, y_geo)
 
         if (
             isinstance(self.proj_map, PlateCarree)
-            and not isinstance(x, float)
+            and not isinstance(x_map, float)
             and len(x) == 2
-            and np.isclose(x[0], x[1], atol=0.5)
-            and np.isclose(np.abs(x[0]), 180, atol=0.5)
         ):
-            # Fix edge case where lon range (-180, 180) is turned into (-180, -180)
+            # Fix edge case where lon range (-180, 180) can invert to (180, -180)
             # during the transformation
-            x[0] = -180.0
-            x[1] = +180.0
-        return (x, y)
+            if np.isclose(np.abs(x_map[0]), 180, atol=0.5) and np.isclose(
+                x_map[0], -x[0], atol=0.5
+            ):
+                x_map[0] = np.sign(x[0]) * 180.0
+            if np.isclose(np.abs(x_map[1]), 180, atol=0.5) and np.isclose(
+                x_map[1], -x[1], atol=0.5
+            ):
+                x_map[1] = np.sign(x[1]) * 180.0
+        return (x_map, y_map)
 
     @overload
     def data_to_axes(self, x: float, y: float) -> tuple[float, float]:

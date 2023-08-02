@@ -10,12 +10,14 @@ from typing import Callable
 from typing import Collection
 from typing import get_args
 from typing import get_type_hints
+from typing import get_origin
 from typing import Iterable
 from typing import Optional
 from typing import Sequence
 from typing import Type
 from typing import TypeVar
 from typing import Union
+
 
 # First-party
 from srutils.datetime import derive_datetime_fmt
@@ -123,17 +125,17 @@ def cast_field_value(cls: Type, name: str, value: Any, **kwargs: Any) -> Any:
     """
     try:
         type_ = get_type_hints(cls)[name]
-    except KeyError as e:
-        raise InvalidParameterNameError(name) from e
+    except KeyError as ex:
+        raise InvalidParameterNameError(name) from ex
     try:
         return cast_value(type_, value, **kwargs)
-    except Exception as e:
+    except Exception as ex:
         exc: Type[Exception]
         type_name = type_.__name__ if isinstance(type_, type) else type
-        if isinstance(e, IncompatibleTypesError):
+        if isinstance(ex, IncompatibleTypesError):
             exc = InvalidParameterValueError
             msg = f"value incompatible with type {type_name}"
-        elif isinstance(e, UnsupportedTypeError):
+        elif isinstance(ex, UnsupportedTypeError):
             for arg in get_args(type_):
                 try:
                     if isinstance(value, arg):
@@ -143,8 +145,8 @@ def cast_field_value(cls: Type, name: str, value: Any, **kwargs: Any) -> Any:
             exc = InvalidParameterNameError
             msg = f"type {type_name} not supported"
         else:
-            raise e
-        raise exc(f"{msg}: {cls.__name__}.{name} = {sfmt(value)}") from e
+            raise ex
+        raise exc(f"{msg}: {cls.__name__}.{name} = {sfmt(value)}") from ex
 
 
 # pylint: disable=R0911  # too-many-return-statements (>6)
@@ -186,10 +188,11 @@ def cast_value(
             sequence of one-character strings, as is their default behavior.
 
     """
+    type_name = None
     try:
-        type_ = type_.__name__  # type: ignore
+        type_name = type_.__name__  # type: ignore
     except AttributeError:
-        type_ = str(type_)
+        type_ = str(type_name)
     if bool_mode not in ["native", "intuitive"]:
         raise ValueError(f"bool_mode neither 'native' nor 'intuitive': {bool_mode}")
     timedelta_unit_choices = [
@@ -276,17 +279,17 @@ def cast_value(
                 raise error(value, type_, msg)
         return value
 
-    if type_ == "typing.Any":
+    if type_name == "Any":
         return value
 
-    elif type_ == "NoneType":
+    elif type_name == "NoneType":
         if isinstance(value, type(None)) or value == "None":
             return None
-        raise error(value, type_)
+        raise error(value, type_name)
 
-    elif type_ == "bool":
+    elif type_name == "bool":
         if isinstance(value, Collection) and not isinstance(value, str):
-            raise error(value, type_, "is a collection")
+            raise error(value, type_name, "is a collection")
         if bool_mode == "intuitive":
             try:
                 value = int(value)
@@ -299,45 +302,43 @@ def cast_value(
                 }.get(str(value).lower(), value)
         return bool(value)
 
-    elif type_ == "str":
+    elif type_name == "str":
         if isinstance(value, Collection) and not isinstance(value, str):
-            raise error(value, type_, "is a collection")
+            raise error(value, type_name, "is a collection")
         return str(value)
 
-    elif type_ in ["int", "float"]:
+    elif type_name in ["int", "float"]:
         try:
-            return {"int": int, "float": float}[type_](value)
+            return {"int": int, "float": float}[type_name](value)
         except (TypeError, ValueError) as e:
-            raise error(value, type_) from e
+            raise error(value, type_name) from e
 
-    elif type_.startswith("typing.Union["):
-        inner_types = split_outside_parens(
-            type_[len("typing.Union[") : -len("]")], ", ", parens="[]"
-        )
+    elif "Union" in type_name:
+        inner_types = get_args(type_)
         if "NoneType" in inner_types:
             inner_types.remove("NoneType")
             inner_types.insert(0, "NoneType")
         for inner_type in inner_types:
-            if has_same_type(value, inner_type):
+            if type(value) == inner_type:
                 return value
         for inner_type in inner_types:
             try:
                 return cast_value(inner_type, value, **kwargs)
             except IncompatibleTypesError:
                 pass
-        raise error(value, type_, f"no compatible inner type: {inner_types}")
+        raise error(value, type_name, f"no compatible inner type: {inner_types}")
 
-    elif type_.startswith("typing.Optional["):
+    elif "Optional" in type_name:
         if value in [None, "None"]:
             return None
-        inner_type = type_[len("typing.Optional[") : -len("]")]
+        inner_type = [i for i in get_args(type_) if not i == type(None)][0]
         try:
             return cast_value(inner_type, value, **kwargs)
         except IncompatibleTypesError:
             pass
-        raise error(value, type_, f"incompatible inner type: {inner_type}")
+        raise error(value, type_name, f"incompatible inner type: {inner_type}")
 
-    elif type_ in ["datetime", "datetime.datetime"]:
+    elif type_name in ["datetime", "datetime.datetime"]:
         if isinstance(datetime_fmt, str):
             datetime_fmt = (datetime_fmt,)  # type: ignore
         assert isinstance(datetime_fmt, Sequence)  # mypy
@@ -347,56 +348,48 @@ def cast_value(
                 try:
                     fmt = derive_datetime_fmt(value)
                 except ValueError as e:
-                    raise error(value, type_, "cannot derive datetime_fmt") from e
+                    raise error(value, type_name, "cannot derive datetime_fmt") from e
             try:
                 return datetime.strptime(str(value), fmt)
             except ValueError:
                 pass
-        raise error(value, type_, f"no compatible datetime_fmt: {datetime_fmt}")
+        raise error(value, type_name, f"no compatible datetime_fmt: {datetime_fmt}")
 
-    elif type_ in ["timedelta", "datetime.timedelta"]:
+    elif type_name in ["timedelta", "datetime.timedelta"]:
         try:
             return timedelta(**{timedelta_unit: value})
         except TypeError as e:
-            raise error(value, type_, f"timedelta_unit: {timedelta_unit}") from e
+            raise error(value, type_name, f"timedelta_unit: {timedelta_unit}") from e
 
-    if type_ in ["tuple", "typing.Tuple"]:
-        return prepare_wrapped_value(value, type_, tuple)
-
-    elif type_.startswith("typing.Tuple["):
-        value = prepare_wrapped_value(value, type_, tuple)
-        if type_.endswith(", ...]"):
-            inner_type = type_[len("typing.Tuple[") : -len(", ...]")]
+    elif "Tuple" in type_name:
+        value = prepare_wrapped_value(value, type_name, tuple)
+        inner_types = [t for t in get_args(type_) if t is not Ellipsis]
+        if len(inner_types) == 0:
+            return prepare_wrapped_value(value, type_name)
+        if len(inner_types) == 1:
+            inner_type = inner_types[0]
             inner_values = [
                 cast_value(inner_type, inner_value, **kwargs) for inner_value in value
             ]
             return tuple(inner_values)
-        else:
-            inner_types = split_outside_parens(
-                type_[len("typing.Tuple[") : -len("]")], ", ", parens="[]"
-            )
-            if len(value) != len(inner_types):
-                raise error(value, type_, "wrong length")
+        elif len(inner_types) > 1:
             inner_values = [
                 cast_value(inner_type, inner_value, **kwargs)
                 for inner_type, inner_value in zip(inner_types, value)
             ]
             return tuple(inner_values)
 
-    if type_ in ["list", "typing.List"]:
-        return prepare_wrapped_value(value, type_, list)
-
-    elif type_.startswith("typing.List["):
-        value = prepare_wrapped_value(value, type_, list)
-        inner_type = type_[len("typing.List[") : -len("]")]
+    elif "List" in type_name:
+        value = prepare_wrapped_value(value, type_name, list)
+        inner_type = get_args(type_)[0]
         return [cast_value(inner_type, inner_value, **kwargs) for inner_value in value]
 
-    elif type_ == "typing.Sequence":
-        return prepare_wrapped_value(value, type_)
-
-    elif type_.startswith("typing.Sequence["):
-        value = prepare_wrapped_value(value, type_)
-        inner_type = type_[len("typing.Sequence[") : -len("]")]
+    elif "Sequence" in type_name:
+        value = prepare_wrapped_value(value, type_name)
+        inner_types = get_args(type_)
+        if len(inner_types) == 0:
+            return prepare_wrapped_value(value, type_name)
+        inner_type = inner_types[0]
         cls: Callable[[Iterable], Sequence] = (
             list if isinstance(value, str) else type(value)  # type: ignore
         )
@@ -404,8 +397,8 @@ def cast_value(
             [cast_value(inner_type, inner_value, **kwargs) for inner_value in value]
         )
 
-    elif type_ == type(value).__name__:
+    elif type_name == type(value).__name__:
         return value
 
     else:
-        raise UnsupportedTypeError(f"{type_}")
+        raise UnsupportedTypeError(f"{type_name}")
