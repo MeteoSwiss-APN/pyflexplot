@@ -156,7 +156,6 @@ class FilePathFormatter:
 
         # Format the file path
         # Don't use str.format in order to handle multival elements
-        print("SETUP IN OUTPUT ")
         kwargs = {
             "base_time": base_time,
             "domain": setup.panels.collect_equal("domain"),
