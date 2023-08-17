@@ -1,6 +1,7 @@
 """Output."""
 # Standard library
 import re
+import os
 from datetime import datetime
 from typing import Any
 from typing import cast
@@ -34,6 +35,7 @@ class FilePathFormatter:
         release_site: str,
         release_start: datetime,
         time_steps: Sequence[Union[int, datetime]],
+        species_name=str,
     ) -> str:
         log(dbg=f"formatting path '{template}'")
         path = self._format_template(
@@ -42,6 +44,7 @@ class FilePathFormatter:
             release_site=release_site,
             release_start=release_start,
             time_steps=time_steps,
+            species_name=species_name,
         )
         while path in self.previous:
             template = self.derive_unique_path(
@@ -51,6 +54,7 @@ class FilePathFormatter:
                     release_site=release_site,
                     release_start=release_start,
                     time_steps=time_steps,
+                    species_name=species_name,
                 )
             )
             path = self._format_template(
@@ -59,6 +63,7 @@ class FilePathFormatter:
                 release_site=release_site,
                 release_start=release_start,
                 time_steps=time_steps,
+                species_name=species_name,
             )
         self.previous.append(path)
         log(dbg=f"formatted path '{path}'")
@@ -73,6 +78,7 @@ class FilePathFormatter:
         release_site: str,
         release_start: datetime,
         time_steps: Sequence[Union[int, datetime]],
+        species_name: str,
     ) -> str:
         # Prepare base time
         base_time = self._format_time_step(
@@ -150,6 +156,7 @@ class FilePathFormatter:
 
         # Format the file path
         # Don't use str.format in order to handle multival elements
+        print("SETUP IN OUTPUT ")
         kwargs = {
             "base_time": base_time,
             "domain": setup.panels.collect_equal("domain"),
@@ -164,6 +171,7 @@ class FilePathFormatter:
             "release_site": release_site,
             "release_start": release_start_fmtd,
             "species_id": setup.panels.collect_equal("dimensions.species_id"),
+            "species_name": species_name,
             "time_idx": time_idx if time_idx is not None else time_idx_seq,
             "time_step": time_step if time_step is not None else time_step_seq,
         }
@@ -218,9 +226,8 @@ class FilePathFormatter:
         # log(dbg=f"deriving unique path from '{path}'")
 
         # Extract suffix
-        if path.endswith(".png") or path.endswith(".pdf"):
-            suffix = f".{path.split('.')[-1]}"
-        else:
+        _, suffix = os.path.splitext(path)
+        if suffix not in [".pdf", ".png", ".shp"]:
             raise NotImplementedError(f"unknown suffix: {path}")
         path_base = path[: -len(suffix)]
 
