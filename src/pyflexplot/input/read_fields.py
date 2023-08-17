@@ -103,6 +103,7 @@ def read_fields(
             be used outside of tests.
 
     """
+    print("READ FIELDS HERE IN read_fields")
     setup_group = setup_group.copy()
     model_setup = setup_group.collect_equal("model")
     ens_member_ids = setup_group.ens_member_ids
@@ -137,13 +138,11 @@ def read_fields(
         model_setup.base_time = int(time_steps[0])
     for plot_type_setup in setup_group:
         plot_type_setup.model.base_time = model_setup.base_time
-
     # SR_TODO Consider moving group_setups_by_plot_type into complete_dimensions
     setup_group = setup_group.complete_dimensions(
         raw_dimensions=raw_dimensions,
         species_ids=species_ids,
     )
-
     # Limit number of plots
     if only and len(setup_group) > only:
         log(dbg=f"[only:{only}] skip {len(setup_group) - only}/{len(setup_group)}")
@@ -329,14 +328,19 @@ class InputFileEnsemble:
 
             # Compute some statistics across all time steps
             time_stats = FieldTimeProperties(fld_time)
-
+            scale_factor = panel_setup_i.dimensions.get("multiplier")
             # Create Field objects at requested time steps
             for panel_setup_req_time, mdata_req_time in zip(
                 panel_setups_req_time, self.mdata_tss
             ):
                 time_idx: int = panel_setup_req_time.dimensions.time
+                output_field = (
+                    fld_time[time_idx] * scale_factor
+                    if scale_factor is not None
+                    else fld_time[time_idx]
+                )
                 field = Field(
-                    fld=fld_time[time_idx],
+                    fld=output_field,
                     lat=self.lat,
                     lon=self.lon,
                     mdata=mdata_req_time,

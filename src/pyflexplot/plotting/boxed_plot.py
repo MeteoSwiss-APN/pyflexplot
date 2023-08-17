@@ -34,6 +34,7 @@ from .domain import Domain
 from .map_axes import MapAxes
 from .map_axes import MapAxesConfig
 from .text_box_axes import TextBoxAxes
+from ..save_data import *
 
 
 @summarizable

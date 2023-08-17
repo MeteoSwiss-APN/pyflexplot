@@ -54,6 +54,7 @@ class CoreDimensions:
     species_id: Optional[int] = None
     time: Optional[int] = None
     variable: Optional[str] = None
+    multiplier: Optional[float] = None
 
     def __post_init__(self) -> None:
         # Check variable
