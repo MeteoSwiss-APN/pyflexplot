@@ -1,19 +1,21 @@
+"""
+This module contains the implementation for data saving strategies, 
+including shapefile creation.
+"""
 # Standard library
 import os
 from pathlib import Path
 import zipfile
+import xml.etree.ElementTree as ET
 
 # Third-party
-from matplotlib import pyplot as plt
-from matplotlib.figure import Figure
-from pyflexplot.plot_layouts import BoxedPlotLayout
-import shapefile
 import numpy as np
-
-from pyflexplot.plotting.boxed_plot import BoxedPlot, BoxedPlotConfig
-from pyflexplot.plotting.text_box_axes import TextBoxAxes
+import shapefile
 
 # Local
+from pyflexplot.plot_layouts import BoxedPlotLayout
+from pyflexplot.plotting.boxed_plot import BoxedPlot, BoxedPlotConfig
+from pyflexplot.plotting.text_box_axes import TextBoxAxes
 from .input.field import FieldGroup
 from .utils.logging import log
 
@@ -41,7 +43,7 @@ class DataSaver:
 
 
 class GeneralDataSaver:
-    def save(self, filename: str, plot: BoxedPlot, data: FieldGroup) -> None:
+    def save(self, filename: str, plot: BoxedPlot, _data: FieldGroup) -> None:
         plot.write(filename)
         # SR_TMP < TODO clean this up; add optional setup param for file name
         if "standalone_release_info" in plot.config.labels:
@@ -98,7 +100,7 @@ class GeneralDataSaver:
 
 
 class ShapeSaver:
-    def save(self, filename: str, plot: BoxedPlot, data: FieldGroup) -> None:
+    def save(self, filename: str, _plot: BoxedPlot, data: FieldGroup) -> None:
         base_file_dir, _ = os.path.splitext(filename)
         with zipfile.ZipFile(f"{filename}.zip", "w") as zip_file:
             lat_values = []
@@ -107,11 +109,11 @@ class ShapeSaver:
             for n, field in enumerate(data):
                 grid_north_pole_lat = field.mdata.simulation.grid_north_pole_lat
                 grid_north_pole_lon = field.mdata.simulation.grid_north_pole_lon
-                fld = field.fld.ravel() * 10e9
+                fld = field.fld.ravel()
                 relevant_indices = np.where(fld > 0)
-                fld = fld[relevant_indices]
-                field_name = f"field{n}"
-                shapefile_writer.field(field_name, "F", 8, 13)
+                fld = np.log10(fld[relevant_indices])
+                field_name = f"{field.mdata.species.name}"
+                shapefile_writer.field(field_name, "F", 8, 15)
                 if len(fld) == 0:
                     shapefile_writer.point(0, 0)
                     shapefile_writer.record(field_name=[0.0])
@@ -119,6 +121,7 @@ class ShapeSaver:
                     lon_values.extend([0, 0])
                     continue
 
+                print("MIN VALUE SAVE DATA ", np.min(fld))
                 coordinates = np.array(
                     [[lon, lat] for lat in field.lat for lon in field.lon]
                 )[relevant_indices]
@@ -146,54 +149,110 @@ class ShapeSaver:
             filename_parts = filename.split(".")
             filename_parts[0] += "_domain"
             domain_filename = ".".join(filename_parts)
-
             domain_shapefile_writer = shapefile.Writer(
                 f"{domain_filename}", shapeType=shapefile.POLYGON
             )
             domain_shapefile_writer.field("name", "C")
+
+            prop_dict = {
+                k: v for d in field.mdata.dict().values() for k, v in d.items()
+            }
+            # print(" jksdfmnksdfmn ",_plot.config.labels, "\n KDLFVHRJF ", prop_dict)
+            print(" jksdfmnksdfmn ", _plot.config.labels)
+            for prop in prop_dict.keys():
+                domain_shapefile_writer.field(prop, "C")
             domain_corners = [
                 (min_lon, min_lat),
                 (min_lon, max_lat),
                 (max_lon, max_lat),
                 (max_lon, min_lat),
             ]
-            domain_shapefile_writer.record("domain")
+            ### Create shape file from domain
             domain_shapefile_writer.poly([domain_corners])
+            domain_shapefile_writer.record("domain", *prop_dict.values())
             domain_basename = domain_filename.rsplit(".", 1)[0]
             domain_shapefile_writer.close()
-
-            for ext in [".shp", ".shx", ".dbf"]:
-                file_to_copy = f"{base_file_dir}{ext}"
-                with open(file_to_copy, "rb") as file_in_zip:
-                    zip_file.writestr(
-                        f"{os.path.basename(base_file_dir)}{ext}", file_in_zip.read()
-                    )
-                file_in_zip.close()
-                os.remove(file_to_copy)
-
-                domain_file_to_copy = f"{domain_basename}{ext}"
-                with open(domain_file_to_copy, "rb") as domain_in_zip:
-                    zip_file.writestr(
-                        f"{os.path.basename(domain_basename)}{ext}",
-                        domain_in_zip.read(),
-                    )
-                domain_in_zip.close()
-                os.remove(domain_file_to_copy)
+            self._write_metadata_file(base_file_dir, zip_file, _plot.config.labels)
+            self._move_shape_file_to_zip(base_file_dir, zip_file)
+            self._move_shape_file_to_zip(domain_basename, zip_file)
 
             # Some GIS Software require information about the projection
-            proj_file_content = (
-                'GEOGCS["WGS 84",DATUM["WGS_1984",'
-                'SPHEROID["WGS 84",6378137,298.257223563]],'
-                'PRIMEM["Greenwich",0],'
-                'UNIT["degree",0.0174532925199433]]'
+            self._write_projection_file_to_zip(
+                os.path.basename(base_file_dir), zip_file
             )
-            zip_file.writestr(
-                f"{os.path.basename(base_file_dir)}.prj", proj_file_content
-            )
-            zip_file.writestr(
-                f"{os.path.basename(domain_basename)}.prj", proj_file_content
+            self._write_projection_file_to_zip(
+                os.path.basename(domain_basename), zip_file
             )
             zip_file.close()
+
+    def _move_shape_file_to_zip(self, base_file_dir: str, zip_file: zipfile.ZipFile):
+        extensions = [".shp", ".shx", ".dbf"]
+        if "_domain" not in base_file_dir:
+            extensions += [".shp.xml"]
+        for ext in extensions:
+            file_to_copy = f"{base_file_dir}{ext}"
+            with open(file_to_copy, "rb") as file_in_zip:
+                zip_file.writestr(
+                    f"{os.path.basename(base_file_dir)}{ext}", file_in_zip.read()
+                )
+            file_in_zip.close()
+            os.remove(file_to_copy)
+
+    def _write_metadata_file(
+        self, filename: str, zip_file: zipfile.ZipFile, metadata: dict = None
+    ):
+        title_string = list(metadata["title"].values())[0]
+        title_latex_string = "<BR>".join(list(metadata["title"].values()))
+        release_latex_string = metadata["release_info"]["lines_str"].replace(
+            "\n", "<BR>"
+        )
+        replacements = {
+            "\\\\": "",  # Remove double backslashes
+            "\\mathrm": "",  # Remove the \mathrm command
+            "\\circ": "°",  # Degree symbol
+            '\\,"': "",  # Remove small space
+            '\\"o': "ö",  # ö character
+            '\\"a': "ä",  # ä character
+            '\\"u': "ü",  # ü character
+            "$": "",  # Remove dollar signs used for math mode
+            "^": "",  # Superscript (might not be needed in plain text)
+            "s^{-1}": "s-1",  # Inverse seconds
+            "\\t": " ",  # Tab character
+            "\\n": " ",
+            "{": "",
+            "}": "",
+            "\\,": " ",
+        }
+
+        for key, value in replacements.items():
+            release_latex_string = release_latex_string.replace(key, value)
+            title_latex_string = title_latex_string.replace(key, value)
+            title_string = title_string.replace(key, value)
+
+        total_content = f"{title_latex_string}<BR><BR>{release_latex_string}"
+        print("META ", total_content)
+
+        xml_content = f"""<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+    <dataIdInfo>
+    <idCitation><resTitle>{title_string}</resTitle></idCitation>
+        <idAbs>
+            <![CDATA[{total_content}]]>
+        </idAbs>
+    </dataIdInfo>
+</metadata>"""
+
+        with open(f"{filename}.shp.xml", "w", encoding="utf-8") as f:
+            f.write(xml_content)
+
+    def _write_projection_file_to_zip(self, base_name: str, zip_file: zipfile.ZipFile):
+        proj_file_content = (
+            'GEOGCS["WGS 84",DATUM["WGS_1984",'
+            'SPHEROID["WGS 84",6378137,298.257223563]],'
+            'PRIMEM["Greenwich",0],'
+            'UNIT["degree",0.0174532925199433]]'
+        )
+        zip_file.writestr(f"{base_name}.prj", proj_file_content)
 
 
 def latrot2lat(

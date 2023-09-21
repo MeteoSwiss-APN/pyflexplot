@@ -18,6 +18,8 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
+import shutil
+import zipfile
 
 # Third-party
 import click
@@ -95,6 +97,7 @@ def main(
         show_version,
         tmp_dir,
     )
+
     if num_procs == 1:
         all_out_file_paths = fct()
     else:
@@ -128,6 +131,30 @@ def main(
         else:
             log(err="Could not merge PDFs in {iter_max} attempts")
 
+    # Merge Shape Files (alreasy packed in .zip files each)
+    log(vbs="merging shape files")
+    iter_max = 1 if abspath(dest_dir) == abspath(tmp_dir) else 10
+    for iter_i in range(iter_max):
+        all_out_file_paths_tmp = list(all_out_file_paths)
+        try:
+            shape_paths = merge_shape_files(
+                all_out_file_paths_tmp,
+                tmp_dir=tmp_dir,
+                dest_dir=dest_dir,
+                dry_run=pdf_dry_run,
+            )
+        except:
+            log(err=f"Error merging shape files; retry {iter_i + 1}/{iter_max}")
+            continue
+        else:
+            all_out_file_paths = all_out_file_paths_tmp
+            for path in shape_paths:
+                if not dry_run:
+                    log(dbg=f"remove {path}")
+                    Path(path).unlink()
+        break
+    else:
+        log(err="Could not merge shape files in {iter_max} attempts")
     # Move output files (remaining after PDF merging) to destination
     if abspath(dest_dir) != abspath(tmp_dir):
         log(inf=f"{tmp_dir} -> {dest_dir}")
@@ -170,6 +197,7 @@ def create_all_plots(
     log(vbs="read fields and create plots")
     all_out_file_paths: List[str] = []
     iter_state = SharedIterationState(n_input_files=len(setup_groups))
+
     for iter_state.i_input_file, setup_group in enumerate(setup_groups, start=1):
         if only and iter_state.n_field_groups_curr >= only:
             log(
@@ -208,6 +236,7 @@ def create_all_plots(
             )
             for field_group in field_groups
         ]
+        print("PRE CREATE PLOTS IN MAIN - USE field_groups from here ")
         fct = partial(create_plots_i, dry_run, show_version, iter_state)
         iter_args = zip(
             range(1, iter_state.n_field_groups_i + 1),
@@ -263,7 +292,6 @@ def prepare_setups(
         setup_groups = restrict_grouped_setups(
             setup_groups, only, grouped_by="files.input"
         )
-
     return setup_groups
 
 
@@ -437,10 +465,7 @@ def merge_pdf_plots(
     dry_run: bool = False,
 ) -> List[str]:
     # Collect PDFs
-    pdf_paths: List[str] = []
-    for path in paths:
-        if path.endswith(".pdf"):
-            pdf_paths.append(path)
+    pdf_paths: List[str] = [path for path in paths if path.endswith(".pdf")]
 
     paths_organizer = PathsOrganizer(suffix="pdf", dup_sep=".")
     grouped_pdf_paths = paths_organizer.group_related(pdf_paths)
@@ -462,6 +487,42 @@ def merge_pdf_plots(
                 merged_pages.append(path)
         paths.append(merged)
     return merged_pages
+
+
+def merge_shape_files(
+    paths: List[str],
+    *,
+    tmp_dir: str = None,
+    dest_dir: str = None,
+    dry_run: bool = False,
+) -> List[str]:
+    # Collect PDFs
+    shape_paths: List[str] = [f"{path}.zip" for path in paths if path.endswith(".shp")]
+    paths_organizer = PathsOrganizer(suffix="shp.zip", dup_sep=".")
+    grouped_file_paths = paths_organizer.group_related(shape_paths)
+    merged_files: List[str] = []
+    n = 0
+    for i, group in enumerate(grouped_file_paths):
+        merged = f"{dest_dir}/{relpath(paths_organizer.merge(group), start=tmp_dir)}"
+        tmp_zip_name = f"{dest_dir}/temp_shape{i}.zip"
+        if not dry_run:
+            with zipfile.ZipFile(tmp_zip_name, "w") as main_zip:
+                for file in group:
+                    zip_to_merge = zipfile.ZipFile(file, "r")
+                    n += len(zip_to_merge.namelist())
+                    for sub_file in zip_to_merge.namelist():
+                        main_zip.writestr(sub_file, zip_to_merge.open(sub_file).read())
+                    zip_to_merge.close()
+            main_zip.close()
+            shutil.copy(tmp_zip_name, merged)
+            os.remove(tmp_zip_name)
+        for path in group:
+            base_name = path.rsplit(".", 1)[0]
+            paths.remove(base_name)
+            if abspath(path) != abspath(merged):
+                merged_files.append(path)
+        paths.append(merged)
+    return merged_files
 
 
 def open_plots(cmd: str, file_paths: Collection[str], dry_run: bool) -> None:

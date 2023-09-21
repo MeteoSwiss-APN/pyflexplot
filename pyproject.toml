@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyflexplot"
-version = "1.0.12"
+version = "1.1.0"
 description = "Stefan Ruedisuehli's PyFlexPlot"
 readme = "README.md"
 keywords = [
