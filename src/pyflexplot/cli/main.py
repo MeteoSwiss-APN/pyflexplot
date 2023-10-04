@@ -236,7 +236,6 @@ def create_all_plots(
             )
             for field_group in field_groups
         ]
-        print("PRE CREATE PLOTS IN MAIN - USE field_groups from here ")
         fct = partial(create_plots_i, dry_run, show_version, iter_state)
         iter_args = zip(
             range(1, iter_state.n_field_groups_i + 1),

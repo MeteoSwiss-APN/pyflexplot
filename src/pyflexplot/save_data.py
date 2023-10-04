@@ -115,13 +115,12 @@ class ShapeSaver:
                 field_name = f"{field.mdata.species.name}"
                 shapefile_writer.field(field_name, "F", 8, 15)
                 if len(fld) == 0:
-                    shapefile_writer.point(0, 0)
-                    shapefile_writer.record(field_name=[0.0])
-                    lat_values.extend([0, 0])
-                    lon_values.extend([0, 0])
+                    shapefile_writer.point(field.mdata.release.lon, field.mdata.release.lat)
+                    shapefile_writer.record(field_name=[-100.0])
+                    lat_values.extend([field.mdata.release.lat])
+                    lon_values.extend([field.mdata.release.lon])
                     continue
 
-                print("MIN VALUE SAVE DATA ", np.min(fld))
                 coordinates = np.array(
                     [[lon, lat] for lat in field.lat for lon in field.lon]
                 )[relevant_indices]
@@ -146,42 +145,15 @@ class ShapeSaver:
 
             min_lon, max_lon = np.min(lon_values), np.max(lon_values)
             min_lat, max_lat = np.min(lat_values), np.max(lat_values)
-            filename_parts = filename.split(".")
-            filename_parts[0] += "_domain"
-            domain_filename = ".".join(filename_parts)
-            domain_shapefile_writer = shapefile.Writer(
-                f"{domain_filename}", shapeType=shapefile.POLYGON
-            )
-            domain_shapefile_writer.field("name", "C")
-
-            prop_dict = {
-                k: v for d in field.mdata.dict().values() for k, v in d.items()
+            domain_metadata = { 
+                'DomainBoundaries': [min_lon, max_lon, min_lat, max_lat]
             }
-            # print(" jksdfmnksdfmn ",_plot.config.labels, "\n KDLFVHRJF ", prop_dict)
-            print(" jksdfmnksdfmn ", _plot.config.labels)
-            for prop in prop_dict.keys():
-                domain_shapefile_writer.field(prop, "C")
-            domain_corners = [
-                (min_lon, min_lat),
-                (min_lon, max_lat),
-                (max_lon, max_lat),
-                (max_lon, min_lat),
-            ]
-            ### Create shape file from domain
-            domain_shapefile_writer.poly([domain_corners])
-            domain_shapefile_writer.record("domain", *prop_dict.values())
-            domain_basename = domain_filename.rsplit(".", 1)[0]
-            domain_shapefile_writer.close()
-            self._write_metadata_file(base_file_dir, zip_file, _plot.config.labels)
+            #print("KKKK ", _plot.config.labels)
+            self._write_metadata_file(base_file_dir, zip_file, {**_plot.config.labels, **domain_metadata})
             self._move_shape_file_to_zip(base_file_dir, zip_file)
-            self._move_shape_file_to_zip(domain_basename, zip_file)
-
             # Some GIS Software require information about the projection
             self._write_projection_file_to_zip(
                 os.path.basename(base_file_dir), zip_file
-            )
-            self._write_projection_file_to_zip(
-                os.path.basename(domain_basename), zip_file
             )
             zip_file.close()
 
@@ -206,6 +178,7 @@ class ShapeSaver:
         release_latex_string = metadata["release_info"]["lines_str"].replace(
             "\n", "<BR>"
         )
+        model_info_string = "<BR>".join(list(metadata["bottom"].values()))
         replacements = {
             "\\\\": "",  # Remove double backslashes
             "\\mathrm": "",  # Remove the \mathrm command
@@ -228,13 +201,23 @@ class ShapeSaver:
             release_latex_string = release_latex_string.replace(key, value)
             title_latex_string = title_latex_string.replace(key, value)
             title_string = title_string.replace(key, value)
+            model_info_string = model_info_string.replace(key, value)
 
-        total_content = f"{title_latex_string}<BR><BR>{release_latex_string}"
-        print("META ", total_content)
-
+        total_content = f"{title_latex_string}<BR><BR>{release_latex_string}<BR><BR>{model_info_string}"
+        domain_boundaries = metadata['DomainBoundaries']
         xml_content = f"""<?xml version="1.0" encoding="utf-8"?>
 <metadata>
     <dataIdInfo>
+    <dataExt>
+        <geoEle>
+            <GeoBndBox>
+                <westBL>{domain_boundaries[0]}</westBL>
+                <eastBL>{domain_boundaries[1]}</eastBL>
+                <northBL>{domain_boundaries[2]}</northBL>
+                <southBL>{domain_boundaries[3]}</southBL>
+            </GeoBndBox>
+        </geoEle>
+    </dataExt>
     <idCitation><resTitle>{title_string}</resTitle></idCitation>
         <idAbs>
             <![CDATA[{total_content}]]>
