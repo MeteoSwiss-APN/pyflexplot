@@ -115,7 +115,9 @@ class ShapeSaver:
                 field_name = f"{field.mdata.species.name}"
                 shapefile_writer.field(field_name, "F", 8, 15)
                 if len(fld) == 0:
-                    shapefile_writer.point(field.mdata.release.lon, field.mdata.release.lat)
+                    shapefile_writer.point(
+                        field.mdata.release.lon, field.mdata.release.lat
+                    )
                     shapefile_writer.record(field_name=[-100.0])
                     lat_values.extend([field.mdata.release.lat])
                     lon_values.extend([field.mdata.release.lon])
@@ -145,11 +147,11 @@ class ShapeSaver:
 
             min_lon, max_lon = np.min(lon_values), np.max(lon_values)
             min_lat, max_lat = np.min(lat_values), np.max(lat_values)
-            domain_metadata = { 
-                'DomainBoundaries': [min_lon, max_lon, min_lat, max_lat]
-            }
-            #print("KKKK ", _plot.config.labels)
-            self._write_metadata_file(base_file_dir, zip_file, {**_plot.config.labels, **domain_metadata})
+            domain_metadata = {"DomainBoundaries": [min_lon, max_lon, min_lat, max_lat]}
+            # print("KKKK ", _plot.config.labels)
+            self._write_metadata_file(
+                base_file_dir, zip_file, {**_plot.config.labels, **domain_metadata}
+            )
             self._move_shape_file_to_zip(base_file_dir, zip_file)
             # Some GIS Software require information about the projection
             self._write_projection_file_to_zip(
@@ -204,7 +206,7 @@ class ShapeSaver:
             model_info_string = model_info_string.replace(key, value)
 
         total_content = f"{title_latex_string}<BR><BR>{release_latex_string}<BR><BR>{model_info_string}"
-        domain_boundaries = metadata['DomainBoundaries']
+        domain_boundaries = metadata["DomainBoundaries"]
         xml_content = f"""<?xml version="1.0" encoding="utf-8"?>
 <metadata>
     <dataIdInfo>
