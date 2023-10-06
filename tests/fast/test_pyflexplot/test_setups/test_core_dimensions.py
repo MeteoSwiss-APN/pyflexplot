@@ -19,6 +19,7 @@ class Test_Init:
             "species_id": None,
             "time": None,
             "variable": None,
+            "multiplier": None,
         }
         assert res == sol
 
@@ -30,6 +31,7 @@ class Test_Init:
             "species_id": 2,
             "time": 0,
             "variable": "dry_deposition",
+            "multiplier": 1,
         }
         cdims = CoreDimensions(**params)
         res = cdims.dict()
@@ -41,6 +43,7 @@ class Test_Init:
             "release": 1,
             "species_id": 2,
             "variable": "concentration",
+            "multiplier": 10,
         }
         cdims = CoreDimensions(**params)
         res = cdims.dict()
@@ -51,6 +54,7 @@ class Test_Init:
             "species_id": 2,
             "time": None,
             "variable": "concentration",
+            "multiplier": 10,
         }
         assert res == sol
 

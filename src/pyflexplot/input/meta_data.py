@@ -77,7 +77,9 @@ def format_meta_datum(value=None, unit=None, *, join_values=" / "):
     else:
         assert value is not None  # mypy
         if unit is not None:
-            return _format_meta_datum_with_unit(value, unit, join_values=join_values)
+            return _format_meta_datum_with_unit(
+                value, unit, join_values=join_values
+            )  # noqa: E501
         if isinstance(value, tuple):
             # SR_TODO make sure this is covered by a test (it currently isn't)!
             return join_values.join([format_meta_datum(v) for v in value])
@@ -105,7 +107,9 @@ def _format_meta_datum_with_unit(
 ) -> str:
     if not isinstance(value, tuple):
         if isinstance(unit, tuple):
-            raise ValueError(f"multiple units for single value: {value}, {unit}")
+            raise ValueError(
+                f"multiple units for single value: {value}, {unit}"
+            )  # noqa: E501
         # Single value, single unit
         value = (value,)
         unit = (unit,)
@@ -114,13 +118,17 @@ def _format_meta_datum_with_unit(
         unit = tuple([unit] * len(value))
     elif len(value) != len(unit):
         raise ValueError(
-            f"different number of values ({len(value)}) and units ({len(unit)})"
+            f"different number of values ({len(value)}) and units ({len(unit)})"  # noqa: E501
             f": {value}, {unit}"
         )
     kwargs = {"join_values": join_values}
     value_fmtd = tuple(map(lambda v: format_meta_datum(v, **kwargs), value))
-    unit_fmtd = tuple(map(lambda u: _format_unit(format_meta_datum(u, **kwargs)), unit))
-    return format_meta_datum(tuple(map(join_unit.join, zip(value_fmtd, unit_fmtd))))
+    unit_fmtd = tuple(
+        map(lambda u: _format_unit(format_meta_datum(u, **kwargs)), unit)
+    )  # noqa: E501
+    return format_meta_datum(
+        tuple(map(join_unit.join, zip(value_fmtd, unit_fmtd)))
+    )  # noqa: E501
 
 
 def _format_unit(s: str) -> str:
@@ -144,7 +152,9 @@ class MetaData:
     variable: "VariableMetaData"
 
     def __repr__(self) -> str:
-        return dataclass_repr(self, fmt=lambda obj: dataclass_repr(obj, nested=1))
+        return dataclass_repr(
+            self, fmt=lambda obj: dataclass_repr(obj, nested=1)
+        )  # noqa: E501
 
     def dict(self) -> Dict[str, Dict[str, Any]]:
         return {
@@ -178,7 +188,9 @@ class MetaData:
 
         # Extract parameter values from objects
         grouped_params: Dict[str, List[Dict[str, Any]]] = {
-            group: [getattr(obj, group).dict() for obj in [self] + list(others)]
+            group: [
+                getattr(obj, group).dict() for obj in [self] + list(others)
+            ]  # noqa: E501
             for group in get_dataclass_fields(type(self))
         }
 
@@ -210,14 +222,16 @@ class MetaData:
         bottoms = [bottom for (bottom, _), _ in level_ranges_lst]
         tops = [top for (_, top), _ in level_ranges_lst]
         if bottoms[1:] != tops[:-1]:
-            raise NotImplementedError("non-adjacent level ranges: {list(level_ranges)}")
+            raise NotImplementedError(
+                "non-adjacent level ranges: {list(level_ranges)}"
+            )  # noqa: E501
         # SR_TMP >
 
         # SR_TMP < TODO implement different meta data per level (if required)
         # Ensure the number of meta data per level range are all equal
         if len(set(map(len, level_ranges.values()))) != 1:
             raise NotImplementedError(
-                f"number of meta data differ betwenen level ranges: {level_ranges}"
+                f"number of meta data differ betwenen level ranges: {level_ranges}"  # noqa: E501
             )
         # SR_TMP >
 
@@ -254,13 +268,13 @@ class MetaData:
                 for level_range, idcs in level_ranges_lst[1:]:
                     idx = idcs[idx_idx]
                     params = params_lst[idx]
-                    # SR_TMP < TODO implement support for reordering (with test)
-                    # Make sure for each range the other meta data are identical
+                    # SR_TMP < TODO implement support for reordering (with test) # noqa: E501
+                    # Make sure for each range the other meta data are identical # noqa: E501
                     if params != params_ref:
                         raise Exception(
                             f"{group} meta data differ:"
-                            f"\n\n{pformat(params)}\n\n!=\n\n{pformat(params_ref)}"
-                            f"\n\n(idx_idx={idx_idx}, idx_ref={idx_ref}, idx={idx}"
+                            f"\n\n{pformat(params)}\n\n!=\n\n{pformat(params_ref)}"  # noqa: E501
+                            f"\n\n(idx_idx={idx_idx}, idx_ref={idx_ref}, idx={idx}"  # noqa: E501
                             f", group='{group}')"
                         )
                     # SR_TMP >
@@ -276,7 +290,9 @@ class MetaData:
 
         # Species meta data
         species_params = compress_multival_dicts(
-            [params["species"] for params in merged_params_lst], tuple, skip_compr=True
+            [params["species"] for params in merged_params_lst],
+            tuple,
+            skip_compr=True,  # noqa: E501
         )
         species_mdata = SpeciesMetaData(**species_params)
 
@@ -346,7 +362,7 @@ class _MetaDataBase:
         return dct
 
     def __eq__(self, other: Any) -> bool:
-        self_dct = dc.asdict(self)
+        self_dct = dc.asdict(self)  # type: ignore
         try:
             other_dct = dc.asdict(other)
         except TypeError:
@@ -424,7 +440,7 @@ class VariableMetaData(_MetaDataBase):
                 level_bot = 0.0 if idx == 0 else float(var[idx - 1])
             except IndexError as e:
                 raise Exception(
-                    f"index of bottom level out of bounds: {idx} > {var.size - 1}"
+                    f"index of bottom level out of bounds: {idx} > {var.size - 1}"  # noqa: E501
                 ) from e
             try:
                 level_top = float(var[idx])
@@ -474,7 +490,7 @@ class SimulationMetaData(_MetaDataBase):
         else:
             choices = [None, "h", "hours"]
             raise ValueError(
-                f"unit {sfmt(unit)} not among [{', '.join(map(sfmt, choices))}]"
+                f"unit {sfmt(unit)} not among [{', '.join(map(sfmt, choices))}]"  # noqa: E501
             )
 
     # pylint: disable=R0913  # too-many-arguments (>5)
@@ -491,7 +507,9 @@ class SimulationMetaData(_MetaDataBase):
         start = init_datetime(
             str(getncattr(fi, "ibdate")) + str(getncattr(fi, "ibtime"))
         )
-        end = init_datetime(str(getncattr(fi, "iedate")) + str(getncattr(fi, "ietime")))
+        end = init_datetime(
+            str(getncattr(fi, "iedate")) + str(getncattr(fi, "ietime"))
+        )  # noqa: E501
         step = int(getncattr(fi, "loutstep"))
 
         # Formatted time steps
@@ -562,7 +580,9 @@ class ReleaseMetaData(_MetaDataBase):
     start_rel: timedelta
 
     @classmethod
-    def from_file(cls, fi: nc4.Dataset, dimensions: Dimensions) -> "ReleaseMetaData":
+    def from_file(
+        cls, fi: nc4.Dataset, dimensions: Dimensions
+    ) -> "ReleaseMetaData":  # noqa: E501
         """Read information on a release from open file."""
         raw = RawReleaseMetaData.from_file(fi, dimensions)
         raw_site_name = raw.site
@@ -583,10 +603,10 @@ class ReleaseMetaData(_MetaDataBase):
             duration=duration,
             duration_unit=duration_unit,
             end_rel=end_rel,
-            height=np.mean([raw.zbot, raw.ztop]),
+            height=np.mean([raw.zbot, raw.ztop], dtype=float),
             height_unit=height_unit,
-            lat=np.mean([raw.lllat, raw.urlat]),
-            lon=np.mean([raw.lllon, raw.urlon]),
+            lat=np.mean([raw.lllat, raw.urlat], dtype=float),
+            lon=np.mean([raw.lllon, raw.urlon], dtype=float),
             mass=mass,
             mass_unit=mass_unit,
             rate=mass / duration.total_seconds() if duration else np.nan,
@@ -647,12 +667,22 @@ class SpeciesMetaData(_MetaDataBase):
             name=species.name,
             half_life=species.half_life.value,
             half_life_unit=cast(str, species.half_life.unit),
-            deposition_velocity=max([0.0, species.deposition_velocity.value]),
-            deposition_velocity_unit=cast(str, species.deposition_velocity.unit),
-            sedimentation_velocity=max([0.0, species.sedimentation_velocity.value]),
-            sedimentation_velocity_unit=cast(str, species.sedimentation_velocity.unit),
+            deposition_velocity=max(
+                [0.0, species.deposition_velocity.value]
+            ),  # noqa: E501
+            deposition_velocity_unit=cast(
+                str, species.deposition_velocity.unit
+            ),  # noqa: E501
+            sedimentation_velocity=max(
+                [0.0, species.sedimentation_velocity.value]
+            ),  # noqa: E501
+            sedimentation_velocity_unit=cast(
+                str, species.sedimentation_velocity.unit
+            ),  # noqa: E501
             washout_coefficient=species.washout_coefficient.value,
-            washout_coefficient_unit=cast(str, species.washout_coefficient.unit),
+            washout_coefficient_unit=cast(
+                str, species.washout_coefficient.unit
+            ),  # noqa: E501
             washout_exponent=species.washout_exponent.value,
         )
 
@@ -698,14 +728,18 @@ class RawReleaseMetaData:
     @classmethod
     def create(cls, params: Dict[str, Any]) -> "RawReleaseMetaData":
         params = {
-            param: cast_field_value(cls, param, value, timedelta_unit="seconds")
+            param: cast_field_value(
+                cls, param, value, timedelta_unit="seconds"
+            )  # noqa: E501
             for param, value in params.items()
         }
         return cls(**params)
 
     # pylint: disable=R0914  # too-many-locals
     @classmethod
-    def from_file(cls, fi: nc4.Dataset, dimensions: Dimensions) -> "RawReleaseMetaData":
+    def from_file(
+        cls, fi: nc4.Dataset, dimensions: Dimensions
+    ) -> "RawReleaseMetaData":  # noqa: E501
         """Read information on a release from open file."""
         # Fetch release
         assert dimensions.release is not None  # mypy
@@ -715,7 +749,9 @@ class RawReleaseMetaData:
         assert dimensions.species_id is not None  # mypy
         n_species = fi.dimensions["numspec"].size
         if dimensions.species_id < 1:
-            raise Exception(f"invalid species_id: {dimensions.species_id} <= 0")
+            raise Exception(
+                f"invalid species_id: {dimensions.species_id} <= 0"
+            )  # noqa: E501
         elif dimensions.species_id > n_species:
             raise Exception(
                 f"invalid species_id: {dimensions.species_id} > {n_species}"
@@ -733,7 +769,9 @@ class RawReleaseMetaData:
         # Check index against no. release point and set it if necessary
         n = var.shape[0]
         if n == 0:
-            raise ValueError(f"file '{fi.name}': no release points ('{var_name}')")
+            raise ValueError(
+                f"file '{fi.name}': no release points ('{var_name}')"
+            )  # noqa: E501
         elif n == 1:
             if idx_release is None:
                 idx_release = 0
@@ -745,12 +783,15 @@ class RawReleaseMetaData:
         assert idx_release is not None  # mypy
         if idx_release < 0 or idx_release >= n:
             raise ValueError(
-                f"file '{fi.name}': invalid index {idx_release} for {n} release points"
+                f"file '{fi.name}': invalid index {idx_release} for {n} release points"  # noqa: E501
             )
 
         # Name: convert from byte character array
         site = (
-            var[idx_release][~var[idx_release].mask].tobytes().decode("utf-8").rstrip()
+            var[idx_release][~var[idx_release].mask]
+            .tobytes()
+            .decode("utf-8")
+            .rstrip()  # noqa: E501
         )
 
         # Other attributes
@@ -884,7 +925,9 @@ def derive_variable_name(model: str, variable: str, species_id: int) -> str:
     raise ValueError(f"unknown variable '{variable}'")
 
 
-def read_dimensions(file_handle: nc4.Dataset, add_ts0: bool = True) -> Dict[str, Any]:
+def read_dimensions(
+    file_handle: nc4.Dataset, add_ts0: bool = True
+) -> Dict[str, Any]:  # noqa: E501
     """Read dimensions from a NetCDF file.
 
     Args:
@@ -916,7 +959,13 @@ def read_time_steps(file_handle: nc4.Dataset) -> List[str]:
         file_handle: Open NetCDF file handle.
 
     """
-    attrs_select: List[str] = ["ibdate", "ibtime", "iedate", "ietime", "loutstep"]
+    attrs_select: List[str] = [
+        "ibdate",
+        "ibtime",
+        "iedate",
+        "ietime",
+        "loutstep",
+    ]  # noqa: E501
     attrs_try_select: List[str] = []
     ncattrs: Dict[str, Any] = {}
     for attr in attrs_select:

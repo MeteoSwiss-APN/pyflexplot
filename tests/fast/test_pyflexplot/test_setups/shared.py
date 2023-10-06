@@ -54,6 +54,7 @@ OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
                 "species_id": None,
                 "time": None,
                 "variable": "concentration",
+                "multiplier": None,
             },
             "domain": "full",
             "domain_size_lat": None,

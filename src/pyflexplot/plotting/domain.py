@@ -107,7 +107,7 @@ class Domain:
         clat = 0.5 * (lllat + urlat)
         return (clon, clat)
 
-    def get_bbox_size(self) -> tuple[float, float]:
+    def get_bbox_size(self) -> Tuple[float, float]:
         """Return the domain size as the distance between the bbox corners."""
         lllon, urlon, lllat, urlat = self.get_bbox_extent()
         dlon = urlon - lllon
@@ -233,7 +233,7 @@ class CloudDomain(Domain):
     # pylint: disable=R0912  # too-many-branches (>12)
     # pylint: disable=R0914  # too-many-locals (>15)
     # pylint: disable=R0915  # too-many-statements (>50)
-    def _get_bbox_extent(self) -> tuple[tuple[float, float, float, float], bool]:
+    def _get_bbox_extent(self) -> Tuple[Tuple[float, float, float, float], bool]:
         """Return ``((lllon, lllat, urlon, urlat), crosses_dateline)``."""
         lat_min: float = self.lat[0]
         lat_max: float = self.lat[-1]
@@ -364,19 +364,19 @@ class GeoMaskBoundingBox:
         self.crosses_dateline: bool
         (self.lllon, self.urlon), self.crosses_dateline = self._get_lon_extent()
 
-    def get_extent(self) -> tuple[float, float, float, float]:
+    def get_extent(self) -> Tuple[float, float, float, float]:
         """Get ``(lllon, urlon, lllat, urlat)``."""
         return (self.lllon, self.urlon, self.lllat, self.urlat)
 
-    def get_lat_extent(self) -> tuple[float, float]:
+    def get_lat_extent(self) -> Tuple[float, float]:
         """Get ``(lllat, urlat)``."""
         return (self.lllat, self.urlat)
 
-    def get_lon_extent(self) -> tuple[float, float]:
+    def get_lon_extent(self) -> Tuple[float, float]:
         """Get ``(lllon, urlon)``."""
         return (self.lllon, self.urlon)
 
-    def _get_lat_extent(self) -> tuple[float, float]:
+    def _get_lat_extent(self) -> Tuple[float, float]:
         """Return ``(lllat, urlat)``."""
         if not any(self.mask_lat):
             lllat = self.lat.min()
@@ -386,7 +386,7 @@ class GeoMaskBoundingBox:
             urlat = self.lat[self.mask_lat].max()
         return (lllat, urlat)
 
-    def _get_lon_extent(self) -> tuple[tuple[float, float], bool]:
+    def _get_lon_extent(self) -> Tuple[Tuple[float, float], bool]:
         """Return ``((lllon, urlon), crosses_dateline)``."""
         if self.mask_lon.all():
             lllon = self.lon.min()

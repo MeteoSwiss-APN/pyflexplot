@@ -21,6 +21,7 @@ class Test_Init:
             "species_id": (None,),
             "time": (None,),
             "variable": (None,),
+            'multiplier': (None,),
         }
         assert res == sol
 
@@ -32,6 +33,7 @@ class Test_Init:
             species_id=2,
             time=0,
             variable="wet_deposition",
+            multiplier=1
         )
         dims = Dimensions([cdims])
         res = dims.raw_dict()
@@ -42,6 +44,7 @@ class Test_Init:
             "species_id": (2,),
             "time": (0,),
             "variable": ("wet_deposition",),
+            "multiplier": (1,)
         }
         assert res == sol
 
@@ -56,6 +59,7 @@ class Test_Init:
             "species_id": (None, None),
             "time": (None, None),
             "variable": (None, None),
+            "multiplier": (None, None),
         }
         assert res == sol
 
@@ -69,6 +73,7 @@ class Test_Init:
                 species_id=0,
                 time=2,
                 variable="dry_deposition",
+                multiplier=1
             ),
             CoreDimensions(
                 level=1,
@@ -77,6 +82,7 @@ class Test_Init:
                 species_id=2,
                 time=1,
                 variable="dry_deposition",
+                multiplier=2
             ),
         ]
         dims = Dimensions(core)
@@ -93,6 +99,7 @@ class Test_Init:
                 "dry_deposition",
                 "dry_deposition",
             ),
+            "multiplier": (None,None,1,2)
         }
         assert res == sol
 
@@ -114,6 +121,7 @@ class Test_Create:
             "species_id": None,
             "time": None,
             "variable": "concentration",
+            "multiplier": None,
         }
         assert res == sol
 
@@ -125,6 +133,7 @@ class Test_Create:
             "species_id": 2,
             "time": 0,
             "variable": "dry_deposition",
+            "multiplier": 1,
         }
         dims = Dimensions.create(params)
         res = dims.dict()
@@ -139,6 +148,7 @@ class Test_Create:
             "species_id": (0, 2),
             "time": (2, 1, 0),
             "variable": ("wet_deposition", "dry_deposition"),
+            "multiplier": (1,10)
         }
         dims = Dimensions.create(params)
         res = dims.dict()
@@ -174,6 +184,7 @@ class Test_Dict:
             "species_id": None,
             "time": None,
             "variable": None,
+            "multiplier": None,
         }
         assert res == sol
 
@@ -185,6 +196,7 @@ class Test_Dict:
             species_id=2,
             time=0,
             variable="dry_deposition",
+            multiplier= 1,
         )
         dims = Dimensions([cdims])
         res = dims.dict()
@@ -195,6 +207,7 @@ class Test_Dict:
             "species_id": 2,
             "time": 0,
             "variable": "dry_deposition",
+            "multiplier": 1,
         }
         assert res == sol
 
@@ -209,19 +222,21 @@ class Test_Dict:
             "species_id": None,
             "time": None,
             "variable": None,
+            "multiplier": None
         }
         assert res == sol
 
     def test_multi_core(self):
         core = [
             CoreDimensions(nageclass=0, time=0, variable="concentration"),
-            CoreDimensions(variable="wet_deposition"),
+            CoreDimensions(variable="wet_deposition", multiplier= 1,),
             CoreDimensions(
                 nageclass=3,
                 species_id=0,
                 time=2,
                 level=1,
                 variable="dry_deposition",
+                multiplier= 10,
             ),
             CoreDimensions(
                 nageclass=0,
@@ -229,6 +244,7 @@ class Test_Dict:
                 time=1,
                 level=1,
                 variable="dry_deposition",
+                multiplier= 100,
             ),
         ]
         dims = Dimensions(core)
@@ -240,6 +256,7 @@ class Test_Dict:
             "species_id": (0, 2),
             "time": (0, 1, 2),
             "variable": ("concentration", "dry_deposition", "wet_deposition"),
+            "multiplier": (1,10,100),
         }
         assert res == sol
 
@@ -333,6 +350,7 @@ class Test_Interact:
             "concentration",
             "dry_deposition",
         ),
+        "multiplier": (None,1,10),
     }
 
     def create_dims(self):
@@ -394,6 +412,7 @@ class Test_Interact:
             "variable",
             ("dry_deposition", "wet_deposition", "concentration", "dry_deposition"),
         )
+        dims.set("multiplier",(1,10,None, None),)
         res = dims.dict()
         sol = self.create_dims().dict()
         assert res == sol
@@ -407,6 +426,7 @@ class Test_Interact:
         dims.set("species_id", (0, 2))
         dims.set("time", (0, 1, 2))
         dims.set("variable", ("concentration", "dry_deposition", "wet_deposition"))
+        dims.set("multiplier",(1,10),)
         res = dims.dict()
         sol = self.create_dims().dict()
         assert res == sol
@@ -425,6 +445,7 @@ class Test_Interact:
             "concentration",
             "dry_deposition",
         )
+        dims.multiplier = (1,10,None, None)
         res = dims.dict()
         sol = self.create_dims().dict()
         assert res == sol
@@ -438,6 +459,7 @@ class Test_Interact:
         dims.species_id = (0, 2)
         dims.time = (0, 1, 2)
         dims.variable = ("concentration", "dry_deposition", "wet_deposition")
+        dims.multiplier = (1,10,None,None)
         res = dims.dict()
         sol = self.create_dims().dict()
         assert res == sol
@@ -464,6 +486,7 @@ class Test_Interact:
             "species_id": None,
             "time": None,
             "variable": "wet_deposition",
+            "multiplier": None,
         }
         assert res == sol
 

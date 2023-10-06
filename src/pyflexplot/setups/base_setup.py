@@ -38,12 +38,15 @@ class BaseSetup:
         return self.create(self.dict())
 
     def derive(self: SetupT, params: Dict[str, Any]) -> SetupT:
-        return type(self).create(merge_dicts(self.dict(), params, overwrite_seqs=True))
+        merged_dictionaries = merge_dicts(
+            self.dict(), params, overwrite_seqs=True
+        )  # noqa: E501
+        return type(self).create(merged_dictionaries)
 
     def dict(self: SetupT, rec: bool = False) -> Dict[str, Any]:
         if rec:
             raise NotImplementedError("rec=T")
-        return dc.asdict(self)
+        return dc.asdict(self)  # type: ignore
 
     def tuple(self: SetupT) -> Tuple[Tuple[str, Any], ...]:
         return tuple(self.dict().items())
@@ -70,9 +73,13 @@ class BaseSetup:
         return nested_repr(self)
 
     @classmethod
-    def cast(cls: Type[SetupT], param: str, value: Any, recursive: bool = False) -> Any:
+    def cast(
+        cls: Type[SetupT], param: str, value: Any, recursive: bool = False
+    ) -> Any:  # noqa: E501
         if recursive:
-            raise ValueError(f"recursive cast not implemented for class {cls.__name__}")
+            raise ValueError(
+                f"recursive cast not implemented for class {cls.__name__}"
+            )  # noqa: E501
         return cast_field_value(cls, param, value)
 
     @classmethod
@@ -102,7 +109,7 @@ class BaseSetup:
 
     @classmethod
     def get_params(cls: Type[SetupT]) -> List[str]:
-        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
+        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101 # noqa: E501
 
     @classmethod
     def _create_mod_params_pre_cast(
