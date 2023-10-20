@@ -108,7 +108,6 @@ class ReferenceDistanceIndicator:
         self._add_to(ax, zorder)
 
     def _add_to(self, ax: Axes, zorder: int) -> None:
-
         # Draw box
         ax.add_patch(
             mpl.patches.Rectangle(
@@ -264,7 +263,6 @@ class MapDistanceCalculator:
 
         iter_max = 9999
         for _ in range(iter_max):
-
             # Step away from point until target distance exceeded
             path, dists = self._overstep(x, y, dist0, step_ax_rel)
 
@@ -305,7 +303,6 @@ class MapDistanceCalculator:
         dist = 0.0
         x1_ax, y1_ax = x0_ax, y0_ax
         while dist < self.dist - dist0:
-
             # Move one step farther away from starting point
             x1_ax += self._dx_unit * step_ax_rel
             y1_ax += self._dy_unit * step_ax_rel

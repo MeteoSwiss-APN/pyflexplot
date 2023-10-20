@@ -545,7 +545,6 @@ class NestedDictLinearizer:
         return linears
 
     def _run_rec(self, dct=None):
-
         if dct is None:
             dct = self.dct
 
@@ -595,7 +594,6 @@ class NestedDictLinearizer:
                     self.head = self.active
 
         def _core_rec(result, dct, state=None):
-
             if state is None:
                 state = _State(dct)
 

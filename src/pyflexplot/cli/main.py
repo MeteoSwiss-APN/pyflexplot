@@ -238,7 +238,6 @@ def prepare_setups(
     suffixes: Optional[Union[str, Collection[str]]],
     only: Optional[int],
 ) -> List[PlotSetupGroup]:
-
     # Extend preset setup file paths
     setup_file_paths = list(setup_file_paths)
 
@@ -437,7 +436,6 @@ def merge_pdf_plots(
     keep_merged: bool = True,
     dry_run: bool = False,
 ) -> List[str]:
-
     # Collect PDFs
     pdf_paths: List[str] = []
     for path in paths:

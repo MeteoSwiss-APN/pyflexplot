@@ -56,7 +56,6 @@ def test_return_paths():
 
 
 class Test_MatchEnd:
-
     dct = {
         "_zz": {
             "a": 1,

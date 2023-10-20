@@ -1,5 +1,5 @@
 Welcome to PyFlexPlot's documentation!
-======================================
+===========================================================
 
 .. toctree::
    :maxdepth: 2
@@ -16,5 +16,4 @@ Welcome to PyFlexPlot's documentation!
 Indices and tables
 ==================
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`

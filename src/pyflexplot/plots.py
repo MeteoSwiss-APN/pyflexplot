@@ -902,7 +902,10 @@ def create_panel_config(
             n_colors += 1
         if extend in ["max", "both"] and not color_over:
             n_colors += 1
-        cmap = mpl.cm.get_cmap(cmap, lut=n_colors)
+        cmap = mpl.pyplot.get_cmap(cmap)
+        if n_colors > 1:
+            cmap = mpl.colors.ListedColormap(cmap(np.linspace(0, 1, n_colors)))
+
         colors: list[ColorType]
         try:
             colors = cmap.colors.tolist()
@@ -1640,7 +1643,6 @@ def format_vertical_level_range(
     value_top: Union[float, Sequence[float]],
     unit: str,
 ) -> Optional[str]:
-
     if (value_bottom, value_top) == (-1, -1):
         return None
 
@@ -1723,7 +1725,6 @@ def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -
 
 
 def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
-
     color_under = "darkgray"
     color_over = "lightgray"
 

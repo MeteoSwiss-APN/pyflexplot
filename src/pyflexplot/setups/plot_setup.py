@@ -90,7 +90,6 @@ class PlotSetup(BaseSetup):
     )
 
     def __post_init__(self) -> None:
-
         # Wrap check in function to locally disable pylint check
         # pylint: disable=E1101  # no-member ("Instance of 'Field' has no '...' member")
         def _check_plot_type():

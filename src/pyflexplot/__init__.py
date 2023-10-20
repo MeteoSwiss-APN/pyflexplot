@@ -1,10 +1,7 @@
-"""Top-level package ``pyflexplot``."""
-
-__author__ = """Stefan Ruedisuehli"""
-__email__ = "stefan.ruedisuehli@env.ethz.ch"
-__version__ = "1.0.10"
+"""Top-level package for PyFlexPlot."""
 
 # Standard library
+import importlib.metadata
 import logging as _logging
 import sys as _sys
 import warnings as _warnings
@@ -33,6 +30,11 @@ except Exception as e:  # pylint: disable=W0703  # broad-except
     print(msg, file=_sys.stderr)
     _sys.exit(1)
 
+__author__ = "Stefan Ruedisuehli"
+__email__ = "stefan.ruedisuehli@env.ethz.ch"
+__version__ = importlib.metadata.version(__package__)
+
+del importlib
 
 __all__: _List[str] = []
 

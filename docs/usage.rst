@@ -1,1 +1,1 @@
-.. include:: ../USAGE.rst
+.. mdinclude:: ../USAGE.md

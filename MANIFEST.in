@@ -1,13 +1,12 @@
-include AUTHORS.rst
-include CONTRIBUTING.rst
-include HISTORY.rst
+include AUTHORS.md
+include CONTRIBUTING.md
+include HISTORY.md
 include LICENSE
-include README.rst
-include *requirements.in
-include *environment.yml
+include README.md
 
-recursive-include src/*/data *
+recursive-include requirements *
 recursive-include src py.typed
+recursive-include src/*/data *
 recursive-include tests *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]

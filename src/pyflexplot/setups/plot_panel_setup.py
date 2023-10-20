@@ -109,7 +109,6 @@ class PlotPanelSetup(BaseSetup):
 
     # pylint: disable=R0912  # too-many-branches (>12)
     def __post_init__(self) -> None:
-
         self._check_types()
 
         # Check plot_variable

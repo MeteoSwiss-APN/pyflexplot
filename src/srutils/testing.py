@@ -46,6 +46,7 @@ def property_obj(cls, *args, **kwargs):
         ...     w = property_obj(en='train', de='Zug')
 
     """
+
     # pylint: disable=W0613  # unused-argument (self)
     def create_obj(self):
         return cls(*args, **kwargs)
@@ -323,7 +324,6 @@ def is_list_like(
 
 
 def _check_children(obj, t_children, f_children, kwargs, raise_):
-
     if t_children is not None:
         for idx, child in enumerate(obj):
             if not isinstance(child, t_children):

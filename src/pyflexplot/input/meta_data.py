@@ -487,7 +487,6 @@ class SimulationMetaData(_MetaDataBase):
         integrate: bool,
         add_ts0: bool,
     ) -> "SimulationMetaData":
-
         # Start and end timesteps of simulation
         start = init_datetime(
             str(getncattr(fi, "ibdate")) + str(getncattr(fi, "ibtime"))

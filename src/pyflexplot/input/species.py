@@ -50,18 +50,12 @@ class Species:
     id_cosmo: int = -99
     id_ifs: int = -99
     name: str = "N/A"
-    weight: SpeciesAttribute = dc.field(default=SpeciesAttribute(-99.9, "g mol-1"))
-    half_life: SpeciesAttribute = dc.field(default=SpeciesAttribute(-99.9, "a"))
-    deposition_velocity: SpeciesAttribute = dc.field(
-        default=SpeciesAttribute(-99.9, "m s-1")
-    )
-    sedimentation_velocity: SpeciesAttribute = dc.field(
-        default=SpeciesAttribute(-99.9, "m s-1")
-    )
-    washout_coefficient: SpeciesAttribute = dc.field(
-        default=SpeciesAttribute(-99.9, "s-1")
-    )
-    washout_exponent: SpeciesAttribute = dc.field(default=SpeciesAttribute(-99.9))
+    weight: SpeciesAttribute = dc.field(default=SpeciesAttribute)
+    half_life: SpeciesAttribute = dc.field(default=SpeciesAttribute)
+    deposition_velocity: SpeciesAttribute = dc.field(default=SpeciesAttribute)
+    sedimentation_velocity: SpeciesAttribute = dc.field(default=SpeciesAttribute)
+    washout_coefficient: SpeciesAttribute = dc.field(default=SpeciesAttribute)
+    washout_exponent: SpeciesAttribute = dc.field(default=SpeciesAttribute)
 
     @classmethod
     def create(cls, **params: Any) -> "Species":
@@ -76,6 +70,14 @@ class Species:
                 value = SpeciesAttribute.create(value)
             params_prep[param] = value
         return cls(**params_prep)
+
+    def __post_init__(self):
+        self.weight = SpeciesAttribute(-99.9, "g mol-1")
+        self.half_life = SpeciesAttribute(-99.9, "a")
+        self.deposition_velocity = SpeciesAttribute(-99.9, "m s-1")
+        self.sedimentation_velocity = SpeciesAttribute(-99.9, "m s-1")
+        self.washout_coefficient = SpeciesAttribute(-99.9, "s-1")
+        self.washout_exponent = SpeciesAttribute(-99.9)
 
 
 # See `flexpart/options/SPECIES/SPECIES_???`
