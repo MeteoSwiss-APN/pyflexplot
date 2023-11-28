@@ -9,15 +9,14 @@ from typing import Any
 from typing import Callable
 from typing import Collection
 from typing import get_args
-from typing import get_type_hints
 from typing import get_origin
+from typing import get_type_hints
 from typing import Iterable
 from typing import Optional
 from typing import Sequence
 from typing import Type
 from typing import TypeVar
 from typing import Union
-
 
 # First-party
 from srutils.datetime import derive_datetime_fmt
