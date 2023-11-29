@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 # Standard library
-import os
 import re
 from typing import Optional
 from typing import Sequence

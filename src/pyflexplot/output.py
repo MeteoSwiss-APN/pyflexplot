@@ -1,7 +1,7 @@
 """Output."""
 # Standard library
-import re
 import os
+import re
 from datetime import datetime
 from typing import Any
 from typing import cast

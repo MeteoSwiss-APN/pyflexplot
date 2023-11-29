@@ -9,7 +9,6 @@ from typing import Any
 from typing import Callable
 from typing import Collection
 from typing import get_args
-from typing import get_origin
 from typing import get_type_hints
 from typing import Iterable
 from typing import Optional
@@ -25,7 +24,6 @@ from srutils.exceptions import InvalidParameterNameError
 from srutils.exceptions import InvalidParameterValueError
 from srutils.exceptions import UnsupportedTypeError
 from srutils.format import sfmt
-from srutils.str import split_outside_parens
 
 DataclassT = TypeVar("DataclassT")
 
@@ -139,7 +137,7 @@ def cast_field_value(cls: Type, name: str, value: Any, **kwargs: Any) -> Any:
                 try:
                     if isinstance(value, arg):
                         return value
-                except TypeError as e:
+                except TypeError:
                     pass
             exc = InvalidParameterNameError
             msg = f"type {type_name} not supported"
@@ -318,7 +316,7 @@ def cast_value(
             inner_types.remove("NoneType")
             inner_types.insert(0, "NoneType")
         for inner_type in inner_types:
-            if type(value) == inner_type:
+            if type(value) == inner_type:  # noqa: E721
                 return value
         for inner_type in inner_types:
             try:
@@ -330,7 +328,7 @@ def cast_value(
     elif "Optional" in type_name:
         if value in [None, "None"]:
             return None
-        inner_type = [i for i in get_args(type_) if not i == type(None)][0]
+        inner_type = [i for i in get_args(type_) if not isinstance(i, type(None))][0]
         try:
             return cast_value(inner_type, value, **kwargs)
         except IncompatibleTypesError:

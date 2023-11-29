@@ -195,4 +195,4 @@ ignore_directives = [
 
 [tool.codespell]
 ignore-words-list = "ende,ue,fo,activ,nd,feld,nd"
-skip = "requirements/*,*.pdf"
+skip = "requirements/*,*.pdf,environment.yml"

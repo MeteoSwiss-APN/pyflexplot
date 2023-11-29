@@ -6,7 +6,7 @@ all sorts of plot-type specific logic from throughout the code in order to
 centralize it.
 
 There's tons of nested if-statements etc. because the goal during the cleanup
-phase that included the centralization was to avoid falling into the trap offile_pathprint(
+phase was to avoid falling into the trap offile_pathprint(
 
 )
 premature design/overdesign again (as has happened repeatedly during the early
@@ -37,9 +37,9 @@ from typing import Union
 import matplotlib as mpl
 import numpy as np
 from matplotlib.colors import Colormap
-from pyflexplot.save_data import DataSaverFactory
 
 # First-party
+from pyflexplot.save_data import DataSaverFactory
 from srutils.datetime import init_datetime
 from srutils.format import format_numbers_range
 from srutils.format import ordinal
@@ -140,7 +140,6 @@ def format_out_file_paths(
             out_file_template = os.path.relpath(
                 os.path.abspath(f"{dest_dir}/{out_file_template}")
             )
-        print("HIER ANSETZEN IN PLOTS.PY mit Mdata and format materialname")
         out_file_path = FilePathFormatter(prev_paths).format(
             out_file_template,
             plot_setup,

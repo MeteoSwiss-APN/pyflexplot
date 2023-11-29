@@ -3,7 +3,6 @@
 import os
 import zipfile
 from pathlib import Path
-from typing import Optional
 
 # Third-party
 import numpy as np
@@ -16,6 +15,8 @@ from pyflexplot.plotting.boxed_plot import BoxedPlotConfig
 from pyflexplot.plotting.text_box_axes import TextBoxAxes
 
 # Local
+from .data_transformation.rotated_pole import latrot2lat
+from .data_transformation.rotated_pole import lonrot2lon
 from .input.field import FieldGroup
 from .utils.logging import log
 
@@ -31,7 +32,7 @@ class DataSaverFactory:
         elif extension == ".png":
             return DataSaver(GeneralDataSaver())
         elif extension == ".shp":
-            return DataSaver(ShapeSaver())
+            return DataSaver(ShapeFileSaver())
         else:
             raise ValueError(f"Unsupported file extension: {extension}")
 
@@ -116,7 +117,7 @@ class GeneralDataSaver:
         return str(path)
 
 
-class ShapeSaver:
+class ShapeFileSaver:
     """Provides functionality to save data as shapefiles and pack inside a ZIP."""  # noqa: E501
 
     def save(self, filename: str, _plot: BoxedPlot, data: FieldGroup) -> None:
@@ -152,10 +153,10 @@ class ShapeSaver:
                     [[lon, lat] for lat in field.lat for lon in field.lon]
                 )[relevant_indices]
 
-                true_lat = self.latrot2lat(
+                true_lat = latrot2lat(
                     coordinates[:, 1], coordinates[:, 0], grid_north_pole_lat
                 )
-                true_lon = self.lonrot2lon(
+                true_lon = lonrot2lon(
                     coordinates[:, 1],
                     coordinates[:, 0],
                     grid_north_pole_lat,
@@ -277,85 +278,3 @@ class ShapeSaver:
             'UNIT["degree",0.0174532925199433]]'
         )
         zip_file.writestr(f"{base_name}.prj", proj_file_content)
-
-    def latrot2lat(
-        self,
-        phirot: np.ndarray,
-        rlarot: np.ndarray,
-        polphi: float,
-        polgam: Optional[float] = None,
-    ) -> np.ndarray:
-        zrpi18 = 57.2957795
-        zpir18 = 0.0174532925
-
-        zsinpol = np.sin(zpir18 * polphi)
-        zcospol = np.cos(zpir18 * polphi)
-
-        zphis = zpir18 * phirot
-        zrlas = np.where(rlarot > 180.0, rlarot - 360.0, rlarot)
-        zrlas = zpir18 * zrlas
-
-        if polgam is not None:
-            zgam = zpir18 * polgam
-            zarg = zsinpol * np.sin(zphis) + zcospol * np.cos(zphis) * (
-                np.cos(zrlas) * np.cos(zgam) - np.sin(zgam) * np.sin(zrlas)
-            )
-        else:
-            zarg = zcospol * np.cos(zphis) * np.cos(zrlas) + zsinpol * np.sin(
-                zphis
-            )  # noqa: E501
-
-        return zrpi18 * np.arcsin(zarg)
-
-    def lonrot2lon(
-        self,
-        phirot: np.ndarray,
-        rlarot: np.ndarray,
-        polphi: float,
-        pollam: float,
-        polgam: Optional[float] = None,
-    ) -> np.ndarray:
-        zrpi18 = 57.2957795
-        zpir18 = 0.0174532925
-
-        zsinpol = np.sin(zpir18 * polphi)
-        zcospol = np.cos(zpir18 * polphi)
-        zlampol = zpir18 * pollam
-        zphis = zpir18 * phirot
-
-        zrlas = np.where(rlarot > 180.0, rlarot - 360.0, rlarot)
-        zrlas = zpir18 * zrlas
-
-        if polgam is not None:
-            zgam = zpir18 * polgam
-            zarg1 = np.sin(zlampol) * (
-                -zsinpol
-                * np.cos(zphis)
-                * (np.cos(zrlas) * np.cos(zgam) - np.sin(zrlas) * np.sin(zgam))
-                + zcospol * np.sin(zphis)
-            ) - np.cos(zlampol) * np.cos(zphis) * (
-                np.sin(zrlas) * np.cos(zgam) + np.cos(zrlas) * np.sin(zgam)
-            )
-
-            zarg2 = np.cos(zlampol) * (
-                -zsinpol
-                * np.cos(zphis)
-                * (np.cos(zrlas) * np.cos(zgam) - np.sin(zrlas) * np.sin(zgam))
-                + zcospol * np.sin(zphis)
-            ) + np.sin(zlampol) * np.cos(zphis) * (
-                np.sin(zrlas) * np.cos(zgam) + np.cos(zrlas) * np.sin(zgam)
-            )
-        else:
-            zarg1 = np.sin(zlampol) * (
-                -zsinpol * np.cos(zrlas) * np.cos(zphis)
-                + zcospol * np.sin(zphis)  # noqa: E501
-            ) - np.cos(zlampol) * np.sin(zrlas) * np.cos(zphis)
-
-            zarg2 = np.cos(zlampol) * (
-                -zsinpol * np.cos(zrlas) * np.cos(zphis)
-                + zcospol * np.sin(zphis)  # noqa: E501
-            ) + np.sin(zlampol) * np.sin(zrlas) * np.cos(zphis)
-
-        zarg2 = np.where(zarg2 == 0.0, 1.0e-20, zarg2)
-
-        return zrpi18 * np.arctan2(zarg1, zarg2)
