@@ -209,7 +209,7 @@ class TranslatedWord:
         return list(self._translations.keys())
 
     def set_active_lang(
-        self, lang: Optional[str] = None, query: Callable[[], str] = None
+        self, lang: Optional[str] = None, query: Optional[Callable[[], str]] = None
     ) -> None:
         """Set the active language, either hard-coded or queryable.
 

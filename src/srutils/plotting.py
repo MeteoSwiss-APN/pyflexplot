@@ -6,6 +6,7 @@ from typing import Union
 
 # Third-party
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import Colormap
 
@@ -13,7 +14,7 @@ ColorType = Union[str, Tuple[float, float, float], Tuple[float, float, float, fl
 
 
 def truncate_cmap(
-    cmap: Union[str, Colormap], minval: float = 0.0, maxval: float = 1.0, n: int = 100
+    cmap: str | Colormap, minval: float = 0.0, maxval: float = 1.0, n: int = 100
 ) -> Colormap:
     """Truncate a color map.
 
@@ -21,7 +22,7 @@ def truncate_cmap(
 
     """
     if isinstance(cmap, str):
-        cmap = mpl.pyplot.get_cmap(cmap)
+        cmap = plt.get_cmap(cmap)
     return mpl.colors.LinearSegmentedColormap.from_list(
         f"truncated({cmap.name}, {minval:.2f}, {maxval:.2f})",
         cmap(np.linspace(minval, maxval, n)),

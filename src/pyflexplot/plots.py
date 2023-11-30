@@ -863,7 +863,7 @@ def create_panel_config(
         cmap = mpl.pyplot.get_cmap(cmap, lut=n_colors)
         colors: list[ColorType]
         try:
-            colors = cmap.colors.tolist()
+            colors = cmap.colors.tolist()  # type: ignore
         except AttributeError:
             if n_colors == 1:
                 colors = [cmap(0.0)]

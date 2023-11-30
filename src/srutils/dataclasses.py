@@ -185,7 +185,7 @@ def cast_value(
             sequence of one-character strings, as is their default behavior.
 
     """
-    type_name = None
+    type_name = ""
     try:
         type_name = type_.__name__  # type: ignore
     except AttributeError:
@@ -311,10 +311,10 @@ def cast_value(
             raise error(value, type_name) from e
 
     elif "Union" in type_name:
-        inner_types = get_args(type_)
-        if "NoneType" in inner_types:
-            inner_types.remove("NoneType")
-            inner_types.insert(0, "NoneType")
+        inner_types = list(get_args(type_))
+        if type(None) in inner_types:
+            inner_types.remove(type(None))
+            inner_types.insert(0, type(None))
         for inner_type in inner_types:
             if type(value) == inner_type:  # noqa: E721
                 return value
@@ -383,7 +383,8 @@ def cast_value(
 
     elif "Sequence" in type_name:
         value = prepare_wrapped_value(value, type_name)
-        inner_types = get_args(type_)
+        inner_types = get_args(type_)  # type: ignore
+        print("INTER TYPE SEQ ", inner_types)
         if len(inner_types) == 0:
             return prepare_wrapped_value(value, type_name)
         inner_type = inner_types[0]

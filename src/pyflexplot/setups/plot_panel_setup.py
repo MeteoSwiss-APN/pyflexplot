@@ -495,15 +495,16 @@ class PlotPanelSetupGroup:
                 a separate group is returned for each decompressed setup object.
 
         """
+        sub_setups: List[PlotPanelSetup] | PlotPanelSetupGroup
         if internal:
-            sub_setups: List[PlotPanelSetup] = [
+            sub_setups = [
                 sub_setup
                 for setup in self
                 for sub_setup in setup.decompress(select=select, skip=skip)
             ]
             return type(self)(sub_setups)
         if skip is None:
-            sub_setups: PlotPanelSetupGroup = self.decompress(select, internal=True)
+            sub_setups = self.decompress(select, internal=True)
             return [
                 type(self)([setup])
                 for setup in sub_setups  # pylint: disable=E1133  # unpacking-non-sequence  # noqa

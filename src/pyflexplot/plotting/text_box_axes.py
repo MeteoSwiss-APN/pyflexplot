@@ -442,7 +442,7 @@ class TextBoxAxes:
                     f"{len(colors_blocks[i])} != {len(block)}"
                 )
             for j in range(len(block)):
-                if colors_blocks[i][j] is None:
+                if colors_blocks[i][j] is not None:
                     colors_blocks[i][j] = default_color
 
         return colors_blocks

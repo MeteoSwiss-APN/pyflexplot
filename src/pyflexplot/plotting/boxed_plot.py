@@ -283,10 +283,11 @@ def _add_panel_label(
             linewidth=1,
         )
     )
+    panel_text = panel_config.label
     ax.ax.text(
         x=0.5 * width,
         y=1.0 - 0.55 * height,
-        s=panel_config.label,
+        s=panel_text if panel_text is not None else "",
         transform=ax.ax.transAxes,
         zorder=zorder,
         ha="center",
