@@ -79,7 +79,7 @@ click.option = lambda *args, **kwargs: _click_option(
     ),
     metavar="DEST_DIR",
     type=click.Path(exists=False),
-    default=None,
+    default="output/",
 )
 @click.option(
     "--merge-pdfs/--no-merge-pdfs",
