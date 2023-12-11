@@ -205,7 +205,7 @@ This package was created with [`copier`](https://github.com/copier-org/copier) a
 
 * [copier](https://github.com/copier-org/copier) - Based library and CLI app for rendering project templates.
 * [mch-python-blueprint](https://github.com/MeteoSwiss-APN/mch-python-blueprint) - Project template embedded in this project based on copier.
-* [pyshp-repo](https://github.com/GeospatialPython/pyshp) - Python module to generate Shapefiles
+* [pyshp](https://github.com/GeospatialPython/pyshp) - Python module to generate Shapefiles
 
 
 ## License
