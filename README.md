@@ -11,7 +11,8 @@ PyFlexPlot is a Python-based tool to visualize/post-process FLEXPART dispersion 
   - [Testing and Coding Standards](#testing-and-coding-standards)
     - [Pre-commit on GitHub Actions](#pre-commit-on-github-actions)
     - [Jenkins](#jenkins)
-- [Features](#features)
+    - [Updating the Test References](#updating-the-test-references)
+- [Features](#key-features)
 - [Credits](#credits)
 - [External Links](#external-links)
 - [License](#license)
@@ -177,12 +178,25 @@ both commits on branches and PRs. Your jenkins pipeline will not be set up
 automatically. If you need to run your tests on CSCS machines, contact DevOps to help you with the setup of the pipelines. Otherwise, you can ignore the jenkinsfiles
 and exclusively run your tests and checks on GitHub actions.
 
-## Features
+### Updating the Test References
+Pyflexplot includes a set of functionality tests that compare generated output against predefined reference data. 
+These reference files, which are in the .py format, are derived from and stored alongside the original data in the tests/data directory.
+To update these references, uncomment the lines of code in the test file you wish to update and run the test.
+
+## Key Features
 
 ### PDF and PNG Files
-Pyflexplot offers the solution to visualize the data in a map plot and save them either in .pdf and/or .png format. For that, the variable 'outfile'.
+Pyflexplot allows to visualize data on a map plot and save the output in either PDF or PNG format. To utilize this feature, simply adjust the outfile variable with the appropriate file extension.
+![Example Image Ouput](img/integrated_concentration_site-Goesgen_species-1_domain-full_lang-de_ts-20200217T0900.png)
 ### Shape File Generation
-
+Furthermore, Pyflexplot provides the functionality to export data into shape files (.shp) to utilize them in GIS programs such as QGIS 3. The output is a ZIP archive containing the essential components of a shapefile: .shp, .dbf, .shx, .prj, and .shp.xml.
+Key aspects of this feature include:
+* __Filtering Zero Values__: The tool initially removes zero values from fields (e.g., concentration) before processing.
+* __Logarithmic Transformation__: Field values undergo a log_10 transformation to optimize the visualization of data ranges.
+* __Precision Handling__: The transformed field values are recorded with 15 decimal places, accommodating the precision limitations of some GIS software.
+* __Metadata Storage__: Information, such as details about released materials, are stored within a .shp.xml file as metadata.
+### Scaling the field values
+Another feature is to manipulate the field values by scaling with an arbritrary factor. This factor can be set in the preset with the variable `multiplier`.
 ## Credits
 
 This package was created with [`copier`](https://github.com/copier-org/copier) and the [`MeteoSwiss-APN/mch-python-blueprint`](https://github.com/MeteoSwiss-APN/mch-python-blueprint) project template.
