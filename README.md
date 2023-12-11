@@ -180,7 +180,7 @@ and exclusively run your tests and checks on GitHub actions.
 ## Features
 
 ### PDF and PNG Files
-oiefjiowef 
+Pyflexplot offers the solution to visualize the data in a map plot and save them either in .pdf and/or .png format. For that, the variable 'outfile'.
 ### Shape File Generation
 
 ## Credits
