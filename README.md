@@ -1,5 +1,5 @@
 # PyFlexPlot
-PyFlexPlot is a Python-based tool to visualize FLEXPART dispersion simulation results stored in NetCDF format.
+PyFlexPlot is a Python-based tool to visualize/post-process FLEXPART dispersion simulation results stored in NetCDF format.
 ## Table of Contents
 - [Prerequisites and Cloning the Repository](#prerequisites-and-cloning-the-repository)
 - [Getting Started](#getting-started)
@@ -179,7 +179,9 @@ and exclusively run your tests and checks on GitHub actions.
 
 ## Features
 
-- TODO
+### PDF and PNG Files
+oiefjiowef 
+### Shape File Generation
 
 ## Credits
 
@@ -189,6 +191,7 @@ This package was created with [`copier`](https://github.com/copier-org/copier) a
 
 * [copier](https://github.com/copier-org/copier) - Based library and CLI app for rendering project templates.
 * [mch-python-blueprint](https://github.com/MeteoSwiss-APN/mch-python-blueprint) - Project template embedded in this project based on copier.
+* [pyshp-repo](https://github.com/GeospatialPython/pyshp) - Python module to generate Shapefiles
 
 
 ## License
