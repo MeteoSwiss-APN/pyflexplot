@@ -1,0 +1,51 @@
+# PyFlexPlot setup file to create ensemble CCOSMO-1E plots
+
+[_base]
+# Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
+infile = "data/cosmo-1e/2021030503/{ens_member:03}/grid_conc_20210305030000.nc_GOE"
+ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+model = "COSMO-1E"
+lang = "de"
+outfile_time_format = "%Y%m%dT%H%M"
+combine_species = true
+
+[_base._concentration]
+plot_variable = "concentration"
+level = 0
+integrate = false
+time = "*"
+
+[_base._concentration._integr]
+integrate = true
+time = -1
+
+[_base._tot_deposition]
+plot_variable = "tot_deposition"
+integrate = true
+time = -1
+
+[_base._affected_area]
+plot_variable = "affected_area"
+integrate = true
+level = 0
+time = -1
+
+[_base._concentration."_probability+"]
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_probability_{domain}.shp"
+ens_variable = "probability"
+ens_param_thr = 0
+[_base._concentration._integr."_probability+"]
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_probability_{domain}.shp"
+ens_variable = "probability"
+ens_param_thr = 0
+[_base._tot_deposition."_probability+"]
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_probability_{domain}.shp"
+ens_variable = "probability"
+ens_param_thr = 0
+[_base._affected_area."_probability+"]
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_probability_{domain}.shp"
+ens_variable = "probability"
+ens_param_thr = 0
+
+["**".ch]
+domain = "ch"
