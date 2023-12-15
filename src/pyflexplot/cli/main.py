@@ -47,7 +47,6 @@ from ..utils.logging import log
 # pylint: disable=R0913  # too-many-arguments (>5)
 # pylint: disable=R0914  # too-many-locals (>15)
 # pylint: disable=R0915  # too-many-statements (>50)
-# noqa: E501
 def main(
     ctx: Context,
     *,
@@ -222,7 +221,7 @@ def create_all_plots(
                 f" read {setup_group.infile}"
             )
         )
-        # Group fields into one group per plot (with possibly multiple outfiles) # noqa: E501
+        # Group fields into one group per plot (with possibly multiple outfiles)
         field_groups = read_fields(
             setup_group,
             config={
@@ -235,7 +234,7 @@ def create_all_plots(
         )
         iter_state.n_field_groups_curr += len(field_groups)
         iter_state.n_field_groups_i = len(field_groups)
-        # Format all outfile paths ahead of parallelized plotting loop to ensure # noqa: E501
+        # Format all outfile paths ahead of parallelized plotting loop to ensure
         # correct order of derived paths (e.g., "a.pdf", "a.1.pdf", "a.2.pdf")
         out_file_paths_lst: List[List[str]] = [
             format_out_file_paths(
@@ -260,9 +259,7 @@ def create_all_plots(
         log(dbg=f"done processing {setup_group.infile}")
         n_input_files_todo = iter_state.n_input_files - iter_state.i_input_file
         maximum_reached = (
-            only
-            and iter_state.n_field_groups_curr >= only
-            and n_input_files_todo  # noqa: E501
+            only and iter_state.n_field_groups_curr >= only and n_input_files_todo
         )
         if maximum_reached:
             log(
@@ -298,13 +295,11 @@ def prepare_setups(
 
     # Combine setups that only differ in outfile
     setup_groups = [
-        setup_group.compress_partially("files.output")
-        for setup_group in setup_groups  # noqa: E501
+        setup_group.compress_partially("files.output") for setup_group in setup_groups
     ]
-
     if only:
         # Restrict the total number of setup objects in the setup groups
-        # Note that the number of plots is likely still higher than only because # noqa: E501
+        # Note that the number of plots is likely still higher than only because
         # each setup can define many plots, but it's a first elimination step
         setup_groups = restrict_grouped_setups(
             setup_groups, only, grouped_by="files.input"
@@ -312,7 +307,6 @@ def prepare_setups(
     return setup_groups
 
 
-# noqa: E501
 def read_setup_groups(
     setup_file_paths: Sequence[Union[Path, str]],
     preset_setup_file_paths: Sequence[Union[Path, str]],
@@ -467,7 +461,9 @@ def create_plots_i(
     pid = get_pid()
     log(
         dbg=(
-            f"[P{pid}][{iter_state.i_input_file}/{iter_state.n_input_files}][{ip_fld}"  # noqa: E501
+            f"""[P{pid}]
+            [{iter_state.i_input_file}/{iter_state.n_input_files}]
+            [{ip_fld}"""
             f"/{iter_state.n_field_groups_i}] prepare plot"
         )
     )
@@ -477,7 +473,8 @@ def create_plots_i(
         log(
             inf=f"{field_group.attrs.format_path()} -> {out_file_path}",
             vbs=(
-                f"[P{pid}][{iter_state.i_input_file}/{iter_state.n_input_files}]"  # noqa: E501
+                f"""[P{pid}]
+                [{iter_state.i_input_file}/{iter_state.n_input_files}]"""
                 f"[{ip_fld}{iter_state.n_field_groups_i}][{ip_out}/{n_out}]"
                 f" plot {out_file_path}"
             ),
@@ -506,7 +503,8 @@ def merge_pdf_plots(
         merged = f"{dest_dir}/{relpath(paths_organizer.merge(group), start=tmp_dir)}"  # noqa: E501
         if keep_merged and abspath(merged) == abspath(group[0]):
             raise Exception(
-                "input and output files are the same file, which is not allowed for"  # noqa: E501
+                """input and output files are the same file,
+                which is not allowed for"""
                 f" remove_merged=T: '{merged}'"
                 + ("" if merged == group[0] else f" == '{merged[0]}'")
             )
@@ -537,7 +535,8 @@ def merge_shape_files(
     merged_files: List[str] = []
     n = 0
     for i, group in enumerate(grouped_file_paths):
-        merged = f"{dest_dir}/{relpath(paths_organizer.merge(group), start=tmp_dir)}"  # noqa: E501
+        merged = f"""{dest_dir}/
+        {relpath(paths_organizer.merge(group), start=tmp_dir)}"""
         tmp_zip_name = f"{dest_dir}/temp_shape{i}.zip"
         if not dry_run:
             with zipfile.ZipFile(tmp_zip_name, "w") as main_zip:
@@ -549,7 +548,6 @@ def merge_shape_files(
                             sub_file, zip_to_merge.open(sub_file).read()
                         )  # noqa: E501
                     zip_to_merge.close()
-            main_zip.close()
             shutil.copy(tmp_zip_name, merged)
             os.remove(tmp_zip_name)
         for path in group:

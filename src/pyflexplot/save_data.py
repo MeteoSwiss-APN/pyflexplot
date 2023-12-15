@@ -21,8 +21,8 @@ from .input.field import FieldGroup
 from .utils.logging import log
 
 
-class DataSaverFactory:
-    """Factory class to create appropriate data saver based on file extensions."""  # noqa: E501
+class DataSaver:
+    """A class that employs a strategy to save the data."""
 
     @staticmethod
     def create_saver(filename: str) -> "DataSaver":
@@ -35,10 +35,6 @@ class DataSaverFactory:
             return DataSaver(ShapeFileSaver())
         else:
             raise ValueError(f"Unsupported file extension: {extension}")
-
-
-class DataSaver:
-    """A class that employs a strategy to save the data."""
 
     def __init__(self, strategy) -> None:
         """Initialize a DataSaver with a specified saving strategy."""
@@ -64,21 +60,15 @@ class GeneralDataSaver:
         self, plot_path: str, plot_config: BoxedPlotConfig
     ) -> str:
         """Write standalone release information for the plot."""
-        path = Path(plot_path).with_suffix(
-            f".release_info{Path(plot_path).suffix}"
-        )  # noqa: E501
+        path = Path(plot_path).with_suffix(f".release_info{Path(plot_path).suffix}")
 
         log(inf=f"write standalone release info to {path}")
         layout = BoxedPlotLayout(
-            plot_config.setup.layout.derive(
-                {"type": "standalone_release_info"}
-            ),  # noqa: E501
+            plot_config.setup.layout.derive({"type": "standalone_release_info"}),
             aspects={"tot": 1.5},
             rects={"tot": (0, 0, 1, 1)},
         )
-        species_id = plot_config.setup.panels.collect_equal(
-            "dimensions.species_id"
-        )  # noqa: E501
+        species_id = plot_config.setup.panels.collect_equal("dimensions.species_id")
         n_species = 1 if isinstance(species_id, int) else len(species_id)
         width = 1.67 + 0.67 * n_species
         config = BoxedPlotConfig(
@@ -110,35 +100,45 @@ class GeneralDataSaver:
             )
 
         plot = BoxedPlot(config)
-        plot.add_text_box(
-            "standalone_release_info", (0, 0, 1, 1), fill=fill_box
-        )  # noqa: E501
+        plot.add_text_box("standalone_release_info", (0, 0, 1, 1), fill=fill_box)
         plot.write(path)
         return str(path)
 
 
 class ShapeFileSaver:
-    """Provides functionality to save data as shapefiles and pack inside a ZIP."""  # noqa: E501
+    """Provides functionality to save data as shapefiles and pack inside a ZIP."""
 
-    def save(self, filename: str, _plot: BoxedPlot, data: FieldGroup) -> None:
+    replacements = {
+        "\\\\": "",  # Remove double backslashes
+        "\\mathrm": "",  # Remove the \mathrm command
+        "\\circ": "°",  # Degree symbol
+        '\\,"': "",  # Remove small space
+        '\\"o': "ö",  # ö character
+        '\\"a': "ä",  # ä character
+        '\\"u': "ü",  # ü character
+        "$": "",  # Remove dollar signs used for math mode
+        "^": "",  # Superscript (might not be needed in plain text)
+        "s^{-1}": "s-1",  # Inverse seconds
+        "\\t": " ",  # Tab character
+        "\\n": " ",  #
+        "{": "",
+        "}": "",
+        "\\,": " ",
+    }
+
+    def save(self, filename: str, plot: BoxedPlot, data: FieldGroup) -> None:
         base_file_dir, _ = os.path.splitext(filename)
         with zipfile.ZipFile(f"{filename}.zip", "w") as zip_file:
             lat_values = []
             lon_values = []
-            shapefile_writer = shapefile.Writer(
-                filename, shapeType=shapefile.POINT
-            )  # noqa: E501
+            shapefile_writer = shapefile.Writer(filename, shapeType=shapefile.POINT)
             for n, field in enumerate(data):
-                grid_north_pole_lat = (
-                    field.mdata.simulation.grid_north_pole_lat
-                )  # noqa: E501
-                grid_north_pole_lon = (
-                    field.mdata.simulation.grid_north_pole_lon
-                )  # noqa: E501
+                grid_north_pole_lat = field.mdata.simulation.grid_north_pole_lat
+                grid_north_pole_lon = field.mdata.simulation.grid_north_pole_lon
                 fld = field.fld.ravel()
                 relevant_indices = np.where(fld > 0)
                 fld = np.log10(fld[relevant_indices])
-                field_name = f"{field.mdata.species.name}"
+                field_name = str(field.mdata.species.name)
                 shapefile_writer.field(field_name, "F", 8, 15)
                 if len(fld) == 0:
                     shapefile_writer.point(
@@ -175,13 +175,11 @@ class ShapeFileSaver:
 
             min_lon, max_lon = np.min(lon_values), np.max(lon_values)
             min_lat, max_lat = np.min(lat_values), np.max(lat_values)
-            domain_metadata = {
-                "DomainBoundaries": [min_lon, max_lon, min_lat, max_lat]
-            }  # noqa: E501
+            domain_metadata = {"DomainBoundaries": [min_lon, max_lon, min_lat, max_lat]}
             self._write_metadata_file(
                 base_file_dir,
                 zip_file,
-                {**_plot.config.labels, **domain_metadata},  # noqa: E501
+                {**plot.config.labels, **domain_metadata},
             )
             self._move_shape_file_to_zip(base_file_dir, zip_file)
             # Some GIS Software require information about the projection
@@ -190,9 +188,7 @@ class ShapeFileSaver:
             )
             zip_file.close()
 
-    def _move_shape_file_to_zip(
-        self, base_file_dir: str, zip_file: zipfile.ZipFile
-    ):  # noqa: E501
+    def _move_shape_file_to_zip(self, base_file_dir: str, zip_file: zipfile.ZipFile):
         """Move the generated shapefile components into a ZIP archive."""
         extensions = [".shp", ".shx", ".dbf"]
         if "_domain" not in base_file_dir:
@@ -202,7 +198,7 @@ class ShapeFileSaver:
             with open(file_to_copy, "rb") as file_in_zip:
                 zip_file.writestr(
                     f"{os.path.basename(base_file_dir)}{ext}",
-                    file_in_zip.read(),  # noqa: E501
+                    file_in_zip.read(),
                 )
             file_in_zip.close()
             os.remove(file_to_copy)
@@ -211,31 +207,14 @@ class ShapeFileSaver:
         self, filename: str, zip_file: zipfile.ZipFile, metadata: dict
     ):
         """Write the metadata of the shapefile as an XML content (.shp.xml)."""
-        title_string = list(metadata["title"].values())[0]
+        title_string, *_ = metadata["title"].values()
         title_latex_string = "<BR>".join(list(metadata["title"].values()))
         release_latex_string = metadata["release_info"]["lines_str"].replace(
             "\n", "<BR>"
         )
         model_info_string = "<BR>".join(list(metadata["bottom"].values()))
-        replacements = {
-            "\\\\": "",  # Remove double backslashes
-            "\\mathrm": "",  # Remove the \mathrm command
-            "\\circ": "°",  # Degree symbol
-            '\\,"': "",  # Remove small space
-            '\\"o': "ö",  # ö character
-            '\\"a': "ä",  # ä character
-            '\\"u': "ü",  # ü character
-            "$": "",  # Remove dollar signs used for math mode
-            "^": "",  # Superscript (might not be needed in plain text)
-            "s^{-1}": "s-1",  # Inverse seconds
-            "\\t": " ",  # Tab character
-            "\\n": " ",
-            "{": "",
-            "}": "",
-            "\\,": " ",
-        }
 
-        for key, value in replacements.items():
+        for key, value in ShapeFileSaver.replacements.items():
             release_latex_string = release_latex_string.replace(key, value)
             title_latex_string = title_latex_string.replace(key, value)
             title_string = title_string.replace(key, value)
@@ -267,9 +246,7 @@ class ShapeFileSaver:
         with open(f"{filename}.shp.xml", "w", encoding="utf-8") as f:
             f.write(xml_content)
 
-    def _write_projection_file_to_zip(
-        self, base_name: str, zip_file: zipfile.ZipFile
-    ):  # noqa: E501
+    def _write_projection_file_to_zip(self, base_name: str, zip_file: zipfile.ZipFile):
         """Write the projection file content to the ZIP archive."""
         proj_file_content = (
             'GEOGCS["WGS 84",DATUM["WGS_1984",'

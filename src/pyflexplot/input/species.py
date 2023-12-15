@@ -30,7 +30,7 @@ class SpeciesAttribute:
 
     @overload
     @classmethod
-    def create(cls, arg1: Tuple[float, str], arg2=None):
+    def create(cls, arg1: tuple[float, str], arg2=None):
         ...
 
     @classmethod
@@ -50,8 +50,8 @@ class Species:
     id_cosmo: int = -99
     id_ifs: int = -99
     name: str = "N/A"
-    weight: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore # noqa: E501
-    half_life: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore # noqa: E501
+    weight: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore
+    half_life: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore
     deposition_velocity: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore # noqa: E501
     sedimentation_velocity: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore # noqa: E501
     washout_coefficient: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore # noqa: E501
@@ -60,7 +60,7 @@ class Species:
     @classmethod
     def create(cls, **params: Any) -> "Species":
         params_prep: Dict[str, Any] = {}
-        fields = cls.__dataclass_fields__  # type: ignore  # pylint: disable=E1101 # noqa: E501
+        fields = cls.__dataclass_fields__  # type: ignore  # pylint: disable=E1101
         for param, value in params.items():
             try:
                 field: dc.Field = fields[param]
@@ -124,9 +124,7 @@ SPECIES: List[Species] = [
         washout_coefficient=(5.0e-5, "s-1"),
         washout_exponent=0.62,
     ),
-    Species.create(
-        id_cosmo=6, id_ifs=6, name="HNO2", weight=(47.0, "g mol-1")
-    ),  # noqa: E501
+    Species.create(id_cosmo=6, id_ifs=6, name="HNO2", weight=(47.0, "g mol-1")),
     Species.create(
         id_cosmo=7,
         id_ifs=7,
@@ -142,12 +140,8 @@ SPECIES: List[Species] = [
         weight=(64.0, "g mol-1"),
         washout_exponent=0.62,
     ),
-    Species.create(
-        id_cosmo=9, id_ifs=9, name="HCHO", weight=(30.0, "g mol-1")
-    ),  # noqa: E501
-    Species.create(
-        id_cosmo=10, id_ifs=10, name="PAN", weight=(121.0, "g mol-1")
-    ),  # noqa: E501
+    Species.create(id_cosmo=9, id_ifs=9, name="HCHO", weight=(30.0, "g mol-1")),
+    Species.create(id_cosmo=10, id_ifs=10, name="PAN", weight=(121.0, "g mol-1")),
     Species.create(
         id_cosmo=11,
         id_ifs=11,
@@ -232,9 +226,7 @@ SPECIES: List[Species] = [
         washout_coefficient=(0.0, "s-1"),
         washout_exponent=0.0,
     ),
-    Species.create(
-        id_cosmo=22, id_ifs=22, name="CO", weight=(28.0, "g mol-1")
-    ),  # noqa: E501
+    Species.create(id_cosmo=22, id_ifs=22, name="CO", weight=(28.0, "g mol-1")),
     Species.create(
         id_cosmo=24,
         id_ifs=24,
@@ -349,9 +341,7 @@ def get_species(*, name: str) -> Species:
 
 
 @overload
-def get_species(
-    *, name: Union[Tuple[str, ...], List[str]]
-) -> Tuple[Species, ...]:  # noqa: E501
+def get_species(*, name: Union[tuple[str, ...], List[str]]) -> tuple[Species, ...]:
     ...
 
 

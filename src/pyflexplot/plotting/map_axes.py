@@ -601,7 +601,7 @@ class MapAxes:
     # pylint: disable=E0633  # unpacking-non-sequence (false negative?!?)
     def _get_domain_bbox(
         self, n: int = 20, pad: float = 1.0
-    ) -> tuple[float, float, float, float]:
+    ) -> Tuple[float, float, float, float]:
         """Get ``(lon0, lat0, lon1, lat1)`` bounding box of domain."""
         trans = self.trans.axes_to_geo
         lons_s, lats_s = trans(np.linspace(0, 1, n), np.full([n], 0))

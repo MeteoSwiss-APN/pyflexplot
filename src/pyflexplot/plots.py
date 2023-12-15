@@ -39,7 +39,7 @@ import numpy as np
 from matplotlib.colors import Colormap
 
 # First-party
-from pyflexplot.save_data import DataSaverFactory
+from pyflexplot.save_data import DataSaver
 from srutils.datetime import init_datetime
 from srutils.format import format_numbers_range
 from srutils.format import ordinal
@@ -210,7 +210,7 @@ def create_plot(
             if dir_path:
                 os.makedirs(dir_path, exist_ok=True)
             log(dbg=f"writing plot {file_path}")
-            data_saver = DataSaverFactory.create_saver(file_path)
+            data_saver = DataSaver.create_saver(file_path)
             data_saver.save(file_path, plot, field_group)
         log(dbg=f"created plot {file_path}")
     plot.clean()

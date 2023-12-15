@@ -117,9 +117,7 @@ def read_fields(
         if override_path is not None:
             override_path = f"{_override_indir}/{Path(override_path).name}"
         else:
-            override_path = (
-                f"{_override_indir}/{Path(setup_group.infile).name}"  # noqa: E501
-            )
+            override_path = f"{_override_indir}/{Path(setup_group.infile).name}"
 
     files = InputFileEnsemble(
         raw_path=setup_group.infile,
@@ -139,7 +137,7 @@ def read_fields(
         model_setup.base_time = int(time_steps[0])
     for plot_type_setup in setup_group:
         plot_type_setup.model.base_time = model_setup.base_time
-    # SR_TODO Consider moving group_setups_by_plot_type into complete_dimensions # noqa: E501
+    # SR_TODO Consider moving group_setups_by_plot_type into complete_dimensions
     setup_group = setup_group.complete_dimensions(
         raw_dimensions=raw_dimensions,
         species_ids=species_ids,
@@ -147,12 +145,13 @@ def read_fields(
     # Limit number of plots
     if only and len(setup_group) > only:
         log(
-            dbg=f"[only:{only}] skip {len(setup_group) - only}/{len(setup_group)}"  # noqa: E501
-        )  # noqa: E501
+            dbg=f"""[only:{only}]
+            skip {len(setup_group) - only}/{len(setup_group)}"""
+        )
         setup_group = PlotSetupGroup(list(setup_group)[:only])
 
     # Separate setups of different plot types
-    # Each setup may still lead to multiple plots (multiple outfiles/time steps) # noqa: E501
+    # Each setup may still lead to multiple plots (multiple outfiles/time steps)
     plot_type_setups = group_setups_by_plot_type(setup_group)
 
     # Read fields for plots (all time steps for each plot type at once)
@@ -160,9 +159,7 @@ def read_fields(
     for plot_type_setup in plot_type_setups:
         field_groups_i = files.read_fields_over_time(plot_type_setup)
         if only and len(field_groups) + len(field_groups_i) > only:
-            log(
-                dbg=f"[only:{only}] skip reading remaining fields after {only}"
-            )  # noqa: E501
+            log(dbg=f"""[only:{only}] skip reading remaining fields after {only}""")
             field_groups.extend(field_groups_i[: only - len(field_groups)])
             break
         field_groups.extend(field_groups_i)
@@ -173,9 +170,7 @@ def read_fields(
     return field_groups
 
 
-def prepare_paths(
-    path: str, ens_member_ids: Optional[Sequence[int]]
-) -> List[str]:  # noqa: E501
+def prepare_paths(path: str, ens_member_ids: Optional[Sequence[int]]) -> List[str]:
     """Prepare paths: one for deterministic, multiple for ensemble run."""
     key = "ens_member"
     if re.search(f"{{{key}" + r"(:[0-9]+d?)?}", path):
@@ -189,9 +184,7 @@ def prepare_paths(
     elif not ens_member_ids:
         paths = [path]
     else:
-        raise ValueError(
-            f"format key '{key}' missing in input file path {path}"
-        )  # noqa: E501
+        raise ValueError(f"format key '{key}' missing in input file path {path}")
     if ens_member_ids and len(ens_member_ids) != len(paths):
         raise ValueError(
             f"must pass same number of ens_member_ids ({len(ens_member_ids)}"
@@ -291,7 +284,7 @@ class InputFileEnsemble:
         if len(self.paths) != len(self.public_paths):
             raise Exception(
                 f"unequal number of paths ({len(self.paths)}) and public_paths"
-                f" ({len(self.public_paths)}) derived from raw_path '{raw_path}'"  # noqa: E501
+                f" ({len(self.public_paths)}) derived from raw_path '{raw_path}'"
                 f" and override_raw_path '{override_raw_path}'"
             )
 
@@ -323,24 +316,18 @@ class InputFileEnsemble:
         """
         first_path = next(iter(self.paths))
         with nc4.Dataset(first_path) as fi:
-            nc_dimensions_dct = read_dimensions(
-                fi, add_ts0=self.config.add_ts0
-            )  # noqa: E501
+            nc_dimensions_dct = read_dimensions(fi, add_ts0=self.config.add_ts0)
             ts_hrs: float = self.get_temp_res_hrs(fi)
 
         field_lst_by_ts: Dict[int, List[Field]] = {}
         for panel_setup_i in plot_setup.panels:
             # Create individual setups at each requested time step
-            panel_setups_req_time: PlotPanelSetupGroup  # noqa: E501
-            panel_setups_req_time = panel_setup_i.decompress(
-                ["dimensions.time"]
-            )  # noqa: E501
+            panel_setups_req_time: PlotPanelSetupGroup
+            panel_setups_req_time = panel_setup_i.decompress(["dimensions.time"])
             fld_time_mem = self._read_fld_time_mem(
                 panel_setup_i, panel_setups_req_time, nc_dimensions_dct
             )
-            fld_time = self._reduce_ensemble_etc(
-                fld_time_mem, panel_setup_i, ts_hrs
-            )  # noqa: E501
+            fld_time = self._reduce_ensemble_etc(fld_time_mem, panel_setup_i, ts_hrs)
 
             # Compute some statistics across all time steps
             time_stats = FieldTimeProperties(fld_time)
@@ -380,9 +367,7 @@ class InputFileEnsemble:
                 ens_member_ids=plot_setup.model.ens_member_id,
             )
             field_lst: List[Field] = [
-                field
-                for fields_i in field_lst_by_ts.values()
-                for field in fields_i  # noqa: E501
+                field for fields_i in field_lst_by_ts.values() for field in fields_i
             ]
             field_group = FieldGroup(
                 field_lst, plot_setup=plot_setup.copy(), attrs=group_attrs
@@ -413,16 +398,12 @@ class InputFileEnsemble:
         nc_dimensions_dct: Dict[str, Any],
     ) -> np.ndarray:
         fld_time_mem = np.full(
-            self._get_shape_mem_time(
-                nc_dimensions_dct, panel_setup.plot_variable
-            ),  # noqa: E501
+            self._get_shape_mem_time(nc_dimensions_dct, panel_setup.plot_variable),
             np.nan,
             np.float32,
         )
         for idx_mem, file_path in enumerate(self.paths):
-            timeless_panel_setup = panel_setup.derive(
-                {"dimensions": {"time": None}}
-            )  # noqa: E501
+            timeless_panel_setup = panel_setup.derive({"dimensions": {"time": None}})
 
             # Read the data from disk
             n_mem = len(self.paths)
@@ -431,9 +412,7 @@ class InputFileEnsemble:
                 self._read_grid(fi)
 
                 # Read meta data at requested time steps
-                mdata_tss_i = self._collect_meta_data_tss(
-                    fi, panel_setups_req_time
-                )  # noqa: E501
+                mdata_tss_i = self._collect_meta_data_tss(fi, panel_setups_req_time)
                 if idx_mem == 0:
                     self.mdata_tss = mdata_tss_i
                 elif mdata_tss_i != self.mdata_tss:
@@ -457,13 +436,11 @@ class InputFileEnsemble:
 
         def read_fld_time_of_dimensions(
             sub_setup: PlotPanelSetup,
-        ) -> List[np.ndarray]:  # noqa: E501
+        ) -> List[np.ndarray]:
             fld_time_lst: List[np.ndarray] = []
             for dimensions in sub_setup.dimensions.decompress():
                 fld_time_lst.append(
-                    self._read_fld_over_time(
-                        fi, dimensions, sub_setup.integrate
-                    )  # noqa: E501
+                    self._read_fld_over_time(fi, dimensions, sub_setup.integrate)
                 )
             return fld_time_lst
 
@@ -471,18 +448,14 @@ class InputFileEnsemble:
         if plot_variable == "affected_area":
             fld_time_lst = []
             for variable in timeless_panel_setup.dimensions.variable:
-                sub_setup_i = timeless_panel_setup.derive(
-                    {"plot_variable": variable}
-                )  # noqa: E501
+                sub_setup_i = timeless_panel_setup.derive({"plot_variable": variable})
                 fld_time_lst.append(
                     merge_fields(read_fld_time_of_dimensions(sub_setup_i))
                 )
             fld_time = np.moveaxis(np.array(fld_time_lst), 0, -1)
         else:
             # By default, sum up over all dimensions
-            fld_time = merge_fields(
-                read_fld_time_of_dimensions(timeless_panel_setup)
-            )  # noqa: E501
+            fld_time = merge_fields(read_fld_time_of_dimensions(timeless_panel_setup))
             fld_time = fld_time[..., np.newaxis]
         if self.fixer and self.model_setup.name == "IFS-HRES":
             # Note: IFS-HRES-EU is not global, so doesn't need this fix
@@ -534,9 +507,9 @@ class InputFileEnsemble:
     def _get_shape_mem_time(
         self,
         raw_dimensions: Mapping[str, Mapping[str, Any]],
-        plot_variable: str,  # noqa: E501
+        plot_variable: str,
     ) -> Tuple[int, int, int, int, int]:
-        """Get the shape of an array of fields across members and time steps."""  # noqa: E501
+        """Get the shape of an array of fields across members and time steps."""
         renamed_dims = self._renamed_dims()
         if self.config.dry_run:
             nlat = 1
@@ -594,17 +567,13 @@ class InputFileEnsemble:
         self,
         fld_time_mem: np.ndarray,
         panel_setup: PlotPanelSetup,
-        ts_hrs: float,  # noqa: E501
+        ts_hrs: float,
     ) -> np.ndarray:
         def reduce_last_dimension(arr: np.ndarray) -> np.ndarray:
             """Reduce the last dimension used for the affect area fields."""
             if panel_setup.plot_variable == "affected_area":
                 assert arr.shape[-1] == 3  # SR_TMP
-                return (
-                    (arr > AFFECTED_AREA_THRESHOLD)
-                    .any(axis=-1)
-                    .astype(arr.dtype)  # noqa: E501
-                )  # noqa: E501
+                return (arr > AFFECTED_AREA_THRESHOLD).any(axis=-1).astype(arr.dtype)
             assert arr.shape[-1] == 1  # SR_TMP
             return arr.reshape(arr.shape[:-1])
 
@@ -647,7 +616,7 @@ class InputFileEnsemble:
         self,
         fld_time_mem: np.ndarray,
         panel_setup: PlotPanelSetup,
-        ts_hrs: float,  # noqa: E501
+        ts_hrs: float,
     ) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
         if len(self.paths) == 1 or self.config.dry_run:
@@ -744,7 +713,7 @@ class InputFileEnsemble:
                         break
                 else:
                     raise Exception(
-                        f"no variable 'spec*' found among {list(fi.variables)} in"  # noqa: E501
+                        f"no variable 'spec*' found among {list(fi.variables)} in"
                         f" {fi.filepath()}"
                     )
                 # SR_TMP >
@@ -786,7 +755,7 @@ class InputFileEnsemble:
             try:
                 idx = nc_var.dimensions.index(dim_name)
             except ValueError as e:
-                # Potential issue: Dimension is not among the variable dimensions! # noqa: E501
+                # Potential issue: Dimension is not among the variable dimensions!
                 if dim_idx in (None, 0):
                     continue  # Zero-index: We're good after all!
                 raise Exception(
@@ -798,7 +767,7 @@ class InputFileEnsemble:
             # Check that the index along the dimension is valid
             if dim_idx is None:
                 raise Exception(
-                    f"value of dimension #{idx} '{dim_name}' (#{dim_idx}) of variable"  # noqa: E501
+                    f"value of dimension #{idx} '{dim_name}' (#{dim_idx}) of variable"
                     f" '{var_name}' is None in {fi.filepath()}"
                 )
 
@@ -819,15 +788,11 @@ class InputFileEnsemble:
         fld = nc_var[indices]
 
         # Fix known issues with NetCDF input data
-        var_ncattrs = {
-            attr: nc_var.getncattr(attr) for attr in nc_var.ncattrs()
-        }  # noqa: E501
+        var_ncattrs = {attr: nc_var.getncattr(attr) for attr in nc_var.ncattrs()}
         if self.fixer:
             self.fixer.fix_nc_var_fld(fld, self.model_setup.name, var_ncattrs)
 
-        return self._handle_time_integration(
-            fi, fld, dimensions.variable, integrate
-        )  # noqa: E501
+        return self._handle_time_integration(fi, fld, dimensions.variable, integrate)
 
     def _handle_time_integration(
         self, fi: nc4.Dataset, fld: np.ndarray, variable: str, integrate: bool
@@ -860,9 +825,7 @@ class InputFileEnsemble:
             return 1
         dts = set(time[1:] - time[:-1])
         if len(dts) > 1:
-            raise Exception(
-                f"Non-uniform time resolution: {sorted(dts)} ({time})"
-            )  # noqa: E501
+            raise Exception(f"Non-uniform time resolution: {sorted(dts)} ({time})")
         dt_min = next(iter(dts))
         dt_hr = dt_min / 3600.0
         return dt_hr

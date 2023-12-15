@@ -179,7 +179,7 @@ automatically. If you need to run your tests on CSCS machines, contact DevOps to
 and exclusively run your tests and checks on GitHub actions.
 
 ### Updating the Test References
-Pyflexplot includes a set of functionality tests that compare generated output against predefined reference data. 
+Pyflexplot includes a set of functionality tests that compare generated output against predefined reference data.
 These reference files, which are in the .py format, are derived from and stored alongside the original data in the tests/data directory.
 To update these references, uncomment the lines of code in the test file you wish to update and run the test.
 
@@ -187,7 +187,7 @@ To update these references, uncomment the lines of code in the test file you wis
 
 ### PDF and PNG Files
 Pyflexplot allows to visualize data on a map plot and save the output in either PDF or PNG format. To utilize this feature, simply adjust the outfile variable with the appropriate file extension.
-![Example Image Ouput](img/integrated_concentration_site-Goesgen_species-1_domain-full_lang-de_ts-20200217T0900.png)
+![Example Image Output](img/integrated_concentration_site-Goesgen_species-1_domain-full_lang-de_ts-20200217T0900.png)
 ### Shape File Generation
 Furthermore, Pyflexplot provides the functionality to export data into shape files (.shp) to utilize them in GIS programs such as QGIS 3. The output is a ZIP archive containing the essential components of a shapefile: .shp, .dbf, .shx, .prj, and .shp.xml.
 Key aspects of this feature include:
@@ -196,7 +196,7 @@ Key aspects of this feature include:
 * __Precision Handling__: The transformed field values are recorded with 15 decimal places, accommodating the precision limitations of some GIS software.
 * __Metadata Storage__: Information, such as details about released materials, are stored within a .shp.xml file as metadata.
 ### Scaling the field values
-Another feature is to manipulate the field values by scaling with an arbritrary factor. This factor can be set in the preset with the variable `multiplier`.
+Another feature is to manipulate the field values by scaling with an arbitrary factor. This factor can be set in the preset with the variable `multiplier`.
 ## Credits
 
 This package was created with [`copier`](https://github.com/copier-org/copier) and the [`MeteoSwiss-APN/mch-python-blueprint`](https://github.com/MeteoSwiss-APN/mch-python-blueprint) project template.

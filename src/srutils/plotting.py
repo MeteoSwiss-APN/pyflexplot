@@ -50,7 +50,7 @@ def linear_cmap(
     """Create a linear color map from one or more colors."""
     if (
         isinstance(colors, str)
-        or isinstance(colors, tuple)
+        or isinstance(colors, Tuple)
         and isinstance(next(iter(colors)), float)
     ):
         colors = ["white", colors]  # type: ignore

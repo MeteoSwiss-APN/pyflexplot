@@ -74,7 +74,7 @@ class Degrees:
         """Return degrees as a fraction."""
         return self._frac
 
-    def dms(self) -> tuple[FullDegsT, FullMinsT, FullSecsT]:
+    def dms(self) -> Tuple[FullDegsT, FullMinsT, FullSecsT]:
         """Return full degrees, minutes, and seconds."""
         degs = self._frac
         mins = degs % 1 * 60

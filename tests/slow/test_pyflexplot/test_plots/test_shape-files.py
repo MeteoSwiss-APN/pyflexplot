@@ -59,7 +59,7 @@ class Test_ShapeFileGeneration(_TestBase):
         field_group = self.get_field_group(datadir)
         plot = self.get_plot(field_group)
         file_name = datadir + self.setup_dct["files"]["output"]
-        shape_file_saver.save(filename=file_name, _plot=plot, data=field_group)
+        shape_file_saver.save(filename=file_name, plot=plot, data=field_group)
         zip_shape_file = f"{file_name}.zip"
         assert os.path.exists(
             zip_shape_file

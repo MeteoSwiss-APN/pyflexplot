@@ -13,6 +13,7 @@ from typing import get_type_hints
 from typing import Iterable
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Type
 from typing import TypeVar
 from typing import Union
@@ -156,7 +157,7 @@ def cast_value(
     *,
     auto_wrap: bool = False,
     bool_mode: str = "native",
-    datetime_fmt: Union[str, tuple[str, ...]] = "auto",
+    datetime_fmt: Union[str, Tuple[str, ...]] = "auto",
     timedelta_unit: str = "days",
     unpack_str: bool = True,
 ) -> Any:

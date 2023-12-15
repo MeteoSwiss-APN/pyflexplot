@@ -38,9 +38,7 @@ class BaseSetup:
         return self.create(self.dict())
 
     def derive(self: SetupT, params: Dict[str, Any]) -> SetupT:
-        merged_dictionaries = merge_dicts(
-            self.dict(), params, overwrite_seqs=True
-        )  # noqa: E501
+        merged_dictionaries = merge_dicts(self.dict(), params, overwrite_seqs=True)
         return type(self).create(merged_dictionaries)
 
     def dict(self: SetupT, rec: bool = False) -> Dict[str, Any]:
@@ -73,13 +71,9 @@ class BaseSetup:
         return nested_repr(self)
 
     @classmethod
-    def cast(
-        cls: Type[SetupT], param: str, value: Any, recursive: bool = False
-    ) -> Any:  # noqa: E501
+    def cast(cls: Type[SetupT], param: str, value: Any, recursive: bool = False) -> Any:
         if recursive:
-            raise ValueError(
-                f"recursive cast not implemented for class {cls.__name__}"
-            )  # noqa: E501
+            raise ValueError(f"recursive cast not implemented for class {cls.__name__}")
         return cast_field_value(cls, param, value)
 
     @classmethod
@@ -109,7 +103,7 @@ class BaseSetup:
 
     @classmethod
     def get_params(cls: Type[SetupT]) -> List[str]:
-        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101 # noqa: E501
+        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
 
     @classmethod
     def _create_mod_params_pre_cast(

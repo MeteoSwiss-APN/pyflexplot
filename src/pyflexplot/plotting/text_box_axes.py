@@ -136,9 +136,9 @@ class TextBoxElementColorRect(TextBoxElement):
 
             h (float): Height (box coordinates).
 
-            fc (str or tuple[float]): Face color.
+            fc (str or Tuple[float]): Face color.
 
-            ec (str or tuple[float]): Edge color.
+            ec (str or Tuple[float]): Edge color.
 
             x_anker (str): Horizontal anker. Options: 'l' or 'left'; 'c' or
                 'center'; 'r' or 'right'; and None, in which case it is derived
