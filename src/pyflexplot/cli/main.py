@@ -136,42 +136,21 @@ def main(
 
     # Merge Shape Files (already packed in .zip files each)
     log(vbs="merging shape files")
-    iter_max = 1 if abspath(dest_dir) == abspath(tmp_dir) else 10
-    for iter_i in range(iter_max):
-        all_out_file_paths_tmp = list(all_out_file_paths)
-        try:
-            shape_paths = merge_shape_files(
-                all_out_file_paths_tmp,
-                tmp_dir=tmp_dir,
-                dest_dir=dest_dir,
-                dry_run=pdf_dry_run,
-            )
-        except FileNotFoundError:
-            log(
-                err=f"""Error merging shape files;
-                retry {iter_i + 1}/{iter_max}"""
-            )
-            continue
-        else:
-            all_out_file_paths = all_out_file_paths_tmp
-            for path in shape_paths:
-                if not dry_run:
-                    log(dbg=f"remove {path}")
-                    Path(path).unlink()
-        break
-    else:
-        log(err="Could not merge shape files in {iter_max} attempts")
-    # Move output files (remaining after PDF merging) to destination
-    if abspath(dest_dir) != abspath(tmp_dir):
-        log(inf=f"{tmp_dir} -> {dest_dir}")
-        for file_path in all_out_file_paths:
-            if not abspath(file_path).startswith(abspath(tmp_dir)):
-                continue
-            file_path_dest = f"{dest_dir}/{relpath(file_path, start=tmp_dir)}"
-            log(vbs=f"{file_path} -> {file_path_dest}")
+    all_out_file_paths_tmp = list(all_out_file_paths)
+    try:
+        redundant_shape_files = merge_shape_files(
+            all_out_file_paths_tmp,
+            tmp_dir=tmp_dir,
+            dest_dir=dest_dir,
+            dry_run=pdf_dry_run,
+        )
+    except FileNotFoundError:
+        log(err="Error merging shape files.")
+    finally:
+        for path in redundant_shape_files:
             if not dry_run:
-                os.makedirs(os.path.dirname(file_path_dest), exist_ok=True)
-                os.replace(file_path, file_path_dest)
+                log(dbg=f"remove {path}")
+                Path(path).unlink()
 
     # Remove temporary directory (if given) unless it already existed before
     remove_tmpdir = tmp_dir and not dry_run and not os.listdir(tmp_dir)
@@ -526,6 +505,7 @@ def merge_shape_files(
     dest_dir: Optional[str] = None,
     dry_run: bool = False,
 ) -> List[str]:
+    print("PATHs ", paths)
     # Collect PDFs
     shape_paths: List[str] = [
         f"{path}.zip" for path in paths if path.endswith(".shp")
@@ -535,19 +515,16 @@ def merge_shape_files(
     merged_files: List[str] = []
     n = 0
     for i, group in enumerate(grouped_file_paths):
-        merged = f"""{dest_dir}/
-        {relpath(paths_organizer.merge(group), start=tmp_dir)}"""
-        tmp_zip_name = f"{dest_dir}/temp_shape{i}.zip"
+        merged = f"""{dest_dir}{relpath(paths_organizer.merge(group), start=tmp_dir)}"""
+        tmp_zip_name = f"{dest_dir}temp_shape{i}.zip"
+        print("TEMP ZIP ", tmp_zip_name, merged)
         if not dry_run:
             with zipfile.ZipFile(tmp_zip_name, "w") as main_zip:
                 for file in group:
                     zip_to_merge = zipfile.ZipFile(file, "r")
                     n += len(zip_to_merge.namelist())
                     for sub_file in zip_to_merge.namelist():
-                        main_zip.writestr(
-                            sub_file, zip_to_merge.open(sub_file).read()
-                        )  # noqa: E501
-                    zip_to_merge.close()
+                        main_zip.writestr(sub_file, zip_to_merge.open(sub_file).read())
             shutil.copy(tmp_zip_name, merged)
             os.remove(tmp_zip_name)
         for path in group:
