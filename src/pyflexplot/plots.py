@@ -6,11 +6,8 @@ all sorts of plot-type specific logic from throughout the code in order to
 centralize it.
 
 There's tons of nested if-statements etc. because the goal during the cleanup
-phase was to avoid falling into the trap offile_pathprint(
-
-)
-premature design/overdesign again (as has happened repeatedly during the early
-stages of development).
+phase was to avoid falling into the trap of premature design/overdesign again
+(as has happened repeatedly during the early stages of development).
 
 Instead, all the logic is collected here in a straightforward but dirty way
 until sane design choices emerge from the code mess.

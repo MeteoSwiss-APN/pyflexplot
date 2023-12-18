@@ -30,7 +30,7 @@ class SpeciesAttribute:
 
     @overload
     @classmethod
-    def create(cls, arg1: tuple[float, str], arg2=None):
+    def create(cls, arg1: Tuple[float, str], arg2=None):
         ...
 
     @classmethod
@@ -341,7 +341,7 @@ def get_species(*, name: str) -> Species:
 
 
 @overload
-def get_species(*, name: Union[tuple[str, ...], List[str]]) -> tuple[Species, ...]:
+def get_species(*, name: Union[Tuple[str, ...], List[str]]) -> Tuple[Species, ...]:
     ...
 
 
