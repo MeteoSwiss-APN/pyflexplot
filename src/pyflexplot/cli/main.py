@@ -146,11 +146,11 @@ def main(
         )
     except FileNotFoundError:
         log(err="Error merging shape files.")
-
-    for path in redundant_shape_files:
-        if not dry_run:
-            log(dbg=f"remove {path}")
-            Path(path).unlink()
+    else:
+        for path in redundant_shape_files:
+            if not dry_run:
+                log(dbg=f"remove {path}")
+                Path(path).unlink()
 
     # Remove temporary directory (if given) unless it already existed before
     remove_tmpdir = tmp_dir and not dry_run and not os.listdir(tmp_dir)
@@ -519,10 +519,12 @@ def merge_shape_files(
         if not dry_run:
             with zipfile.ZipFile(tmp_zip_name, "w") as main_zip:
                 for file in group:
-                    zip_to_merge = zipfile.ZipFile(file, "r")
-                    n += len(zip_to_merge.namelist())
-                    for sub_file in zip_to_merge.namelist():
-                        main_zip.writestr(sub_file, zip_to_merge.open(sub_file).read())
+                    with zipfile.ZipFile(file, "r") as zip_to_merge:
+                        n += len(zip_to_merge.namelist())
+                        for sub_file in zip_to_merge.namelist():
+                            main_zip.writestr(
+                                sub_file, zip_to_merge.open(sub_file).read()
+                            )
             shutil.copy(tmp_zip_name, merged)
             os.remove(tmp_zip_name)
         for path in group:
