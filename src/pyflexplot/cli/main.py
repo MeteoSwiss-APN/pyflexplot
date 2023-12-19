@@ -138,7 +138,7 @@ def main(
     log(vbs="merging shape files")
     all_out_file_paths_tmp = list(all_out_file_paths)
     try:
-        merge_shape_files(
+        redundant_shape_files = merge_shape_files(
             all_out_file_paths_tmp,
             tmp_dir=tmp_dir,
             dest_dir=dest_dir,
@@ -146,6 +146,11 @@ def main(
         )
     except FileNotFoundError:
         log(err="Error merging shape files.")
+
+    for path in redundant_shape_files:
+        if not dry_run:
+            log(dbg=f"remove {path}")
+            Path(path).unlink()
 
     # Remove temporary directory (if given) unless it already existed before
     remove_tmpdir = tmp_dir and not dry_run and not os.listdir(tmp_dir)
