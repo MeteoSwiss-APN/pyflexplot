@@ -7,6 +7,7 @@ from typing import Any
 from typing import Mapping
 from typing import Optional
 from typing import overload
+from typing import Tuple
 from typing import Type
 from typing import Union
 
@@ -180,9 +181,9 @@ class TranslatedWords:
         self,
         key: Union[
             str,
-            tuple[str],
-            tuple[str, Optional[str]],
-            tuple[str, Optional[str], Optional[str]],
+            Tuple[str],
+            Tuple[str, Optional[str]],
+            Tuple[str, Optional[str], Optional[str]],
         ],
     ) -> WordT:
         if not isinstance(key, tuple):

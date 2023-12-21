@@ -276,7 +276,9 @@ class MetaData:
 
         # Species meta data
         species_params = compress_multival_dicts(
-            [params["species"] for params in merged_params_lst], tuple, skip_compr=True
+            [params["species"] for params in merged_params_lst],
+            tuple,
+            skip_compr=True,
         )
         species_mdata = SpeciesMetaData(**species_params)
 
@@ -346,7 +348,7 @@ class _MetaDataBase:
         return dct
 
     def __eq__(self, other: Any) -> bool:
-        self_dct = dc.asdict(self)
+        self_dct = dc.asdict(self)  # type: ignore
         try:
             other_dct = dc.asdict(other)
         except TypeError:
@@ -583,10 +585,10 @@ class ReleaseMetaData(_MetaDataBase):
             duration=duration,
             duration_unit=duration_unit,
             end_rel=end_rel,
-            height=np.mean([raw.zbot, raw.ztop]),
+            height=np.mean([raw.zbot, raw.ztop], dtype=float),
             height_unit=height_unit,
-            lat=np.mean([raw.lllat, raw.urlat]),
-            lon=np.mean([raw.lllon, raw.urlon]),
+            lat=np.mean([raw.lllat, raw.urlat], dtype=float),
+            lon=np.mean([raw.lllon, raw.urlon], dtype=float),
             mass=mass,
             mass_unit=mass_unit,
             rate=mass / duration.total_seconds() if duration else np.nan,
@@ -916,7 +918,13 @@ def read_time_steps(file_handle: nc4.Dataset) -> List[str]:
         file_handle: Open NetCDF file handle.
 
     """
-    attrs_select: List[str] = ["ibdate", "ibtime", "iedate", "ietime", "loutstep"]
+    attrs_select: List[str] = [
+        "ibdate",
+        "ibtime",
+        "iedate",
+        "ietime",
+        "loutstep",
+    ]
     attrs_try_select: List[str] = []
     ncattrs: Dict[str, Any] = {}
     for attr in attrs_select:

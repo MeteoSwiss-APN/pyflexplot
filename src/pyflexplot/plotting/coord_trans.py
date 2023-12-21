@@ -6,6 +6,7 @@ import dataclasses as dc
 import warnings
 from collections.abc import Sequence
 from typing import overload
+from typing import Tuple
 from typing import Union
 
 # Third-party
@@ -63,13 +64,13 @@ class CoordinateTransformer:
     invalid_warn: bool = True
 
     @overload
-    def axes_to_data(self, x: float, y: float) -> tuple[float, float]:
+    def axes_to_data(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
     @overload
     def axes_to_data(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def axes_to_data(self, x, y):
@@ -80,13 +81,13 @@ class CoordinateTransformer:
         return (x, y)
 
     @overload
-    def axes_to_geo(self, x: float, y: float) -> tuple[float, float]:
+    def axes_to_geo(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
     @overload
     def axes_to_geo(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def axes_to_geo(self, x, y):
@@ -120,13 +121,13 @@ class CoordinateTransformer:
         return (x, y)
 
     @overload
-    def axes_to_map(self, x: float, y: float) -> tuple[float, float]:
+    def axes_to_map(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
     @overload
     def axes_to_map(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def axes_to_map(self, x, y):
@@ -153,13 +154,13 @@ class CoordinateTransformer:
         return (x_map, y_map)
 
     @overload
-    def data_to_axes(self, x: float, y: float) -> tuple[float, float]:
+    def data_to_axes(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
     @overload
     def data_to_axes(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def data_to_axes(self, x, y):
@@ -170,13 +171,13 @@ class CoordinateTransformer:
         return (x, y)
 
     @overload
-    def data_to_geo(self, x: float, y: float) -> tuple[float, float]:
+    def data_to_geo(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
     @overload
     def data_to_geo(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def data_to_geo(self, x, y):
@@ -194,13 +195,13 @@ class CoordinateTransformer:
         return (x, y)
 
     @overload
-    def data_to_map(self, x: float, y: float) -> tuple[float, float]:
+    def data_to_map(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
     @overload
     def data_to_map(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def data_to_map(self, x, y):
@@ -211,13 +212,13 @@ class CoordinateTransformer:
         return (x, y)
 
     @overload
-    def geo_to_axes(self, x: float, y: float) -> tuple[float, float]:
+    def geo_to_axes(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
     @overload
     def geo_to_axes(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def geo_to_axes(self, x, y):
@@ -258,13 +259,13 @@ class CoordinateTransformer:
         return (x, y)
 
     @overload
-    def geo_to_data(self, x: float, y: float) -> tuple[float, float]:
+    def geo_to_data(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
     @overload
     def geo_to_data(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def geo_to_data(self, x, y):
@@ -282,13 +283,13 @@ class CoordinateTransformer:
         return (x, y)
 
     @overload
-    def geo_to_map(self, x: float, y: float) -> tuple[float, float]:
+    def geo_to_map(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
     @overload
     def geo_to_map(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def geo_to_map(self, x, y):
@@ -306,13 +307,13 @@ class CoordinateTransformer:
         return (x, y)
 
     @overload
-    def map_to_axes(self, x: float, y: float) -> tuple[float, float]:
+    def map_to_axes(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
     @overload
     def map_to_axes(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def map_to_axes(self, x, y):
@@ -323,13 +324,13 @@ class CoordinateTransformer:
         return (x, y)
 
     @overload
-    def map_to_data(self, x: float, y: float) -> tuple[float, float]:
+    def map_to_data(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
     @overload
     def map_to_data(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def map_to_data(self, x, y):
@@ -340,13 +341,13 @@ class CoordinateTransformer:
         return (x, y)
 
     @overload
-    def map_to_geo(self, x: float, y: float) -> tuple[float, float]:
+    def map_to_geo(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
     @overload
     def map_to_geo(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
     def map_to_geo(self, x, y):
@@ -381,12 +382,12 @@ class CoordinateTransformer:
 
 
 @overload
-def check_valid_coords(xy: tuple[float, float], allow, warn):
+def check_valid_coords(xy: Tuple[float, float], allow, warn):
     ...
 
 
 @overload
-def check_valid_coords(xy: tuple[FloatArray1DLike_T, FloatArray1DLike_T], allow, warn):
+def check_valid_coords(xy: Tuple[FloatArray1DLike_T, FloatArray1DLike_T], allow, warn):
     ...
 
 

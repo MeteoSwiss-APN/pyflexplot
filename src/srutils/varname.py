@@ -21,9 +21,9 @@ class VariableName:
     """
 
     def __init__(self, s: str) -> None:
-        """Crate an instance of ``VariableName``.
+        """Create an instance of ``VariableName``.
 
-        No validity check is performed during instatiation; use the method
+        No validity check is performed during instantiation; use the method
         ``is_valid`` to perform one.
 
         Args:

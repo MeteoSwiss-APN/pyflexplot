@@ -38,12 +38,13 @@ class BaseSetup:
         return self.create(self.dict())
 
     def derive(self: SetupT, params: Dict[str, Any]) -> SetupT:
-        return type(self).create(merge_dicts(self.dict(), params, overwrite_seqs=True))
+        merged_dictionaries = merge_dicts(self.dict(), params, overwrite_seqs=True)
+        return type(self).create(merged_dictionaries)
 
     def dict(self: SetupT, rec: bool = False) -> Dict[str, Any]:
         if rec:
             raise NotImplementedError("rec=T")
-        return dc.asdict(self)
+        return dc.asdict(self)  # type: ignore
 
     def tuple(self: SetupT) -> Tuple[Tuple[str, Any], ...]:
         return tuple(self.dict().items())

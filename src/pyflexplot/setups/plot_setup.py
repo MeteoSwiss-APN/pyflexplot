@@ -203,7 +203,7 @@ class PlotSetup(BaseSetup):
                 both ``select`` and ``skip`` will be skipped.
 
             internal (optional): Decompress setup group internally and return
-                one group containing the decompressed setup objectss; otherwise,
+                one group containing the decompressed setup objects; otherwise,
                 a separate group is returned for each decompressed setup object.
 
         """
@@ -716,7 +716,7 @@ class PlotSetupGroup:
                 ``skip`` and ``select`` will be skipped.
 
             internal (optional): Decompress setup group internally and return
-                one group containing the decompressed setup objectss; otherwise,
+                one group containing the decompressed setup objects; otherwise,
                 a separate group is returned for each decompressed setup object.
 
         """

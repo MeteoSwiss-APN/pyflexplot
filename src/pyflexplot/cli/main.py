@@ -2,7 +2,9 @@
 # Standard library
 import multiprocessing as mp
 import os
+import shutil
 import time
+import zipfile
 from copy import copy
 from functools import partial
 from multiprocessing.pool import Pool
@@ -95,6 +97,7 @@ def main(
         show_version,
         tmp_dir,
     )
+
     if num_procs == 1:
         all_out_file_paths = fct()
     else:
@@ -116,7 +119,10 @@ def main(
                     dry_run=pdf_dry_run,
                 )
             except PdfReadError as e:
-                log(err=f"Error merging PDFs ({e}); retry {iter_i + 1}/{iter_max}")
+                log(
+                    err=f"""Error merging PDFs ({e});
+                retry {iter_i + 1}/{iter_max}"""
+                )
                 continue
             else:
                 all_out_file_paths = all_out_file_paths_tmp
@@ -128,17 +134,23 @@ def main(
         else:
             log(err="Could not merge PDFs in {iter_max} attempts")
 
-    # Move output files (remaining after PDF merging) to destination
-    if abspath(dest_dir) != abspath(tmp_dir):
-        log(inf=f"{tmp_dir} -> {dest_dir}")
-        for file_path in all_out_file_paths:
-            if not abspath(file_path).startswith(abspath(tmp_dir)):
-                continue
-            file_path_dest = f"{dest_dir}/{relpath(file_path, start=tmp_dir)}"
-            log(vbs=f"{file_path} -> {file_path_dest}")
+    # Merge Shape Files (already packed in .zip files each)
+    log(vbs="merging shape files")
+    all_out_file_paths_tmp = list(all_out_file_paths)
+    try:
+        redundant_shape_files = merge_shape_files(
+            all_out_file_paths_tmp,
+            tmp_dir=tmp_dir,
+            dest_dir=dest_dir,
+            dry_run=pdf_dry_run,
+        )
+    except FileNotFoundError:
+        log(err="Error merging shape files.")
+    else:
+        for path in redundant_shape_files:
             if not dry_run:
-                os.makedirs(os.path.dirname(file_path_dest), exist_ok=True)
-                os.replace(file_path, file_path_dest)
+                log(dbg=f"remove {path}")
+                Path(path).unlink()
 
     # Remove temporary directory (if given) unless it already existed before
     remove_tmpdir = tmp_dir and not dry_run and not os.listdir(tmp_dir)
@@ -170,11 +182,14 @@ def create_all_plots(
     log(vbs="read fields and create plots")
     all_out_file_paths: List[str] = []
     iter_state = SharedIterationState(n_input_files=len(setup_groups))
-    for iter_state.i_input_file, setup_group in enumerate(setup_groups, start=1):
+    for iter_state.i_input_file, setup_group in enumerate(
+        setup_groups, start=1
+    ):  # noqa: E501
         if only and iter_state.n_field_groups_curr >= only:
             log(
                 dbg=(
-                    f"[only:{only}] skip {ordinal(iter_state.n_field_groups_curr)}"
+                    f"""[only:{only}] skip
+                    {ordinal(iter_state.n_field_groups_curr)}"""
                     " field group"
                 )
             )
@@ -222,8 +237,14 @@ def create_all_plots(
                 fct(*args)
         log(dbg=f"done processing {setup_group.infile}")
         n_input_files_todo = iter_state.n_input_files - iter_state.i_input_file
-        if only and iter_state.n_field_groups_curr >= only and n_input_files_todo:
-            log(vbs=f"[only:{only}] skip remaining {n_input_files_todo} input files")
+        maximum_reached = (
+            only and iter_state.n_field_groups_curr >= only and n_input_files_todo
+        )
+        if maximum_reached:
+            log(
+                vbs=f"""[only:{only}] skip remaining
+            {n_input_files_todo} input files"""
+            )
             break
 
     # Sort output file paths with numbered duplicates are in the correct order
@@ -255,7 +276,6 @@ def prepare_setups(
     setup_groups = [
         setup_group.compress_partially("files.output") for setup_group in setup_groups
     ]
-
     if only:
         # Restrict the total number of setup objects in the setup groups
         # Note that the number of plots is likely still higher than only because
@@ -263,7 +283,6 @@ def prepare_setups(
         setup_groups = restrict_grouped_setups(
             setup_groups, only, grouped_by="files.input"
         )
-
     return setup_groups
 
 
@@ -283,12 +302,20 @@ def read_setup_groups(
         if path not in setup_file_paths:
             setup_file_paths.append(path)
     if not setup_file_paths:
-        return [PlotSetupGroup.create(SetupFile.prepare_raw_params(input_setup_params))]
+        return [
+            PlotSetupGroup.create(
+                SetupFile.prepare_raw_params(input_setup_params)
+            )  # noqa: E501
+        ]
     return SetupFile.read_many(setup_file_paths, override=input_setup_params)
 
 
+# noqa: E501
 def restrict_grouped_setups(
-    setup_groups: Sequence[PlotSetupGroup], only: int, *, grouped_by: str = "group"
+    setup_groups: Sequence[PlotSetupGroup],
+    only: int,
+    *,
+    grouped_by: str = "group",  # noqa: E501
 ) -> List[PlotSetupGroup]:
     """Restrict total number of ``Setup``s in ``SetupGroup``s."""
     old_setup_groups = copy(setup_groups)
@@ -297,7 +324,9 @@ def restrict_grouped_setups(
     n_setups_new = 0
     for setup_group in old_setup_groups:
         if n_setups_new + len(setup_group) > only:
-            setup_group = PlotSetupGroup(list(setup_group)[: only - n_setups_new])
+            setup_group = PlotSetupGroup(
+                list(setup_group)[: only - n_setups_new]
+            )  # noqa: E501
             new_setup_groups.append(setup_group)
             n_setups_new += len(setup_group)
             assert n_setups_new == only
@@ -309,7 +338,7 @@ def restrict_grouped_setups(
     if n_setups_new < n_setups_old:
         log(
             dbg=(
-                f"[only:{only}] skip {n_setups_old - n_setups_new}/{n_setups_old}"
+                f"[only:{only}] skip {n_setups_old - n_setups_new}/{n_setups_old}"  # noqa: E501
                 f" setups and {n_groups_old - n_groups_new}"
                 f"/{n_groups_old} {grouped_by}s"
             )
@@ -324,7 +353,9 @@ def get_pid() -> int:
     elif name.startswith("ForkPoolWorker-"):
         return int(name.split("-")[1])
     else:
-        raise NotImplementedError(f"cannot derive pid from process name: {name}")
+        raise NotImplementedError(
+            f"cannot derive pid from process name: {name}"
+        )  # noqa: E501
 
 
 class SharedIterationState:
@@ -340,7 +371,7 @@ class SharedIterationState:
         n_field_groups_i: int = -1,
     ) -> None:
         """Create an instance of ``SharedIterationState``."""
-        self._dict: Dict[str, Any] = mp.Manager().dict()
+        self._dict: Dict[str, Any] = mp.Manager().dict()  # type: ignore
         self.n_plot_files_curr = n_plot_files_curr
         self.n_input_files = n_input_files
         self.i_input_file = i_input_file
@@ -390,7 +421,9 @@ class SharedIterationState:
     def __repr__(self) -> str:
         return (
             f"{type(self).__name__}("
-            + ", ".join([f"{key}={sfmt(value)}" for key, value in self._dict.items()])
+            + ", ".join(
+                [f"{key}={sfmt(value)}" for key, value in self._dict.items()]
+            )  # noqa: E501
             + ")"
         )
 
@@ -407,7 +440,9 @@ def create_plots_i(
     pid = get_pid()
     log(
         dbg=(
-            f"[P{pid}][{iter_state.i_input_file}/{iter_state.n_input_files}][{ip_fld}"
+            f"""[P{pid}]
+            [{iter_state.i_input_file}/{iter_state.n_input_files}]
+            [{ip_fld}"""
             f"/{iter_state.n_field_groups_i}] prepare plot"
         )
     )
@@ -417,7 +452,8 @@ def create_plots_i(
         log(
             inf=f"{field_group.attrs.format_path()} -> {out_file_path}",
             vbs=(
-                f"[P{pid}][{iter_state.i_input_file}/{iter_state.n_input_files}]"
+                f"""[P{pid}]
+                [{iter_state.i_input_file}/{iter_state.n_input_files}]"""
                 f"[{ip_fld}{iter_state.n_field_groups_i}][{ip_out}/{n_out}]"
                 f" plot {out_file_path}"
             ),
@@ -431,25 +467,23 @@ def create_plots_i(
 def merge_pdf_plots(
     paths: List[str],
     *,
-    tmp_dir: str = None,
-    dest_dir: str = None,
+    tmp_dir: Optional[str] = None,
+    dest_dir: Optional[str] = None,
     keep_merged: bool = True,
     dry_run: bool = False,
 ) -> List[str]:
     # Collect PDFs
-    pdf_paths: List[str] = []
-    for path in paths:
-        if path.endswith(".pdf"):
-            pdf_paths.append(path)
+    pdf_paths: List[str] = [path for path in paths if path.endswith(".pdf")]
 
     paths_organizer = PathsOrganizer(suffix="pdf", dup_sep=".")
     grouped_pdf_paths = paths_organizer.group_related(pdf_paths)
     merged_pages: List[str] = []
     for group in grouped_pdf_paths:
-        merged = f"{dest_dir}/{relpath(paths_organizer.merge(group), start=tmp_dir)}"
+        merged = f"{dest_dir}/{relpath(paths_organizer.merge(group), start=tmp_dir)}"  # noqa: E501
         if keep_merged and abspath(merged) == abspath(group[0]):
             raise Exception(
-                "input and output files are the same file, which is not allowed for"
+                """input and output files are the same file,
+                which is not allowed for"""
                 f" remove_merged=T: '{merged}'"
                 + ("" if merged == group[0] else f" == '{merged[0]}'")
             )
@@ -462,6 +496,44 @@ def merge_pdf_plots(
                 merged_pages.append(path)
         paths.append(merged)
     return merged_pages
+
+
+def merge_shape_files(
+    paths: List[str],
+    *,
+    tmp_dir: Optional[str] = None,
+    dest_dir: Optional[str] = None,
+    dry_run: bool = False,
+) -> List[str]:
+    # Collect PDFs
+    shape_paths: List[str] = [
+        f"{path}.zip" for path in paths if path.endswith(".shp")
+    ]  # noqa: E501
+    paths_organizer = PathsOrganizer(suffix="shp.zip", dup_sep=".")
+    grouped_file_paths = paths_organizer.group_related(shape_paths)
+    merged_files: List[str] = []
+    n = 0
+    for i, group in enumerate(grouped_file_paths):
+        merged = f"""{dest_dir}{relpath(paths_organizer.merge(group), start=tmp_dir)}"""
+        tmp_zip_name = f"{dest_dir}temp_shape{i}.zip"
+        if not dry_run:
+            with zipfile.ZipFile(tmp_zip_name, "w") as main_zip:
+                for file in group:
+                    with zipfile.ZipFile(file, "r") as zip_to_merge:
+                        n += len(zip_to_merge.namelist())
+                        for sub_file in zip_to_merge.namelist():
+                            main_zip.writestr(
+                                sub_file, zip_to_merge.open(sub_file).read()
+                            )
+            shutil.copy(tmp_zip_name, merged)
+            os.remove(tmp_zip_name)
+        for path in group:
+            base_name = path.rsplit(".", 1)[0]
+            paths.remove(base_name)
+            if abspath(path) != abspath(merged):
+                merged_files.append(path)
+        paths.append(merged)
+    return merged_files
 
 
 def open_plots(cmd: str, file_paths: Collection[str], dry_run: bool) -> None:

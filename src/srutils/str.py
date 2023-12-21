@@ -129,12 +129,15 @@ def sorted_paths(
         dup_sep = dup_sep.replace("-", "") + "-"
     grouped_paths: Dict[str, Dict[int, str]] = {}
     rx = re.compile(
-        r"^(?P<base>.*?)([" + str(dup_sep) + r"](?P<num>[0-9]+))?(?P<suffix>\.\w+)$"
+        r"^(?P<base>.*?)(["
+        + str(dup_sep)
+        + r"](?P<num>[0-9]+))?((?P<suffix1>\.\w+)(?P<suffix2>\.\w+)?)?$"
     )
     for path in paths:
         match = rx.match(path)
         if match:
-            base_path = match.group("base") + match.group("suffix")
+            suffix2 = match.group("suffix2") or ""
+            base_path = match.group("base") + match.group("suffix1") + suffix2
             num = int(match.group("num")) if match.group("num") else -1
             if base_path not in grouped_paths:
                 grouped_paths[base_path] = {}

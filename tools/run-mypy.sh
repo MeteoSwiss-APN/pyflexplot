@@ -19,7 +19,6 @@ cd "${SCRIPT_DIR}/.."
 # Paths relative to project root
 paths=(
     src/pyflexplot
-    tests/test_pyflexplot
 )
 for path in "${paths[@]}"; do
     ${VERBOSE} && echo "mypy \"${path}\""

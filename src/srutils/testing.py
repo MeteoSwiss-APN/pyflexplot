@@ -25,10 +25,10 @@ def property_obj(cls, *args, **kwargs):
     """Define a class property creating a given object on-the-fly.
 
     The purpose of creating the object on-the-fly in a property method is to
-    isolate any errors during instatiation in the test methods using the
+    isolate any errors during instantiation in the test methods using the
     property. This prevents the whole test suite from being aborted, as it
     would if the object were defined as a simple class attribute and its
-    instatiation failed -- instead, only the tests attempting to use the object
+    instantiation failed -- instead, only the tests attempting to use the object
     will fail.
 
     And yes, this is indeed merely a convenience function to save two lines of
@@ -44,10 +44,8 @@ def property_obj(cls, *args, **kwargs):
 
         >>> class C2:
         ...     w = property_obj(en='train', de='Zug')
-
     """
 
-    # pylint: disable=W0613  # unused-argument (self)
     def create_obj(self):
         return cls(*args, **kwargs)
 
@@ -141,7 +139,7 @@ def check_is_sub_element(
             in recursive calls
 
     Notes:
-        Elements of ``subdict`` of certain types recieve special treatment:
+        Elements of ``subdict`` of certain types receive special treatment:
             ``IgnoredElement``: Not not compared to the respective ``superdict``
                 elements.
 
@@ -418,7 +416,7 @@ def assert_nested_equal(
         def check_equivalent(obj1, obj2, type_, path):
             if not isinstance(obj1, type_) or not isinstance(obj2, type_):
                 raise error(
-                    f"unequivalent types: expected {type_name(type_)}, got "
+                    f"inequal types: expected {type_name(type_)}, got "
                     f"{type_name(type(obj1))} and {type_name(type(obj2))}",
                     *[path, obj1, obj2],
                 )
@@ -478,7 +476,7 @@ def assert_nested_equal(
         elif np.isreal(obj1):
             if not np.isreal(obj2):
                 raise error(
-                    f"unequivalent types (expected real numbers): "
+                    f"inequal types (expected real numbers): "
                     f"{type_name(type(obj1))} vs. {type_name(type(obj2))}, ",
                     path,
                     obj1,

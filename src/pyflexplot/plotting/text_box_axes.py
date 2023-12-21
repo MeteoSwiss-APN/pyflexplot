@@ -136,9 +136,9 @@ class TextBoxElementColorRect(TextBoxElement):
 
             h (float): Height (box coordinates).
 
-            fc (str or tuple[float]): Face color.
+            fc (str or Tuple[float]): Face color.
 
-            ec (str or tuple[float]): Edge color.
+            ec (str or Tuple[float]): Edge color.
 
             x_anker (str): Horizontal anker. Options: 'l' or 'left'; 'c' or
                 'center'; 'r' or 'right'; and None, in which case it is derived
@@ -442,7 +442,7 @@ class TextBoxAxes:
                     f"{len(colors_blocks[i])} != {len(block)}"
                 )
             for j in range(len(block)):
-                if colors_blocks[i][j] is None:
+                if colors_blocks[i][j] is not None:
                     colors_blocks[i][j] = default_color
 
         return colors_blocks

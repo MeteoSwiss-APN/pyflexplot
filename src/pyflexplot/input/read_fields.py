@@ -58,8 +58,8 @@ class InputConfig:
             correspond to the beginning of the simulation, but constitute the
             sum over the first few hours of the simulation.
 
-        dry_run (optional): Perform dry run without reading the fields from disk
-            (meta data are still read).
+        dry_run (optional): Perform dry run without reading the
+        fields from disk (meta data are still read).
 
         cache_on (optional): Cache input fields to avoid reading the same field
             multiple times.
@@ -99,8 +99,8 @@ def read_fields(
         _override_indir (optional): Override directory of
             ``setups.files.input``; should not be used outside of tests.
 
-        _override_infile (optional): Override ``setups.files.input``; should not
-            be used outside of tests.
+        _override_infile (optional): Override ``setups.files.input``;
+        should not be used outside of tests.
 
     """
     setup_group = setup_group.copy()
@@ -137,16 +137,17 @@ def read_fields(
         model_setup.base_time = int(time_steps[0])
     for plot_type_setup in setup_group:
         plot_type_setup.model.base_time = model_setup.base_time
-
     # SR_TODO Consider moving group_setups_by_plot_type into complete_dimensions
     setup_group = setup_group.complete_dimensions(
         raw_dimensions=raw_dimensions,
         species_ids=species_ids,
     )
-
     # Limit number of plots
     if only and len(setup_group) > only:
-        log(dbg=f"[only:{only}] skip {len(setup_group) - only}/{len(setup_group)}")
+        log(
+            dbg=f"""[only:{only}]
+            skip {len(setup_group) - only}/{len(setup_group)}"""
+        )
         setup_group = PlotSetupGroup(list(setup_group)[:only])
 
     # Separate setups of different plot types
@@ -158,7 +159,7 @@ def read_fields(
     for plot_type_setup in plot_type_setups:
         field_groups_i = files.read_fields_over_time(plot_type_setup)
         if only and len(field_groups) + len(field_groups_i) > only:
-            log(dbg=f"[only:{only}] skip reading remaining fields after {only}")
+            log(dbg=f"""[only:{only}] skip reading remaining fields after {only}""")
             field_groups.extend(field_groups_i[: only - len(field_groups)])
             break
         field_groups.extend(field_groups_i)
@@ -267,7 +268,8 @@ class InputFileEnsemble:
                 paths of the files on disk; if passed, the paths derived from
                 ``raw_path`` are only passed to the returned ``FieldGroup``
                 object as attributes; useful in tests to read files from a
-                temporary directory that should not be stored in the attributes,
+                temporary directory that should
+                not be stored in the attributes,
                 in which case a simplified, reproducible path can be passed to
                 ``raw_path``, and the actual path to ``override_raw_path``.
 
@@ -329,14 +331,19 @@ class InputFileEnsemble:
 
             # Compute some statistics across all time steps
             time_stats = FieldTimeProperties(fld_time)
-
+            scale_factor = panel_setup_i.dimensions.get("multiplier")
             # Create Field objects at requested time steps
             for panel_setup_req_time, mdata_req_time in zip(
                 panel_setups_req_time, self.mdata_tss
             ):
                 time_idx: int = panel_setup_req_time.dimensions.time
+                output_field = (
+                    fld_time[time_idx] * scale_factor
+                    if scale_factor is not None
+                    else fld_time[time_idx]
+                )
                 field = Field(
-                    fld=fld_time[time_idx],
+                    fld=output_field,
                     lat=self.lat,
                     lon=self.lon,
                     mdata=mdata_req_time,
@@ -427,7 +434,9 @@ class InputFileEnsemble:
         """Read field over all time steps for each member."""
         plot_variable = timeless_panel_setup.plot_variable
 
-        def read_fld_time_of_dimensions(sub_setup: PlotPanelSetup) -> List[np.ndarray]:
+        def read_fld_time_of_dimensions(
+            sub_setup: PlotPanelSetup,
+        ) -> List[np.ndarray]:
             fld_time_lst: List[np.ndarray] = []
             for dimensions in sub_setup.dimensions.decompress():
                 fld_time_lst.append(
@@ -435,7 +444,7 @@ class InputFileEnsemble:
                 )
             return fld_time_lst
 
-        # Read fields for all dimensions that are to be merged (e.g., summed up)
+        # Read fields for all dimensions that are to be merged
         if plot_variable == "affected_area":
             fld_time_lst = []
             for variable in timeless_panel_setup.dimensions.variable:
@@ -496,7 +505,9 @@ class InputFileEnsemble:
         return mdata_lst
 
     def _get_shape_mem_time(
-        self, raw_dimensions: Mapping[str, Mapping[str, Any]], plot_variable: str
+        self,
+        raw_dimensions: Mapping[str, Mapping[str, Any]],
+        plot_variable: str,
     ) -> Tuple[int, int, int, int, int]:
         """Get the shape of an array of fields across members and time steps."""
         renamed_dims = self._renamed_dims()
@@ -553,7 +564,10 @@ class InputFileEnsemble:
         return new_fld_time
 
     def _reduce_ensemble_etc(
-        self, fld_time_mem: np.ndarray, panel_setup: PlotPanelSetup, ts_hrs: float
+        self,
+        fld_time_mem: np.ndarray,
+        panel_setup: PlotPanelSetup,
+        ts_hrs: float,
     ) -> np.ndarray:
         def reduce_last_dimension(arr: np.ndarray) -> np.ndarray:
             """Reduce the last dimension used for the affect area fields."""
@@ -599,7 +613,10 @@ class InputFileEnsemble:
     # pylint: disable=R0912  # too-many-branches
     # pylint: disable=R1702  # too-many-nested-blocks (>5)
     def _reduce_ensemble(
-        self, fld_time_mem: np.ndarray, panel_setup: PlotPanelSetup, ts_hrs: float
+        self,
+        fld_time_mem: np.ndarray,
+        panel_setup: PlotPanelSetup,
+        ts_hrs: float,
     ) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
         if len(self.paths) == 1 or self.config.dry_run:

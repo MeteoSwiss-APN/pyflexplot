@@ -286,7 +286,7 @@ and without committing it as new tag (--no-commit --no-tag)
     bumpversion --verbose --allow-dirty --no-commit --no-tag --new-version=1.0.6-pre-1 dummy
 
 
-Save environment specificatons to allow for an exact replication of
+Save environment specifications to allow for an exact replication of
 environment with make install
 
     make install-dev

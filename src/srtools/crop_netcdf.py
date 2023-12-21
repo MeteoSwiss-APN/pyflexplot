@@ -6,6 +6,7 @@ import dataclasses as dc
 import sys
 from typing import Any
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 # Third-party
@@ -147,7 +148,7 @@ def transfer_dimension(
 
 
 def len_slice(
-    arg: Union[slice, tuple[Optional[int], Optional[int], Optional[int]]], n: int
+    arg: Union[slice, Tuple[Optional[int], Optional[int], Optional[int]]], n: int
 ) -> int:
     """Count number of elements selected by slice."""
     if not isinstance(arg, slice):

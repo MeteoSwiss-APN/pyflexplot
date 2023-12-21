@@ -6,11 +6,12 @@ import functools
 from typing import Callable
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 
 
 def check_array_indices(
-    shape: tuple[int, ...], inds: Sequence[Union[int, slice]]
+    shape: Tuple[int, ...], inds: Sequence[Union[int, slice]]
 ) -> None:
     """Check that slicing indices are consistent with array shape."""
 

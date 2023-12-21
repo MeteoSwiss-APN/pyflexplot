@@ -28,7 +28,7 @@ pipeline {
                 '''
             }
         }
-        stage('build package') {
+        stage('build unpinned') {
             steps {
                 sh '''#!/usr/bin/env bash
                 set -e
@@ -41,7 +41,7 @@ pipeline {
                 '''
             }
         }
-        stage('test') {
+        stage('test unpinned') {
             steps {
                 sh '''#!/usr/bin/env bash
                 source $WORKSPACE/miniconda/etc/profile.d/conda.sh
@@ -51,69 +51,25 @@ pipeline {
                 '''
             }
         }
-        stage('dev-environment') {
+        stage('build unpinned') {
             steps {
                 sh '''#!/usr/bin/env bash
                 set -e
-                source $WORKSPACE/miniconda/etc/profile.d/conda.sh
+                source ${WORKSPACE}/miniconda/etc/profile.d/conda.sh
                 conda init bash --no-user --install --system
                 conda activate
-                bash tools/setup_env.sh -n dev-pyflexplot -u
-                conda activate dev-pyflexplot
-                pip install --no-deps --editable .
-                '''
-            }
-        }
-        stage('dev-test') {
-            steps {
-                sh '''#!/usr/bin/env bash
-                source $WORKSPACE/miniconda/etc/profile.d/conda.sh
-                conda init bash --no-user --install --system
-                conda activate dev-pyflexplot
-                pytest tests
-                '''
-            }
-        }
-        stage('pinned-environment') {
-            steps {
-                sh '''#!/usr/bin/env bash
-                set -e
-                source $WORKSPACE/miniconda/etc/profile.d/conda.sh
-                conda init bash --no-user --install --system
-                conda activate
-                bash tools/setup_env.sh -n pinned-pyflexplot
-                conda activate pinned-pyflexplot
+                bash tools/setup_env.sh -n pyflexplot-pinned
+                conda activate pyflexplot-pinned
                 pip install --no-deps .
                 '''
             }
         }
-        stage('pinned-test') {
+        stage('test pinned') {
             steps {
                 sh '''#!/usr/bin/env bash
-                source $WORKSPACE/miniconda/etc/profile.d/conda.sh
-                conda activate pinned-pyflexplot
-                pytest tests
-                '''
-            }
-        }
-        stage('pinned-dev-environment') {
-            steps {
-                sh '''#!/usr/bin/env bash
-                set -e
                 source $WORKSPACE/miniconda/etc/profile.d/conda.sh
                 conda init bash --no-user --install --system
-                conda activate
-                bash tools/setup_env.sh -n pinned-dev-pyflexplot
-                conda activate pinned-dev-pyflexplot
-                pip install --no-deps --editable .
-                '''
-            }
-        }
-        stage('pinned-dev-test') {
-            steps {
-                sh '''#!/usr/bin/env bash
-                source $WORKSPACE/miniconda/etc/profile.d/conda.sh
-                conda activate pinned-dev-pyflexplot
+                conda activate pyflexplot-pinned
                 pytest tests
                 '''
             }

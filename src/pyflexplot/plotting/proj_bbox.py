@@ -220,7 +220,7 @@ class ProjectedBoundingBox:
         Args:
             fact (float): Zoom factor, > 1.0 to zoom in, < 1.0 to zoom out.
 
-            rel_offset (tuple[float, float], optional): Relative offset in x
+            rel_offset (Tuple[float, float], optional): Relative offset in x
                 and y direction as a fraction of the respective domain extent.
                 Defaults to (0.0, 0.0).
 

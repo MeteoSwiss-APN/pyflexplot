@@ -18,7 +18,7 @@ import cartopy
 import matplotlib as mpl
 import numpy as np
 from cartopy.io.shapereader import Record  # type: ignore
-from matplotlib.axes import Axes
+from cartopy.mpl.geoaxes import GeoAxes
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.text import Text
@@ -177,7 +177,7 @@ class MapAxes:
             fig: Figure,
             rect: RectType,
             domain: Domain,
-        ) -> Axes:
+        ) -> GeoAxes:
             """Initialize Axes."""
             with warnings.catch_warnings():
                 warnings.filterwarnings(
@@ -185,7 +185,7 @@ class MapAxes:
                     category=RuntimeWarning,
                     message="numpy.ufunc size changed",
                 )
-                ax: Axes = fig.add_axes(rect, projection=self.projs.map)
+                ax: GeoAxes = fig.add_axes(rect, projection=self.projs.map)
             ax.set_adjustable("datalim")
             ax.spines["geo"].set_edgecolor("none")
             ax.set_aspect("auto")
@@ -193,7 +193,7 @@ class MapAxes:
             ax.set_extent(bbox, self.projs.map)
             return ax
 
-        self.ax: Axes = _create_ax(
+        self.ax: GeoAxes = _create_ax(
             self.fig,
             self.rect,
             self.domain,
@@ -345,10 +345,10 @@ class MapAxes:
             linestyle=":", linewidth=1, color="black", zorder=self.zorder["grid"]
         )
         gl.xlocator = mpl.ticker.FixedLocator(
-            np.arange(-180, 180, self.config.d_lon_grid)
+            np.arange(-180, 180, self.config.d_lon_grid)  # type: ignore
         )
         gl.ylocator = mpl.ticker.FixedLocator(
-            np.arange(-90, 90.1, self.config.d_lat_grid)
+            np.arange(-90, 90.1, self.config.d_lat_grid)  # type: ignore
         )
 
     def _ax_add_geography(self) -> None:
@@ -601,7 +601,7 @@ class MapAxes:
     # pylint: disable=E0633  # unpacking-non-sequence (false negative?!?)
     def _get_domain_bbox(
         self, n: int = 20, pad: float = 1.0
-    ) -> tuple[float, float, float, float]:
+    ) -> Tuple[float, float, float, float]:
         """Get ``(lon0, lat0, lon1, lat1)`` bounding box of domain."""
         trans = self.trans.axes_to_geo
         lons_s, lats_s = trans(np.linspace(0, 1, n), np.full([n], 0))

@@ -10,14 +10,13 @@ from typing import Callable
 from typing import Collection
 from typing import get_args
 from typing import get_type_hints
-from typing import get_origin
 from typing import Iterable
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Type
 from typing import TypeVar
 from typing import Union
-
 
 # First-party
 from srutils.datetime import derive_datetime_fmt
@@ -26,7 +25,6 @@ from srutils.exceptions import InvalidParameterNameError
 from srutils.exceptions import InvalidParameterValueError
 from srutils.exceptions import UnsupportedTypeError
 from srutils.format import sfmt
-from srutils.str import split_outside_parens
 
 DataclassT = TypeVar("DataclassT")
 
@@ -140,7 +138,7 @@ def cast_field_value(cls: Type, name: str, value: Any, **kwargs: Any) -> Any:
                 try:
                     if isinstance(value, arg):
                         return value
-                except TypeError as e:
+                except TypeError:
                     pass
             exc = InvalidParameterNameError
             msg = f"type {type_name} not supported"
@@ -159,7 +157,7 @@ def cast_value(
     *,
     auto_wrap: bool = False,
     bool_mode: str = "native",
-    datetime_fmt: Union[str, tuple[str, ...]] = "auto",
+    datetime_fmt: Union[str, Tuple[str, ...]] = "auto",
     timedelta_unit: str = "days",
     unpack_str: bool = True,
 ) -> Any:
@@ -188,7 +186,7 @@ def cast_value(
             sequence of one-character strings, as is their default behavior.
 
     """
-    type_name = None
+    type_name = ""
     try:
         type_name = type_.__name__  # type: ignore
     except AttributeError:
@@ -314,12 +312,12 @@ def cast_value(
             raise error(value, type_name) from e
 
     elif "Union" in type_name:
-        inner_types = get_args(type_)
-        if "NoneType" in inner_types:
-            inner_types.remove("NoneType")
-            inner_types.insert(0, "NoneType")
+        inner_types = list(get_args(type_))
+        if type(None) in inner_types:
+            inner_types.remove(type(None))
+            inner_types.insert(0, type(None))
         for inner_type in inner_types:
-            if type(value) == inner_type:
+            if type(value) == inner_type:  # noqa: E721
                 return value
         for inner_type in inner_types:
             try:
@@ -331,7 +329,7 @@ def cast_value(
     elif "Optional" in type_name:
         if value in [None, "None"]:
             return None
-        inner_type = [i for i in get_args(type_) if not i == type(None)][0]
+        inner_type = [i for i in get_args(type_) if not isinstance(i, type(None))][0]
         try:
             return cast_value(inner_type, value, **kwargs)
         except IncompatibleTypesError:
@@ -386,7 +384,7 @@ def cast_value(
 
     elif "Sequence" in type_name:
         value = prepare_wrapped_value(value, type_name)
-        inner_types = get_args(type_)
+        inner_types = get_args(type_)  # type: ignore
         if len(inner_types) == 0:
             return prepare_wrapped_value(value, type_name)
         inner_type = inner_types[0]

@@ -6,9 +6,8 @@ all sorts of plot-type specific logic from throughout the code in order to
 centralize it.
 
 There's tons of nested if-statements etc. because the goal during the cleanup
-phase that included the centralization was to avoid falling into the trap of
-premature design/overdesign again (as has happened repeatedly during the early
-stages of development).
+phase was to avoid falling into the trap of premature design/overdesign again
+(as has happened repeatedly during the early stages of development).
 
 Instead, all the logic is collected here in a straightforward but dirty way
 until sane design choices emerge from the code mess.
@@ -20,7 +19,6 @@ from __future__ import annotations
 import os
 from datetime import datetime
 from datetime import timedelta
-from pathlib import Path
 from pprint import pformat
 from typing import Any
 from typing import cast
@@ -38,6 +36,7 @@ import numpy as np
 from matplotlib.colors import Colormap
 
 # First-party
+from pyflexplot.save_data import DataSaver
 from srutils.datetime import init_datetime
 from srutils.format import format_numbers_range
 from srutils.format import ordinal
@@ -93,6 +92,7 @@ def format_out_file_paths(
     release_start_rel = _mdata.release.start_rel
     simulation_start = _mdata.simulation.start
     simulation_time_steps = _mdata.simulation.time_steps
+    species_name = _mdata.species.name
     for idx, field in enumerate(field_group):
         if idx == 0:
             continue
@@ -116,6 +116,11 @@ def format_out_file_paths(
                 "simulation time steps differ between fields:"
                 f"\n{simulation_time_steps}\n!=\n{field.mdata.simulation.time_steps}"
             )
+        if species_name != field.mdata.species.name:
+            raise NotImplementedError(
+                "species name differs between fields:"
+                f"\n{species_name}\n!=\n{field.mdata.species.name}"
+            )
     out_file_templates: Sequence[str] = (
         [plot_setup.files.output]
         if isinstance(plot_setup.files.output, str)
@@ -138,6 +143,7 @@ def format_out_file_paths(
             release_site=release_site_name,
             release_start=simulation_start + release_start_rel,
             time_steps=tuple(simulation_time_steps),
+            species_name=species_name,
         )
         log(dbg=f"preparing plot '{out_file_path}'")
         out_file_paths.append(out_file_path)
@@ -201,62 +207,11 @@ def create_plot(
             if dir_path:
                 os.makedirs(dir_path, exist_ok=True)
             log(dbg=f"writing plot {file_path}")
-            plot.write(file_path)
-            # SR_TMP < TODO clean this up; add optional setup param for file name
-            if "standalone_release_info" in plot.config.labels:
-                write_standalone_release_info(
-                    file_path,
-                    plot.config,
-                )
-            # SR_TMP >
+            data_saver = DataSaver.create_saver(file_path)
+            data_saver.save(file_path, plot, field_group)
         log(dbg=f"created plot {file_path}")
     plot.clean()
     return plot
-
-
-def write_standalone_release_info(plot_path: str, plot_config: BoxedPlotConfig) -> str:
-    path = Path(plot_path).with_suffix(f".release_info{Path(plot_path).suffix}")
-    log(inf=f"write standalone release info to {path}")
-    layout = BoxedPlotLayout(
-        plot_config.setup.layout.derive({"type": "standalone_release_info"}),
-        aspects={"tot": 1.5},
-        rects={"tot": (0, 0, 1, 1)},
-    )
-    species_id = plot_config.setup.panels.collect_equal("dimensions.species_id")
-    n_species = 1 if isinstance(species_id, int) else len(species_id)
-    width = 1.67 + 0.67 * n_species
-    config = BoxedPlotConfig(
-        fig_size=(width, 2.5),
-        layout=layout,
-        labels=plot_config.labels,
-        panels=[],
-        setup=plot_config.setup,
-    )
-
-    def fill_box(box: TextBoxAxes, plot: BoxedPlot) -> None:
-        labels = plot.config.labels["standalone_release_info"]
-
-        # Box title
-        box.text(
-            s=labels["title"],
-            loc="tc",
-            fontname=plot.config.font.name,
-            size=plot.config.font.sizes.title_small,
-        )
-
-        # Add lines bottom-up (to take advantage of baseline alignment)
-        box.text_blocks_hfill(
-            labels["lines_str"],
-            dy_unit=-10.0,
-            dy_line=8.0,
-            fontname=plot.config.font.name,
-            size=plot.config.font.sizes.content_small,
-        )
-
-    plt = BoxedPlot(config)
-    plt.add_text_box("standalone_release_info", (0, 0, 1, 1), fill=fill_box)
-    plt.write(path)
-    return str(path)
 
 
 # pylint: disable=R0912  # too-many-branches (>12)
@@ -902,13 +857,10 @@ def create_panel_config(
             n_colors += 1
         if extend in ["max", "both"] and not color_over:
             n_colors += 1
-        cmap = mpl.pyplot.get_cmap(cmap)
-        if n_colors > 1:
-            cmap = mpl.colors.ListedColormap(cmap(np.linspace(0, 1, n_colors)))
-
+        cmap = mpl.pyplot.get_cmap(cmap, lut=n_colors)
         colors: list[ColorType]
         try:
-            colors = cmap.colors.tolist()
+            colors = cmap.colors.tolist()  # type: ignore
         except AttributeError:
             if n_colors == 1:
                 colors = [cmap(0.0)]

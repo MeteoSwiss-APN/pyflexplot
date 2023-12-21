@@ -271,7 +271,7 @@ class MapDistanceCalculator:
             dist = dists[i_sel]
             # Note: We could also check `dists[-2]` and return that
             # if it were sufficiently close (based on the relative
-            # error) and closer to the targest dist than `dist[-1]`.
+            # error) and closer to the target's distance than `dist[-1]`.
 
             # Compute the relative error
             err = abs(dist - self.dist) / self.dist

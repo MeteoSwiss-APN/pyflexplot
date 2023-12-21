@@ -17,6 +17,7 @@ from typing import MutableMapping
 from typing import Optional
 from typing import overload
 from typing import Sequence
+from typing import Tuple
 from typing import Type
 from typing import Union
 
@@ -153,7 +154,7 @@ def merge_dicts(
 # pylint: disable=R0912  # too-many-branches
 def compress_multival_dicts(
     dcts: Sequence[Mapping[str, Any]],
-    cls_seq: Type[Union[list[Any], tuple[Any, ...]]] = list,
+    cls_seq: Type[Union[list[Any], Tuple[Any, ...]]] = list,
     *,
     dedup: bool = True,
     skip_compr: bool = False,
@@ -399,7 +400,7 @@ def flatten_nested_dict(
     return_paths: Literal[True],
     return_depths: Literal[False] = False,
     tie_breaker: Optional[Callable] = None,
-) -> tuple[dict[Hashable, Any], dict[Hashable, tuple[Hashable]]]:
+) -> Tuple[dict[Hashable, Any], dict[Hashable, Tuple[Hashable]]]:
     ...
 
 
@@ -410,7 +411,7 @@ def flatten_nested_dict(
     return_paths: Literal[False] = False,
     return_depths: Literal[True],
     tie_breaker: Optional[Callable] = None,
-) -> tuple[dict[Hashable, Any], dict[Hashable, int]]:
+) -> Tuple[dict[Hashable, Any], dict[Hashable, int]]:
     ...
 
 
@@ -421,9 +422,9 @@ def flatten_nested_dict(
     return_paths: Literal[True],
     return_depths: Literal[True],
     tie_breaker: Optional[Callable] = None,
-) -> tuple[
+) -> Tuple[
     dict[Hashable, Any],
-    dict[Hashable, tuple[Hashable, ...]],
+    dict[Hashable, Tuple[Hashable, ...]],
     dict[Hashable, int],
 ]:
     ...
@@ -492,7 +493,7 @@ def flatten_nested_dict(
     flat = run_rec(dct)
 
     values: dict[Hashable, Any] = {}
-    paths: dict[Hashable, tuple[Hashable, ...]] = {}
+    paths: dict[Hashable, Tuple[Hashable, ...]] = {}
     depths: dict[Hashable, int] = {}
     for key, val in flat.items():
         values[key] = val["value"]

@@ -50,12 +50,12 @@ class Species:
     id_cosmo: int = -99
     id_ifs: int = -99
     name: str = "N/A"
-    weight: SpeciesAttribute = dc.field(default=SpeciesAttribute)
-    half_life: SpeciesAttribute = dc.field(default=SpeciesAttribute)
-    deposition_velocity: SpeciesAttribute = dc.field(default=SpeciesAttribute)
-    sedimentation_velocity: SpeciesAttribute = dc.field(default=SpeciesAttribute)
-    washout_coefficient: SpeciesAttribute = dc.field(default=SpeciesAttribute)
-    washout_exponent: SpeciesAttribute = dc.field(default=SpeciesAttribute)
+    weight: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore
+    half_life: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore
+    deposition_velocity: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore # noqa: E501
+    sedimentation_velocity: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore # noqa: E501
+    washout_coefficient: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore # noqa: E501
+    washout_exponent: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore # noqa: E501
 
     @classmethod
     def create(cls, **params: Any) -> "Species":

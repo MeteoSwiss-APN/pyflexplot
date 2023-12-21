@@ -76,7 +76,7 @@ def click_set_verbosity(ctx, param, value) -> None:
 
 
 def wrap_callback(fct):
-    """Wrapp click callback functions to conditionally drop into ipdb."""
+    """Wrap click callback functions to conditionally drop into ipdb."""
 
     def wrapper(ctx, param, value):
         fct_loc = wrap_pdb(fct) if (ctx.obj or {}).get("pdb") else fct

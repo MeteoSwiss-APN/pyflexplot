@@ -1,18 +1,18 @@
 # PyFlexPlot
-PyFlexPlot is a Python-based tool to visualize FLEXPART dispersion simulation results stored in NetCDF format.
+PyFlexPlot is a Python-based tool to visualize/post-process FLEXPART dispersion simulation results stored in NetCDF format.
 ## Table of Contents
 - [Prerequisites and Cloning the Repository](#prerequisites-and-cloning-the-repository)
-- [Quick Start](#quick-start)
+- [Getting Started](#getting-started)
 - [Usage](#usage)
   - [Usage Example](#usage-example)
-- [The Developer's Guide through the Project](#the-developers-guide-through-the-project)
-  - [Getting Started](#getting-started)
+- [Developer Notes](#developer-notes)
   - [Implemented Debugging Features](#implemented-debugging-features)
   - [Roadmap to your first Contribution](#roadmap-to-your-first-contribution)
   - [Testing and Coding Standards](#testing-and-coding-standards)
     - [Pre-commit on GitHub Actions](#pre-commit-on-github-actions)
     - [Jenkins](#jenkins)
-- [Features](#features)
+    - [Updating the Test References](#updating-the-test-references)
+- [Features](#key-features)
 - [Credits](#credits)
 - [External Links](#external-links)
 - [License](#license)
@@ -23,67 +23,8 @@ To get a local copy of this repository, run following commands and naviate into 
 git clone https://github.com/MeteoSwiss-APN/pyflexplot <custom_directory_name>
 cd <custom_directory_name>
 ```
-## Quick Start
-For a quick setup to use pyflexplot, run the following commands within the root folder:
-1. Install pinned environment: ```tools/setup_env.sh```
-2. Activate the environment and build the package:
-```bash
-conda activate pyflexplot
-pip install --no-deps .
-```
-3. To check if the tool runs properly you can run the tests by running ```pytest tests```
 
-## Usage
-To utilize pyflexplot, first ensure you are in the root directory of the project and have activated the necessary conda environment:
-```bash
-cd <custom_directory_name>
-conda activate <custom_environment_name>
-```
-The primary command for pyflexplot follows this structure:
-```bash
-pyflexplot [OPTIONS] CONFIG_FILE_DIRECTORY
-```
-To see the available options, run:
- ```bash
- pyflexplot -h
- ```
-To utilize all available CPUs for the command, use the option:
-```bash
---num-procs=$SLURM_CPUS_PER_TASK
-```
-
-### Usage Example
-After you've set up pyflexplot ([Prerequisites and cloning the repository](#prerequisites-and-cloning-the-repository) and [Getting started](#getting-started)),
-you'll need to specify a configuration file and an output directory.
-Define an output directory:
-```bash
-dest=test_output/
-```
-Note: The directory will be created on run time if it doesn't already exist.
-
-Furthermore, there are already several default config files available in the directory ```src/pyflexplot/data/presets/opr```.
-To run the program for all presets in the PDF graphics format with the default input data, use:
- ```bash
-preset='opr/*/all_pdf'
-```
-Alternatively, select a specific preset from the table below:
-| Model            | Type                 | Preset                           |
-|------------------|----------------------|----------------------------------|
-| FLEXPART-IFS     | Global output:       | preset=opr/ifs-hres/all_pdf      |
-| FLEXPART-IFS     | Europe output:       | preset=opr/ifs-hres-eu/all_pdf   |
-| FLEXPART-COSMO   | deterministic output:| preset=opr/cosmo-1e-ctrl/all_pdf |
-| FLEXPART-COSMO   | deterministic output:| preset=opr/cosmo-2e-ctrl/all_pdf |
-| FLEXPART-COSMO-1E| ensemble output:     | preset=opr/cosmo-1e/all_pdf      |
-| FLEXPART-COSMO-2E| ensemble output:     | preset=opr/cosmo-2e/all_pdf      |
-
-After selecting a preset, run pyflexplot interactively:
- ```bash
-pyflexplot --preset "$preset" --merge-pdfs --dest=$dest
-```
-
-## The Developer's Guide through the Project
-
-### Getting Started
+## Getting Started
 
 Once you created or cloned this repository, make sure the installation is running properly. Install the package dependencies with the provided script `setup_env.sh`.
 Check available options with
@@ -119,8 +60,59 @@ conda activate <custom_environment_name>
 pytest
 ```
 
-If the tests pass, you are good to go. Make sure to update your requirement files and export your environments after installation
+If the tests pass, you are good to go. If not, contact the package administrator Stefan Ruedisuehli. Make sure to update your requirement files and export your environments after installation
 every time you add new imports while developing. Check the next section to find some guidance on the development process if you are new to Python and/or SEN.
+
+## Usage
+To utilize pyflexplot, first ensure you are in the root directory of the project and have activated the necessary conda environment:
+```bash
+cd <custom_directory_name>
+conda activate <custom_environment_name>
+```
+The primary command for pyflexplot follows this structure:
+```bash
+pyflexplot [OPTIONS] CONFIG_FILE_DIRECTORY
+```
+To see the available options, run:
+ ```bash
+ pyflexplot -h
+ ```
+To utilize all available CPUs for the command, use the option:
+```bash
+--num-procs=$SLURM_CPUS_PER_TASK
+```
+
+### Usage Example
+After you've set up pyflexplot ([Prerequisites and cloning the repository](#prerequisites-and-cloning-the-repository) and [Getting started](#getting-started)),
+you'll need to specify a configuration file and an output directory.
+Create an output directory using:
+```bash
+dest=test_output/
+```
+Note: The directory will be automatically created if it doesn't already exist.
+
+There are several default config files available under ```src/pyflexplot/data/presets/opr```.
+Furthermore, there are already several default config files available in the directory ```src/pyflexplot/data/presets/opr```.
+To run the program for all presets in the PDF graphics format with the default input data, use:
+ ```bash
+preset='opr/*/all_pdf'
+```
+Alternatively, select a specific preset from the table below:
+| Model            | Type                 | Preset                           |
+|------------------|----------------------|----------------------------------|
+| FLEXPART-IFS     | Global output:       | preset=opr/ifs-hres/all_pdf      |
+| FLEXPART-IFS     | Europe output:       | preset=opr/ifs-hres-eu/all_pdf   |
+| FLEXPART-COSMO   | deterministic output:| preset=opr/cosmo-1e-ctrl/all_pdf |
+| FLEXPART-COSMO   | deterministic output:| preset=opr/cosmo-2e-ctrl/all_pdf |
+| FLEXPART-COSMO-1E| ensemble output:     | preset=opr/cosmo-1e/all_pdf      |
+| FLEXPART-COSMO-2E| ensemble output:     | preset=opr/cosmo-2e/all_pdf      |
+
+After selecting a preset, run pyflexplot interactively:
+ ```bash
+pyflexplot --preset "$preset" --merge-pdfs --dest=$dest
+```
+
+## Developer Notes
 
 As this package was created with the SEN Python blueprint, it comes with a stack of development tools, which are described in more detail on the [Website](https://meteoswiss-apn.github.io/mch-python-blueprint/). Here, we give a brief overview on what is implemented.
 
@@ -139,8 +131,8 @@ Here are some of the key debugging features:
 
 ### Roadmap to your first Contribution
 
-Generally, the source code of your library is located in `src/<library_name>`. `cli.py` thereby serves as an entry
-point for functionalities you want to execute from the command line and it is based on the Click library. If you do not need interactions with the command line, you should remove `cli.py`. Moreover, of course there exist other options for command line interfaces,
+Generally, the source code of your library is located in `src/<library_name>`. The blueprint will generate some example code in `mutable_number.py`, `utils.py` and `cli.py`. `cli.py` thereby serves as an entry
+point for functionalities you want to execute from the command line, it is based on the Click library. If you do not need interactions with the command line, you should remove `cli.py`. Moreover, of course there exist other options for command line interfaces,
 a good overview may be found [here](https://realpython.com/comparing-python-command-line-parsing-libraries-argparse-docopt-click/), we recommend however to use click. The provided example
 code should provide some guidance on how the individual source code files interact within the library. In addition to the example code in `src/<library_name>`, there are examples for
 unit tests in `tests/<library_name>/`, which can be triggered with `pytest` from the command line. Once you implemented a feature (and of course you also
@@ -186,10 +178,25 @@ both commits on branches and PRs. Your jenkins pipeline will not be set up
 automatically. If you need to run your tests on CSCS machines, contact DevOps to help you with the setup of the pipelines. Otherwise, you can ignore the jenkinsfiles
 and exclusively run your tests and checks on GitHub actions.
 
-## Features
+### Updating the Test References
+Pyflexplot includes a set of functionality tests that compare generated output against predefined reference data.
+These reference files, which are in the .py format, are derived from and stored alongside the original data in the tests/data directory.
+To update these references, uncomment the lines of code in the test file you wish to update and run the test.
 
-- TODO
+## Key Features
 
+### PDF and PNG Files
+Pyflexplot allows to visualize data on a map plot and save the output in either PDF or PNG format. To utilize this feature, simply adjust the outfile variable with the appropriate file extension.
+![Example Image Output](img/integrated_concentration_site-Goesgen_species-1_domain-full_lang-de_ts-20200217T0900.png)
+### Shape File Generation
+Furthermore, Pyflexplot provides the functionality to export data into shape files (.shp) to utilize them in GIS programs such as QGIS 3. The output is a ZIP archive containing the essential components of a shapefile: .shp, .dbf, .shx, .prj, and .shp.xml.
+Key aspects of this feature include:
+* __Filtering Zero Values__: The tool initially removes zero values from fields (e.g., concentration) before processing.
+* __Logarithmic Transformation__: Field values undergo a log_10 transformation to optimize the visualization of data ranges.
+* __Precision Handling__: The transformed field values are recorded with 15 decimal places, accommodating the precision limitations of some GIS software.
+* __Metadata Storage__: Information, such as details about released materials, are stored within a .shp.xml file as metadata.
+### Scaling the field values
+Another feature is to manipulate the field values by scaling with an arbitrary factor. This factor can be set in the preset with the variable `multiplier`.
 ## Credits
 
 This package was created with [`copier`](https://github.com/copier-org/copier) and the [`MeteoSwiss-APN/mch-python-blueprint`](https://github.com/MeteoSwiss-APN/mch-python-blueprint) project template.
@@ -198,6 +205,7 @@ This package was created with [`copier`](https://github.com/copier-org/copier) a
 
 * [copier](https://github.com/copier-org/copier) - Based library and CLI app for rendering project templates.
 * [mch-python-blueprint](https://github.com/MeteoSwiss-APN/mch-python-blueprint) - Project template embedded in this project based on copier.
+* [pyshp](https://github.com/GeospatialPython/pyshp) - Python module to generate Shapefiles
 
 
 ## License

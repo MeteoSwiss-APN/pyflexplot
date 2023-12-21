@@ -145,6 +145,7 @@ class Test_CloudArrivalTime(_TestBase):
                     "species_id": 1,
                     "time": 0,
                     "level": 0,
+                    "multiplier": None,
                 },
             }
         ],

@@ -44,7 +44,7 @@ class PathsOrganizer:
             f"{re.escape(self._dup_sep)}[0-9]+{re.escape(self._suffix)}$"
         )
         paths = list(paths)
-        grouped_pdf_paths: list[list[str]] = []
+        grouped_file_paths: list[list[str]] = []
         for path in list(paths):
             if path not in paths:
                 # Already handled
@@ -52,19 +52,19 @@ class PathsOrganizer:
             if rx_numbered.search(path):
                 # Numbered, so not the first
                 continue
-            path_base = path.rstrip(self._suffix)
+            path_base = path.split(self._dup_sep)[0]
             paths.remove(path)
-            grouped_pdf_paths.append([path])
+            grouped_file_paths.append([path])
             rx_related = re.compile(
                 f"{re.escape(path_base)}\\.[0-9]+{re.escape(self._suffix)}"
             )
             for other_path in list(paths):
                 if rx_related.search(other_path):
                     paths.remove(other_path)
-                    grouped_pdf_paths[-1].append(other_path)
+                    grouped_file_paths[-1].append(other_path)
         return [
             sorted_paths(group, dup_sep=self._dup_sep)
-            for group in grouped_pdf_paths
+            for group in grouped_file_paths
             if len(group) > 1
         ]
 

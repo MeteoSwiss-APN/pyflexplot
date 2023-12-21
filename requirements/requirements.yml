@@ -12,7 +12,7 @@ dependencies:
   - netcdf4
   - numpy >= 1.20
   - pillow >= 8.4.0
-  - pypdf2 == 1.*
+  - pypdf >= 3.10.0
   - scipy
   - toml
   - typing-extensions
