@@ -11,7 +11,7 @@ DEFAULT_ENV_NAME="pyflexplot"
 
 # Default options
 ENV_NAME="${DEFAULT_ENV_NAME}"
-PYVERSION=3.10
+PYVERSION=3.11
 PINNED=true
 EXPORT=false
 CONDA=conda
