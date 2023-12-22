@@ -52,7 +52,7 @@ class PathsOrganizer:
             if rx_numbered.search(path):
                 # Numbered, so not the first
                 continue
-            path_base = path.split(self._dup_sep)[0]
+            path_base = path.rstrip(self._suffix)
             paths.remove(path)
             grouped_file_paths.append([path])
             rx_related = re.compile(

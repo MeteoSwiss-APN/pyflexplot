@@ -190,9 +190,7 @@ class ShapeFileSaver:
 
     def _move_shape_file_to_zip(self, base_file_dir: str, zip_file: zipfile.ZipFile):
         """Move the generated shapefile components into a ZIP archive."""
-        extensions = [".shp", ".shx", ".dbf"]
-        if "_domain" not in base_file_dir:
-            extensions += [".shp.xml"]
+        extensions = [".shp", ".shx", ".dbf", ".shp.xml"]
         for ext in extensions:
             file_to_copy = f"{base_file_dir}{ext}"
             with open(file_to_copy, "rb") as file_in_zip:
