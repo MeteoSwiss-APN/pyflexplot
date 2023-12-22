@@ -514,8 +514,10 @@ def merge_shape_files(
     merged_files: List[str] = []
     n = 0
     for i, group in enumerate(grouped_file_paths):
-        merged = f"""{dest_dir}{relpath(paths_organizer.merge(group), start=tmp_dir)}"""
-        tmp_zip_name = f"{dest_dir}temp_shape{i}.zip"
+        merged = (
+            f"""{dest_dir}/{relpath(paths_organizer.merge(group), start=tmp_dir)}"""
+        )
+        tmp_zip_name = f"{dest_dir}/temp_shape{i}.zip"
         if not dry_run:
             with zipfile.ZipFile(tmp_zip_name, "w") as main_zip:
                 for file in group:
