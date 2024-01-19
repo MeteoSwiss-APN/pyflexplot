@@ -677,6 +677,10 @@ class InputFileEnsemble:
             "COSMO-E",
             "COSMO-2E",
             "COSMO-1E",
+            "ICON-CH1-CTRL",
+            "ICON-CH2-CTRL",
+            "ICON-CH1-EPS",
+            "ICON-CH2-EPS",
         ]:
             return {
                 "lat": "rlat",

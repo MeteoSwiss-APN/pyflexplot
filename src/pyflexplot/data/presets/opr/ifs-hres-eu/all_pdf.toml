@@ -1,7 +1,7 @@
 # PyFlexPlot setup file to create deterministic IFS-HRES-EU plots
 
 [_base]
-# Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
+# Test data source: /store_new/mch/msopr/pyflexplot_testdata/
 infile = "data/ifs-hres-eu/grid_conc_0999_20200818000000_fessenheim_5spec.nc"
 model = "IFS-HRES-EU"
 lang = "de"
