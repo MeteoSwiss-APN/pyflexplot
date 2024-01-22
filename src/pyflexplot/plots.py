@@ -230,7 +230,14 @@ def get_domain(field: Field, aspect: float) -> Domain:
     mask_nz = field.time_props.mask_nz
     domain: Optional[Domain] = None
     if domain_type == "full":
-        if model_name in ["COSMO-1", "COSMO-1E", "COSMO-2", "COSMO-E", "ICON-CH1-CTRL", "ICON-CH2-CTRL"]:
+        if model_name in [
+            "COSMO-1",
+            "COSMO-1E",
+            "COSMO-2",
+            "COSMO-E",
+            "ICON-CH1-CTRL",
+            "ICON-CH2-CTRL",
+        ]:
             domain = Domain(lat, lon, config={"zoom_fact": 1.01})
         elif model_name in ["COSMO-2E", "ICON-CH1-EPS", "ICON-CH2-EPS"]:
             domain = Domain(lat, lon, config={"zoom_fact": 1.025})
@@ -270,7 +277,15 @@ def get_domain(field: Field, aspect: float) -> Domain:
             },
         )
     elif domain_type == "ch":
-        if model_name in ["COSMO-1", "COSMO-1E", "COSMO-2E", "ICON-CH1-CTRL", "ICON-CH2-CTRL", "ICON-CH1-EPS", "ICON-CH2-EPS"]:
+        if model_name in [
+            "COSMO-1",
+            "COSMO-1E",
+            "COSMO-2E",
+            "ICON-CH1-CTRL",
+            "ICON-CH2-CTRL",
+            "ICON-CH1-EPS",
+            "ICON-CH2-EPS",
+        ]:
             domain = Domain(
                 lat, lon, config={"zoom_fact": 3.6, "rel_offset": (-0.02, 0.045)}
             )
@@ -1554,7 +1569,16 @@ def format_model_info(model_setup: ModelSetup, words: TranslatedWords) -> str:
     # SR_TMP >
     model_info = None
     if simulation_type == "deterministic":
-        if model_name in ["COSMO-1", "COSMO-2", "ICON-CH1-CTRL", "ICON-CH2-CTRL", "ICON-CH1-EPS", "ICON-CH2-EPS", "IFS-HRES", "IFS-HRES-EU"]:
+        if model_name in [
+            "COSMO-1",
+            "COSMO-2",
+            "ICON-CH1-CTRL",
+            "ICON-CH2-CTRL",
+            "ICON-CH1-EPS",
+            "ICON-CH2-EPS",
+            "IFS-HRES",
+            "IFS-HRES-EU",
+        ]:
             model_info = model_name
         elif model_name in ["COSMO-E", "COSMO-1E", "COSMO-2E"]:
             model_info = f"{model_name} {words['control_run']}"
