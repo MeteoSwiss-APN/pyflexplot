@@ -16,7 +16,7 @@ from .meta_data import MetaData
 class FlexPartDataFixer:
     """Fix issues with FlexPart NetCDF output."""
 
-    cosmo_models = ["COSMO-2", "COSMO-1", "COSMO-E", "COSMO-1E", "COSMO-2E"]
+    cosmo_models = ["COSMO-2", "COSMO-1", "COSMO-E", "COSMO-1E", "COSMO-2E", "ICON-CH1-CTRL", "ICON-CH2-CTRL", "ICON-CH1-EPS", "ICON-CH2-EPS"]
     ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
 
     def __init__(self, file_reader):

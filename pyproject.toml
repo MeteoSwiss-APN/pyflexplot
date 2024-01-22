@@ -7,8 +7,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyflexplot"
-version = "1.1.0"
-description = "Stefan Ruedisuehli's PyFlexPlot"
+version = "1.1.1"
+description = "PyFlexPlot - Visualize and post-process FLEXPART dispersion simulation results stored in NetCDF format"
 readme = "README.md"
 keywords = [
     "Dispersion",
@@ -22,7 +22,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 requires-python = ">=3.10"
 authors = [
