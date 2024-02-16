@@ -154,7 +154,7 @@ pyflexplot offers several debugging options to assist in troubleshooting and
 refining your workflow (see ```pyflexplot -h```).
 Here are some of the key debugging features:
 
- ```
+ ```text
 --pdb / --no-pdb                Drop into debugger when an exception is raised.  [default: no-pdb]
 --preset-cat PATTERN            Show the contents of preset setup files
 --only N                        Only create the first N plots based on the given setup.
@@ -184,7 +184,7 @@ your package, type `pre-commit install`. If you run `pre-commit` without having 
 
 Alternatively, you can instead run `pre-commit` selectively, without installing and whenever you want, by typing
 
-```
+```bash
 pre-commit run --all-files
 ```
 
@@ -229,6 +229,7 @@ Pyflexplot allows to visualize data on a map plot and save the output in either 
 
 Furthermore, Pyflexplot provides the functionality to export data into shape files (.shp) to utilize them in GIS programs such as QGIS 3. The output is a ZIP archive containing the essential components of a shapefile: .shp, .dbf, .shx, .prj, and .shp.xml.
 Key aspects of this feature include:
+
 - __Filtering Zero Values__: The tool initially removes zero values from fields (e.g., concentration) before processing.
 - __Logarithmic Transformation__: Field values undergo a log_10 transformation to optimize the visualization of data ranges.
 - __Precision Handling__: The transformed field values are recorded with 15 decimal places, accommodating the precision limitations of some GIS software.
