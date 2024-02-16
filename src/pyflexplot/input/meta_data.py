@@ -655,7 +655,7 @@ class SpeciesMetaData(_MetaDataBase):
             sedimentation_velocity_unit=cast(str, species.sedimentation_velocity.unit),
             washout_coefficient=species.washout_coefficient.value,
             washout_coefficient_unit=cast(str, species.washout_coefficient.unit),
-            washout_exponent=species.washout_exponent.value,
+            washout_exponent=species.washout_exponent,
         )
 
     @staticmethod
