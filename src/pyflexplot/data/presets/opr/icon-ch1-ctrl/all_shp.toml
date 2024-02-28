@@ -1,9 +1,9 @@
-# PyFlexPlot setup file to create deterministic IFS-HRES shapefiles
+# PyFlexPlot setup file to create deterministic ICON-CH1-CTRL shapefiles
 
 [_base]
 # Test data source: /store_new/mch/msopr/pyflexplot_testdata/
-infile = "data/ifs-hres/grid_conc_1000_20200818000000_bushehr_2spec.nc"
-model = "IFS-HRES"
+infile = "data/icon-ch1-ctrl/grid_conc_0910_20200216000000.nc"
+model = "ICON-CH1-CTRL"
 lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
@@ -43,7 +43,7 @@ multipanel_param = "time"
 time = [2, 4, 8, -1]
 
 ["**".full]
-domain = "cloud"
+domain = "full"
 
 ["**".zoom]
-domain = "release_site"
+domain = "ch"

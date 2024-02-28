@@ -655,7 +655,7 @@ class SpeciesMetaData(_MetaDataBase):
             sedimentation_velocity_unit=cast(str, species.sedimentation_velocity.unit),
             washout_coefficient=species.washout_coefficient.value,
             washout_coefficient_unit=cast(str, species.washout_coefficient.unit),
-            washout_exponent=species.washout_exponent.value,
+            washout_exponent=species.washout_exponent,
         )
 
     @staticmethod
@@ -871,7 +871,17 @@ class TimeStepMetaDataCollector:
 
 def derive_variable_name(model: str, variable: str, species_id: int) -> str:
     """Derive the NetCDF variable name given some attributes."""
-    cosmo_models = ["COSMO-2", "COSMO-1", "COSMO-E", "COSMO-2E", "COSMO-1E"]
+    cosmo_models = [
+        "COSMO-2",
+        "COSMO-1",
+        "COSMO-E",
+        "COSMO-2E",
+        "COSMO-1E",
+        "ICON-CH1-CTRL",
+        "ICON-CH2-CTRL",
+        "ICON-CH1-EPS",
+        "ICON-CH2-EPS",
+    ]
     ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
     if variable == "concentration":
         if model in cosmo_models:

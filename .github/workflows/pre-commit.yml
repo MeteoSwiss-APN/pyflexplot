@@ -1,4 +1,4 @@
-name: Run pre-commit in blueprint
+name: Run pre-commit in pyflexplot
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
     - main
 
 jobs:
-  blueprint-pre-commit:
+  pyflexplot-pre-commit:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -26,9 +26,9 @@ jobs:
         channels: conda-forge
         channel-priority: flexible
         show-channel-urls: true
-    - name: Create env from unpinned reqs
+    - name: Create env from pinned reqs
       run: |
-        conda env create --name dev_env --file requirements/requirements.yml
+        conda env create --name dev_env --file requirements/environment.yml
     - name: Install project into env
       run: |
         conda run --name dev_env pip install --no-deps .

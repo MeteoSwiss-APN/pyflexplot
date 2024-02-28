@@ -1,10 +1,11 @@
 """Chemical species and their attributes."""
+from __future__ import annotations
+
 # Standard library
 import dataclasses as dc
 from dataclasses import dataclass  # pylint doesn't understand dc.dataclass
 from typing import Any
 from typing import cast
-from typing import Dict
 from typing import List
 from typing import Optional
 from typing import overload
@@ -55,21 +56,19 @@ class Species:
     deposition_velocity: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore # noqa: E501
     sedimentation_velocity: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore # noqa: E501
     washout_coefficient: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore # noqa: E501
-    washout_exponent: SpeciesAttribute = dc.field(default=SpeciesAttribute)  # type: ignore # noqa: E501
+    washout_exponent: float = 0
 
     @classmethod
-    def create(cls, **params: Any) -> "Species":
-        params_prep: Dict[str, Any] = {}
-        fields = cls.__dataclass_fields__  # type: ignore  # pylint: disable=E1101
-        for param, value in params.items():
-            try:
-                field: dc.Field = fields[param]
-            except KeyError as e:
-                raise ValueError(param) from e
-            if issubclass(field.type, SpeciesAttribute):
-                value = SpeciesAttribute.create(value)
-            params_prep[param] = value
-        return cls(**params_prep)
+    def create(cls, **params: Any) -> Species:
+        return_value = cls()
+        attribute_names = [field.name for field in dc.fields(Species)]
+        for name, value in params.items():
+            if name in attribute_names:
+                if return_value.__annotations__[name] != "SpeciesAttribute":
+                    return_value.__setattr__(name, value)
+                else:
+                    return_value.__setattr__(name, SpeciesAttribute(*value))
+        return return_value
 
     def __post_init__(self):
         self.weight = SpeciesAttribute(-99.9, "g mol-1")

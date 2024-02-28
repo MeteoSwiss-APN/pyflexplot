@@ -1,7 +1,7 @@
 # PyFlexPlot setup file to create ensemble CCOSMO-1E plots
 
 [_base]
-# Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
+# Test data source: /store/mch/msopr/pyflexplot_testdata/
 infile = "data/cosmo-1e/2021030503/{ens_member:03}/grid_conc_20210305030000.nc_GOE"
 ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 model = "COSMO-1E"
