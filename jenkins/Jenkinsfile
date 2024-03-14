@@ -51,7 +51,7 @@ pipeline {
                 '''
             }
         }
-        stage('build unpinned') {
+        stage('build pinned') {
             steps {
                 sh '''#!/usr/bin/env bash
                 set -e
