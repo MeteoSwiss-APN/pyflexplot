@@ -10,7 +10,7 @@ pipeline {
        PATH = "$WORKSPACE/miniconda/bin:$PATH"
     }
     agent {
-        label 'tsa'
+        label 'balfrin'
     }
 
     post {
@@ -25,29 +25,6 @@ pipeline {
                 sh '''#!/usr/bin/env bash
                 set -e
                 bash tools/setup_miniconda.sh -p ${WORKSPACE}
-                '''
-            }
-        }
-        stage('build unpinned') {
-            steps {
-                sh '''#!/usr/bin/env bash
-                set -e
-                source ${WORKSPACE}/miniconda/etc/profile.d/conda.sh
-                conda init bash --no-user --install --system
-                conda activate
-                bash tools/setup_env.sh -n pyflexplot -u
-                conda activate pyflexplot
-                pip install --no-deps .
-                '''
-            }
-        }
-        stage('test unpinned') {
-            steps {
-                sh '''#!/usr/bin/env bash
-                source $WORKSPACE/miniconda/etc/profile.d/conda.sh
-                conda init bash --no-user --install --system
-                conda activate pyflexplot
-                pytest tests
                 '''
             }
         }
