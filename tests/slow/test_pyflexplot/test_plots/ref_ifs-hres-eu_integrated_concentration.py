@@ -140,15 +140,15 @@ field_summary = {
                 },
                 "species": {
                     "name": "Xe-133",
-                    "half_life": -99.9,
-                    "half_life_unit": "a",
+                    "half_life": 5.245,
+                    "half_life_unit": "d",
                     "deposition_velocity": 0.0,
                     "deposition_velocity_unit": "m s-1",
                     "sedimentation_velocity": 0.0,
                     "sedimentation_velocity_unit": "m s-1",
-                    "washout_coefficient": -99.9,
+                    "washout_coefficient": 0.0,
                     "washout_coefficient_unit": "s-1",
-                    "washout_exponent": -99.9,
+                    "washout_exponent": 0.0,
                 },
                 "variable": {
                     "unit": "Bq h m-3",
@@ -394,16 +394,7 @@ plot_summary = {
                 "label": None,
                 "levels": {
                     "type": "ContourLevelsConfig",
-                    "levels": [
-                        1e-07,
-                        1e-06,
-                        9.999999999999999e-06,
-                        9.999999999999999e-05,
-                        0.001,
-                        0.01,
-                        0.09999999999999999,
-                        1.0,
-                    ],
+                    "levels": [1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1, 1.0],
                     "extend": "max",
                     "include_lower": False,
                     "legend": {
@@ -489,7 +480,7 @@ plot_summary = {
             },
             "release_info": {
                 "title": "Release",
-                "lines_str": "Site:\tBeznau\nLatitude:\t47$^\\circ$$\\,$33'$\\,$N (47.5519$^\\circ$$\\,$N)\nLongitude:\t8$^\\circ$$\\,$13'$\\,$E (8.2284$^\\circ$$\\,$E)\nHeight:\t100$\\,$$\\,$m AGL\n\n\nStart:\t2020-11-13 14:00 UTC\nEnd:\t2020-11-14 02:00 UTC\nRate:\t1e+07$\\,$Bq s$^{-1}$\nTotal mass:\t4.3e+11$\\,$Bq\n\n\nSubstance:\tXe-133\nHalf-life:\t-1e+02$\\,$a\nDeposit. vel.:\t0$\\,$m s$^{-1}$\nSediment. vel.:\t0$\\,$m s$^{-1}$\nWashout coeff.:\t-1e+02$\\,$s$^{-1}$\nWashout exponent:\t-1e+02\n",
+                "lines_str": "Site:\tBeznau\nLatitude:\t47$^\\circ$$\\,$33'$\\,$N (47.5519$^\\circ$$\\,$N)\nLongitude:\t8$^\\circ$$\\,$13'$\\,$E (8.2284$^\\circ$$\\,$E)\nHeight:\t100$\\,$$\\,$m AGL\n\n\nStart:\t2020-11-13 14:00 UTC\nEnd:\t2020-11-14 02:00 UTC\nRate:\t1e+07$\\,$Bq s$^{-1}$\nTotal mass:\t4.3e+11$\\,$Bq\n\n\nSubstance:\tXe-133\nHalf-life:\t5.245$\\,$d\nDeposit. vel.:\t0$\\,$m s$^{-1}$\nSediment. vel.:\t0$\\,$m s$^{-1}$\nWashout coeff.:\t0$\\,$s$^{-1}$\nWashout exponent:\t0\n",
             },
         },
         "fig_size": [12.5, 8.0],
@@ -728,15 +719,15 @@ plot_summary = {
                     },
                     "species": {
                         "name": "Xe-133",
-                        "half_life": -99.9,
-                        "half_life_unit": "a",
+                        "half_life": 5.245,
+                        "half_life_unit": "d",
                         "deposition_velocity": 0.0,
                         "deposition_velocity_unit": "m s-1",
                         "sedimentation_velocity": 0.0,
                         "sedimentation_velocity_unit": "m s-1",
-                        "washout_coefficient": -99.9,
+                        "washout_coefficient": 0.0,
                         "washout_coefficient_unit": "s-1",
-                        "washout_exponent": -99.9,
+                        "washout_exponent": 0.0,
                     },
                     "variable": {
                         "unit": "Bq h m-3",
@@ -5516,7 +5507,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-1e+02$\\,$a",
+                    "s": "5.245$\\,$d",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -5603,7 +5594,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-1e+02$\\,$s$^{-1}$",
+                    "s": "0$\\,$s$^{-1}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -5632,7 +5623,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-1e+02",
+                    "s": "0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
