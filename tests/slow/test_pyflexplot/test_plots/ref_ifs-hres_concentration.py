@@ -140,15 +140,15 @@ field_summary = {
                 },
                 "species": {
                     "name": "Cs-137",
-                    "half_life": -99.9,
+                    "half_life": 30.0,
                     "half_life_unit": "a",
-                    "deposition_velocity": 0.0,
+                    "deposition_velocity": 0.0015,
                     "deposition_velocity_unit": "m s-1",
                     "sedimentation_velocity": 0.0,
                     "sedimentation_velocity_unit": "m s-1",
-                    "washout_coefficient": -99.9,
+                    "washout_coefficient": 7e-05,
                     "washout_coefficient_unit": "s-1",
-                    "washout_exponent": -99.9,
+                    "washout_exponent": 0.8,
                 },
                 "variable": {
                     "unit": "Bq m-3",
@@ -394,16 +394,7 @@ plot_summary = {
                 "label": None,
                 "levels": {
                     "type": "ContourLevelsConfig",
-                    "levels": [
-                        1e-13,
-                        1e-12,
-                        1e-11,
-                        9.999999999999999e-11,
-                        9.999999999999999e-10,
-                        1e-08,
-                        1e-07,
-                        1e-06,
-                    ],
+                    "levels": [1e-13, 1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07, 1e-06],
                     "extend": "max",
                     "include_lower": False,
                     "legend": {
@@ -489,7 +480,7 @@ plot_summary = {
             },
             "release_info": {
                 "title": "Freisetzung",
-                "lines_str": 'Ort:\tPunggye-ri\nBreite:\t41$^\\circ$$\\,$16\'$\\,$N (41.2800$^\\circ$$\\,$N)\nL$\\mathrm{\\"a}$nge:\t129$^\\circ$$\\,$5\'$\\,$O (129.0900$^\\circ$$\\,$O)\nH$\\mathrm{\\"o}$he:\t100$\\,$$\\,$m $\\mathrm{\\"u}$.G.\n\n\nStart:\t2020-03-17 00:00 UTC\nEnde:\t2020-03-17 08:00 UTC\nRate:\t34722.2$\\,$Bq s$^{-1}$\nTotale Masse:\t1e+09$\\,$Bq\n\n\nSubstanz:\tCs-137\nHalbwertszeit:\t-1e+02$\\,$a\nDeposit.-Geschw.:\t0$\\,$m s$^{-1}$\nSediment.-Geschw.:\t0$\\,$m s$^{-1}$\nAuswaschkoeff.:\t-1e+02$\\,$s$^{-1}$\nAuswaschexponent:\t-1e+02\n',
+                "lines_str": 'Ort:\tPunggye-ri\nBreite:\t41$^\\circ$$\\,$16\'$\\,$N (41.2800$^\\circ$$\\,$N)\nL$\\mathrm{\\"a}$nge:\t129$^\\circ$$\\,$5\'$\\,$O (129.0900$^\\circ$$\\,$O)\nH$\\mathrm{\\"o}$he:\t100$\\,$$\\,$m $\\mathrm{\\"u}$.G.\n\n\nStart:\t2020-03-17 00:00 UTC\nEnde:\t2020-03-17 08:00 UTC\nRate:\t34722.2$\\,$Bq s$^{-1}$\nTotale Masse:\t1e+09$\\,$Bq\n\n\nSubstanz:\tCs-137\nHalbwertszeit:\t30$\\,$a\nDeposit.-Geschw.:\t0.0015$\\,$m s$^{-1}$\nSediment.-Geschw.:\t0$\\,$m s$^{-1}$\nAuswaschkoeff.:\t7e-05$\\,$s$^{-1}$\nAuswaschexponent:\t0.8\n',
             },
         },
         "fig_size": [12.5, 8.0],
@@ -728,15 +719,15 @@ plot_summary = {
                     },
                     "species": {
                         "name": "Cs-137",
-                        "half_life": -99.9,
+                        "half_life": 30.0,
                         "half_life_unit": "a",
-                        "deposition_velocity": 0.0,
+                        "deposition_velocity": 0.0015,
                         "deposition_velocity_unit": "m s-1",
                         "sedimentation_velocity": 0.0,
                         "sedimentation_velocity_unit": "m s-1",
-                        "washout_coefficient": -99.9,
+                        "washout_coefficient": 7e-05,
                         "washout_coefficient_unit": "s-1",
-                        "washout_exponent": -99.9,
+                        "washout_exponent": 0.8,
                     },
                     "variable": {
                         "unit": "Bq m-3",
@@ -5004,7 +4995,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-1e+02$\\,$a",
+                    "s": "30$\\,$a",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -5033,7 +5024,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "0$\\,$m s$^{-1}$",
+                    "s": "0.0015$\\,$m s$^{-1}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -5091,7 +5082,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-1e+02$\\,$s$^{-1}$",
+                    "s": "7e-05$\\,$s$^{-1}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -5120,7 +5111,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-1e+02",
+                    "s": "0.8",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

@@ -135,15 +135,15 @@ field_summary = {
                 },
                 "species": {
                     "name": "Cs-137",
-                    "half_life": -99.9,
+                    "half_life": 30.0,
                     "half_life_unit": "a",
-                    "deposition_velocity": 0.0,
+                    "deposition_velocity": 0.0015,
                     "deposition_velocity_unit": "m s-1",
                     "sedimentation_velocity": 0.0,
                     "sedimentation_velocity_unit": "m s-1",
-                    "washout_coefficient": -99.9,
+                    "washout_coefficient": 7e-05,
                     "washout_coefficient_unit": "s-1",
-                    "washout_exponent": -99.9,
+                    "washout_exponent": 0.8,
                 },
                 "variable": {
                     "unit": "Bq h m-3",
@@ -391,16 +391,7 @@ plot_summary = {
                 "label": None,
                 "levels": {
                     "type": "ContourLevelsConfig",
-                    "levels": [
-                        9.999999999999999e-10,
-                        1e-08,
-                        1e-07,
-                        1e-06,
-                        9.999999999999999e-06,
-                        9.999999999999999e-05,
-                        0.001,
-                        0.01,
-                    ],
+                    "levels": [1e-09, 1e-08, 1e-07, 1e-06, 1e-05, 0.0001, 0.001, 0.01],
                     "extend": "max",
                     "include_lower": False,
                     "legend": {
@@ -486,7 +477,7 @@ plot_summary = {
             },
             "release_info": {
                 "title": "Release",
-                "lines_str": "Site:\tG$\\mathrm{\\\"o}$sgen\nLatitude:\t47$^\\circ$$\\,$21'$\\,$N (47.3659$^\\circ$$\\,$N)\nLongitude:\t7$^\\circ$$\\,$58'$\\,$E (7.9668$^\\circ$$\\,$E)\nHeight:\t100$\\,$$\\,$m AGL\n\n\nStart:\t2019-09-30 12:00 UTC\nEnd:\t2019-09-30 20:00 UTC\nRate:\t34722.2$\\,$Bq s$^{-1}$\nTotal mass:\t1e+09$\\,$Bq\n\n\nSubstance:\tCs-137\nHalf-life:\t-1e+02$\\,$a\nDeposit. vel.:\t0$\\,$m s$^{-1}$\nSediment. vel.:\t0$\\,$m s$^{-1}$\nWashout coeff.:\t-1e+02$\\,$s$^{-1}$\nWashout exponent:\t-1e+02\n",
+                "lines_str": "Site:\tG$\\mathrm{\\\"o}$sgen\nLatitude:\t47$^\\circ$$\\,$21'$\\,$N (47.3659$^\\circ$$\\,$N)\nLongitude:\t7$^\\circ$$\\,$58'$\\,$E (7.9668$^\\circ$$\\,$E)\nHeight:\t100$\\,$$\\,$m AGL\n\n\nStart:\t2019-09-30 12:00 UTC\nEnd:\t2019-09-30 20:00 UTC\nRate:\t34722.2$\\,$Bq s$^{-1}$\nTotal mass:\t1e+09$\\,$Bq\n\n\nSubstance:\tCs-137\nHalf-life:\t30$\\,$a\nDeposit. vel.:\t0.0015$\\,$m s$^{-1}$\nSediment. vel.:\t0$\\,$m s$^{-1}$\nWashout coeff.:\t7e-05$\\,$s$^{-1}$\nWashout exponent:\t0.8\n",
             },
         },
         "fig_size": [12.5, 8.0],
@@ -714,15 +705,15 @@ plot_summary = {
                     },
                     "species": {
                         "name": "Cs-137",
-                        "half_life": -99.9,
+                        "half_life": 30.0,
                         "half_life_unit": "a",
-                        "deposition_velocity": 0.0,
+                        "deposition_velocity": 0.0015,
                         "deposition_velocity_unit": "m s-1",
                         "sedimentation_velocity": 0.0,
                         "sedimentation_velocity_unit": "m s-1",
-                        "washout_coefficient": -99.9,
+                        "washout_coefficient": 7e-05,
                         "washout_coefficient_unit": "s-1",
-                        "washout_exponent": -99.9,
+                        "washout_exponent": 0.8,
                     },
                     "variable": {
                         "unit": "Bq h m-3",
@@ -4614,7 +4605,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-1e+02$\\,$a",
+                    "s": "30$\\,$a",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4643,7 +4634,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "0$\\,$m s$^{-1}$",
+                    "s": "0.0015$\\,$m s$^{-1}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4701,7 +4692,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-1e+02$\\,$s$^{-1}$",
+                    "s": "7e-05$\\,$s$^{-1}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4730,7 +4721,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-1e+02",
+                    "s": "0.8",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
