@@ -120,7 +120,7 @@ pipeline {
                 mkdir -p test_reports
                 """
                 echo "Starting with unit-testing including coverage"
-                sh "./run_within_db_pod.sh ${Globals.imageTag}-tester '. ./test_ci.sh && run_tests_with_coverage'"
+                sh "podman run --rm -v \$(pwd)/test_reports:/src/app-root/test_reports ${Globals.imageTag}-tester sh -c '. ./test_ci.sh && run_tests_with_coverage'"
             }
             post {
                 always {

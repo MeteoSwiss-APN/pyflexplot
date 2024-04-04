@@ -1,7 +1,7 @@
 #!/bin/sh
 
 run_tests_with_coverage() {
-  python -m coverage run --source pyflexplot --data-file test_reports/.coverage --module pytest --junitxml=test_reports/junit.xml test/
+  python -m coverage run --source pyflexplot --data-file test_reports/.coverage --module pytest --junitxml=test_reports/junit.xml tests/
   python -m coverage xml --data-file test_reports/.coverage -o test_reports/coverage.xml
 }
 
