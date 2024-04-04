@@ -1,15 +1,19 @@
-[build-system]
-requires = [
-    "setuptools>=65",
-    "wheel>=0.38",
-]
-build-backend = "setuptools.build_meta"
-
-[project]
+[tool.poetry]
 name = "pyflexplot"
-version = "1.1.1"
+# Keep only Major and Minor version in this configuration,
+# the patch version is calculated when releasing the library
+version = "2.0"
 description = "PyFlexPlot - Visualize and post-process FLEXPART dispersion simulation results stored in NetCDF format"
+authors = ["Stefan Ruedisuehli <stefan.ruedisuehli@env.ethz.ch>"]
+packages = [
+    { include = "pyflexplot", from = "src" },
+    { include = "srtools", from = "src" },
+    { include = "srutils", from = "src" },
+    { include = "words", from = "src" }
+]
 readme = "README.md"
+repository = "https://github.com/MeteoSwiss-APN/pyflexplot"
+documentation = "https://github.io/MeteoSwiss-APN/pyflexplot"
 keywords = [
     "Dispersion",
     "Flexpart",
@@ -24,23 +28,49 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
 ]
-requires-python = ">=3.10"
-authors = [
-    {name="Stefan Ruedisuehli", email="stefan.ruedisuehli@env.ethz.ch"},
-]
 
-[project.urls]
-source = "https://github.com/MeteoSwiss-APN/pyflexplot"
-documentation = "https://github.io/MeteoSwiss-APN/pyflexplot"
-
-[project.scripts]
-# Format: <command> = "<package>.<module>:<function>"
-# pyflexplot = "pyflexplot.cli:main"
+[tool.poetry.scripts]
 pyflexplot  = "pyflexplot.cli.cli:cli"
 pytrajplot  = "pytrajplot.cli:cli"
 crop-netcdf = "srtools.crop_netcdf:main"
 
+# TODO RMF-81 how to use service.meteoswiss.ch so we do not need to adapt it when calling it from CSCS?
+[[tool.poetry.source]]
+name = "meteoswiss-hub"
+url = "https://hub.meteoswiss.ch/nexus/repository/python-all/simple"
+priority = "primary"
+
+[[tool.poetry.source]]
+name = "pypi-mch-publish"
+url = "https://hub.meteoswiss.ch/nexus/repository/python-mch/"
+
+[tool.poetry.dependencies]
+python = "~3.10"  # python version restricted by pillow
+cartopy = "^0.22"
+click = "^6.0"
+geopy = "^2.4.0"
+matplotlib = "^3.8.1"
+netcdf4 = "^1.6.5"
+numpy = "^1.21.6"
+pillow = "^8.4.0"
+pypdf = "^3.10.0"
+scipy = "^1.11.3"
+toml = "^0.10.2"
+typing-extensions = "^4.8.0"
+
+[tool.poetry.dev-dependencies]
+Sphinx = "^7.2.6"
+sphinx-autoapi = "^3.0.0"
+pydata-sphinx-theme = "^0.14.1"
+pytest = "^7.4.3"
+pytest-cov = "^4.1.0"
+pylint = "^3.0.2"
+mypy = "^1.6.1"
+types-setuptools = "^68.2.0.0"
+yapf = "^0.40.2"
+
 [tool.pytest.ini_options]
+pythonpath = "src"
 testpaths = ["tests"]
 addopts = [
     "-s",

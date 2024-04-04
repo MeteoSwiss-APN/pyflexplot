@@ -32,7 +32,13 @@ except Exception as e:  # pylint: disable=W0703  # broad-except
 
 __author__ = "Stefan Ruedisuehli"
 __email__ = "stefan.ruedisuehli@env.ethz.ch"
-__version__ = importlib.metadata.version(__package__)
+
+try:
+    __version__ = importlib.metadata.version(__package__)
+except importlib.metadata.PackageNotFoundError:
+    # package is not installed
+    __version__ = 'n/a'
+    pass
 
 del importlib
 
