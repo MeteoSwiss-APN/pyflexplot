@@ -4,6 +4,9 @@ class Globals {
     static final String IMAGE_REPO = 'docker-intern-nexus.meteoswiss.ch'
     static final String IMAGE_NAME = 'docker-intern-nexus.meteoswiss.ch/flexpart-cosmo/pyflexplot'
 
+    static final String AWS_IMAGE_NAME = 'mch-meteoswiss-flexpart-cosmo-pyflexplot-repository'
+    static final String AWS_REGION = 'eu-central-2'
+
     // sets the pipeline to execute all steps related to building the service
     static boolean build = false
 
@@ -242,8 +245,32 @@ pipeline {
         stage('Deploy') {
             when { expression { Globals.deploy } }
             steps {
-                // TODO RMF-81 add deployment steps
-                echo 'Not yet implemented'
+                withVault(
+                    configuration: [vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
+                                    vaultCredentialId: 'fogtop-approle',
+                                    engineVersion: 2],
+                    vaultSecrets: [
+                        [path: "fogtop/${Globals.cpProjectName}-secrets", engineVersion: 2, secretValues: [
+                            [envVar: 'TF_TOKEN_app_terraform_io', vaultKey: 'terraform-token'],
+                            [envVar: 'TF_WORKSPACE', vaultKey: 'terraform-workspace-pyflexplot'],
+                            [envVar: 'AWS_ACCOUNT_ID', vaultKey: 'aws-account-id'],
+                        ]
+                    ]
+                ) {
+                    environment = params.environment[-4..-1]
+                    awsEcrRepo = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
+                    awsEcrImageTag = "${awsEcrRepo}/${Globals.AWS_IMAGE_NAME}-${Globals.deployEnv}:${shortBranchName}"
+
+                    sh """
+                        terraform -chdir=infrastructure/aws init -no-color
+                        terraform -chdir=infrastructure/aws validate -no-color
+                        terraform -chdir=infrastructure/aws apply -var environment=${environment} -auto-approve
+
+                        aws ecr get-login-password --region ${Globals.AWS_REGION} | podman login -u AWS --password-stdin ${awsEcrRepo}
+                        podman build --pull --target runner --build-arg VERSION=${Globals.version} -t ${awsEcrImageTag} .
+                        podman push ${awsEcrImageTag}
+                    """
+                }
             }
         }
 
