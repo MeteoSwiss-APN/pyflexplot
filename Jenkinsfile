@@ -250,10 +250,12 @@ pipeline {
                                     vaultCredentialId: 'fogtop-approle',
                                     engineVersion: 2],
                     vaultSecrets: [
-                        [path: "fogtop/${Globals.cpProjectName}-secrets", engineVersion: 2, secretValues: [
-                            [envVar: 'TF_TOKEN_app_terraform_io', vaultKey: 'terraform-token'],
-                            [envVar: 'TF_WORKSPACE', vaultKey: 'terraform-workspace-pyflexplot'],
-                            [envVar: 'AWS_ACCOUNT_ID', vaultKey: 'aws-account-id'],
+                        [
+                            path: "fogtop/${Globals.cpProjectName}-secrets", engineVersion: 2, secretValues: [
+                                [envVar: 'TF_TOKEN_app_terraform_io', vaultKey: 'terraform-token'],
+                                [envVar: 'TF_WORKSPACE', vaultKey: 'terraform-workspace-pyflexplot'],
+                                [envVar: 'AWS_ACCOUNT_ID', vaultKey: 'aws-account-id']
+                            ]
                         ]
                     ]
                 ) {
