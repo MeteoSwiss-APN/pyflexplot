@@ -239,11 +239,11 @@ pipeline {
             }
         }
 
-
         stage('Deploy') {
             when { expression { Globals.deploy } }
             steps {
                 // TODO RMF-81 add deployment steps
+                echo 'Not yet implemented'
             }
         }
 
@@ -251,6 +251,7 @@ pipeline {
             when { expression { Globals.restart } }
             steps {
                 // TODO RMF-81 add deployment steps
+                echo 'Not yet implemented'
             }
         }
 
@@ -258,6 +259,7 @@ pipeline {
             when { expression { Globals.deleteContainer } }
             steps {
                 // TODO RMF-81 add deployment steps
+                echo 'Not yet implemented'
             }
         }
     }
