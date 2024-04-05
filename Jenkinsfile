@@ -33,6 +33,15 @@ class Globals {
 
     // the service version
     static String version = ''
+
+    // the AWS container registry image tag
+    static String awsEcrImageTag = ''
+
+    // the AWS ECR repository name
+    static String awsEcrRepo = ''
+
+    // the target environment to deploy (e.g., devt, depl, prod)
+    static String deployEnv = ''
 }
 
 // TODO RMF-81 add documentation stage
@@ -69,6 +78,23 @@ pipeline {
             steps {
                 script {
                     echo 'Starting with Preflight'
+
+                    Globals.deployEnv = params.environment[-4..-1]
+
+                    // TODO RMF-81 can we calculate the awsEcrRepo in a later stage? the awsEcrImageTag depends on both awsEcrRepo and shortBranchName
+                    withVault(
+                        configuration: [vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
+                                        vaultCredentialId: 'flexpart-cosmo-approle',
+                                        engineVersion: 2],
+                        vaultSecrets: [
+                            [
+                                path: "flexpart-cosmo/${params.environment}-secrets", engineVersion: 2, secretValues: [
+                                    [envVar: 'AWS_ACCOUNT_ID', vaultKey: 'aws-account-id']
+                                ]
+                            ]
+                        ]) {
+                        Globals.awsEcrRepo = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
+                    }
 
                     // Determine the type of build
                     switch (params.buildChoice) {
@@ -108,6 +134,7 @@ pipeline {
                         } else {
                             Globals.imageTag = "${Globals.IMAGE_NAME}:${shortBranchName}"
                         }
+                        Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.AWS_IMAGE_NAME}-${Globals.deployEnv}:${shortBranchName}"
                         echo "Using container version ${Globals.imageTag}"
                     }
                 }
@@ -244,36 +271,37 @@ pipeline {
 
         stage('Deploy') {
             when { expression { Globals.deploy } }
+            environment {
+                HTTPS_PROXY="http://proxy.meteoswiss.ch:8080"
+                AWS_DEFAULT_OUTPUT="json"
+                AWS_CA_BUNDLE="/etc/ssl/certs/MCHRoot.crt"
+                PATH = "/opt/maker/tools/terraform:/opt/maker/tools/aws:$PATH"
+            }
             steps {
-                script {
-                    withVault(
-                        configuration: [vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
-                                        vaultCredentialId: 'fogtop-approle',
-                                        engineVersion: 2],
-                        vaultSecrets: [
-                            [
-                                path: "fogtop/${Globals.cpProjectName}-secrets", engineVersion: 2, secretValues: [
-                                    [envVar: 'TF_TOKEN_app_terraform_io', vaultKey: 'terraform-token'],
-                                    [envVar: 'TF_WORKSPACE', vaultKey: 'terraform-workspace-pyflexplot'],
-                                    [envVar: 'AWS_ACCOUNT_ID', vaultKey: 'aws-account-id']
-                                ]
+                withVault(
+                    configuration: [vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
+                                    vaultCredentialId: 'flexpart-cosmo-approle',
+                                    engineVersion: 2],
+                    vaultSecrets: [
+                        [
+                            path: "flexpart-cosmo/${params.environment}-secrets", engineVersion: 2, secretValues: [
+                                [envVar: 'TF_TOKEN_app_terraform_io', vaultKey: 'terraform-token'],
+                                [envVar: 'TF_WORKSPACE', vaultKey: 'terraform-workspace-pyflexplot'],
+                                [envVar: 'AWS_ACCESS_KEY_ID', vaultKey: 'jenkins-aws-access-key'],
+                                [envVar: 'AWS_SECRET_ACCESS_KEY', vaultKey: 'jenkins-aws-secret-key']
                             ]
                         ]
-                    ) {
-                        environment = params.environment[-4..-1]
-                        awsEcrRepo = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
-                        awsEcrImageTag = "${awsEcrRepo}/${Globals.AWS_IMAGE_NAME}-${Globals.deployEnv}:${shortBranchName}"
+                    ]
+                ) {
+                    sh """
+                        terraform -chdir=infrastructure/aws init -no-color
+                        terraform -chdir=infrastructure/aws validate -no-color
+                        terraform -chdir=infrastructure/aws apply -var environment=${Globals.deployEnv} -auto-approve
 
-                        sh """
-                            terraform -chdir=infrastructure/aws init -no-color
-                            terraform -chdir=infrastructure/aws validate -no-color
-                            terraform -chdir=infrastructure/aws apply -var environment=${environment} -auto-approve
-
-                            aws ecr get-login-password --region ${Globals.AWS_REGION} | podman login -u AWS --password-stdin ${awsEcrRepo}
-                            podman build --pull --target runner --build-arg VERSION=${Globals.version} -t ${awsEcrImageTag} .
-                            podman push ${awsEcrImageTag}
-                        """
-                    }
+                        aws ecr get-login-password --region ${Globals.AWS_REGION} | podman login -u AWS --password-stdin ${Globals.awsEcrRepo}
+                        podman build --pull --target runner --build-arg VERSION=${Globals.version} -t ${Globals.awsEcrImageTag} .
+                        podman push ${Globals.awsEcrImageTag}
+                    """
                 }
             }
         }
@@ -300,6 +328,7 @@ pipeline {
         cleanup {
             sh "podman image rm -f ${Globals.imageTag}-tester || true"
             sh "podman image rm -f ${Globals.imageTag} || true"
+            sh "podman image rm -f ${Globals.awsEcrImageTag} || true"
         }
         failure {
             echo 'Sending email'
