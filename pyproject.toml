@@ -58,14 +58,18 @@ scipy = "^1.11.3"
 toml = "^0.10.2"
 typing-extensions = "^4.8.0"
 
-[tool.poetry.dev-dependencies]
-Sphinx = "^7.2.6"
-sphinx-autoapi = "^3.0.0"
+[tool.poetry.group.dev.dependencies]
+codespell = " ^2.2.6"
+flake8 = "^7.0.0"
+mypy = "^1.6.1"
+pre-commit = "^3.7.0"
 pydata-sphinx-theme = "^0.14.1"
+pydocstyle = "^6.3.0"
 pytest = "^7.4.3"
 pytest-cov = "^4.1.0"
 pylint = "^3.0.2"
-mypy = "^1.6.1"
+Sphinx = "^7.2.6"
+sphinx-autoapi = "^3.0.0"
 types-setuptools = "^68.2.0.0"
 yapf = "^0.40.2"
 
@@ -116,6 +120,7 @@ known_first_party = [
 ]
 
 [tool.mypy]
+files=["src/**/*.py"]
 
 [[tool.mypy.overrides]]
 # Note: Only globally ignore missing imports as a matter of last resort!
@@ -133,6 +138,7 @@ module = [
     "scipy.*",
     "shapely.*",
     "tomlkit.*",
+    "toml.*"
 ]
 ignore_missing_imports = true
 
@@ -189,7 +195,6 @@ disable = [
     "E0401", # Unable to import '...' (import-error)
     # -> Wrongly triggered for relative imports (pylint v2.11.1, 2022-03-09)
     # -> TODO Re-enable once fixed (see https://github.com/PyCQA/pylint/issues/3651)
-    "C0330", # Wrong hanging indentation before block (add 4 spaces)
     "R0801", # Similar lines in 2 files (duplicate-code)
 ]
 # Ignore (sub-)modules that trigger errors like E1101 (no-member) or E0611 (no-name-in-module)
