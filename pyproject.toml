@@ -47,7 +47,7 @@ url = "https://hub.meteoswiss.ch/nexus/repository/python-mch/"
 [tool.poetry.dependencies]
 python = "~3.10"  # python version restricted by pillow
 cartopy = "^0.22"
-click = "^6.0"
+click = "^8.0"
 geopy = "^2.4.0"
 matplotlib = "^3.8.1"
 netcdf4 = "^1.6.5"
@@ -59,6 +59,7 @@ toml = "^0.10.2"
 typing-extensions = "^4.8.0"
 
 [tool.poetry.group.dev.dependencies]
+black = "^24.3.0"
 codespell = " ^2.2.6"
 flake8 = "^7.0.0"
 mypy = "^1.6.1"
@@ -71,7 +72,6 @@ pylint = "^3.0.2"
 Sphinx = "^7.2.6"
 sphinx-autoapi = "^3.0.0"
 types-setuptools = "^68.2.0.0"
-yapf = "^0.40.2"
 
 [tool.pytest.ini_options]
 pythonpath = "src"

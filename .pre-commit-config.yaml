@@ -33,11 +33,11 @@ repos:
             )$
 -   repo: local
     hooks:
-    -   id: yapf
-        name: yapf
+    -   id: black
+        name: black
         description: Format Python code
         language: system
-        entry: yapf
+        entry: black
         types_or: [python, pyi]
 -   repo: local
     hooks:
