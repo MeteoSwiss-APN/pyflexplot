@@ -35,8 +35,9 @@ pytrajplot  = "pytrajplot.cli:cli"
 crop-netcdf = "srtools.crop_netcdf:main"
 
 # TODO RMF-81 how to use service.meteoswiss.ch so we do not need to adapt it when calling it from CSCS?
+# TODO RMF-81 use pypi global repo until clarified how to work with open source projects?
 [[tool.poetry.source]]
-name = "meteoswiss-hub"
+name = "pypi-meteoswiss"
 url = "https://hub.meteoswiss.ch/nexus/repository/python-all/simple"
 priority = "primary"
 

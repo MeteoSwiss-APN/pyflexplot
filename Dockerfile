@@ -27,12 +27,6 @@ FROM base AS runner
 
 ENTRYPOINT ["pyflexplot"]
 
-FROM base AS aws-lambda-runner
-
-RUN pip install awslambdaric
-
-CMD ["python", "-m", "awslambdaric", "pyflexplot.awslambda.awslambda_handler"]
-
 FROM base AS tester
 
 COPY --from=builder /src/app-root/requirements_dev.txt /src/app-root/requirements_dev.txt

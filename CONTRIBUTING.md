@@ -53,19 +53,9 @@ Ready to contribute? Here's how to set up `pyflexplot` for local development.
 
     ```bash
     cd pyflexplot/
-    ./tools/setup_env.sh
+    poetry install
+    poetry run pre-commit install
     ```
-
-    This will create a conda environment named `pyflexplot` (change with `-n`) and install the pinned runtime and development dependencies in `requirements/environment.yml`.
-
-    Install the package itself in editable mode.
-
-    ```bash
-    conda activate pyflexplot
-    pip install --editable .
-    ```
-
-    Use `-u` to get the newest package versions (unpinned dependencies in `requirements/requirements.yml`), and additionally `-e` to update the environment files.
 
 4. Create a branch for local development:
 
@@ -103,7 +93,7 @@ Before you submit a pull request, check that it meets these guidelines:
 
 1. The pull request should include tests.
 2. If the pull request adds functionality, the docs should be updated. Put your new functionality into a function with a docstring, and add the feature to the list in `README.md`.
-3. The pull request should work for Python 3.6 and 3.7, and for PyPy. Make sure that the tests pass for all supported Python versions.
+3. The pull request should work for Python 3.10, and for PyPy. Make sure that the tests pass for all supported Python versions.
 
 ## Tips
 
@@ -126,18 +116,10 @@ In order to release a new version of your project, follow these steps:
 
 Following is a description of the most important files and folders in the project in alphabetic order.
 
-- `.github/workflows/`: [GitHub Actions](https://docs.github.com/en/actions) workflows, e.g., checks that are run when certain branches are pushed.
 - `docs/`: Documentation.
 - `jenkins/`: Jenkins setup.
-- `requirements/`: Project dependencies and environment
-    - `environment.yml`: Full tree of runtime and development dependencies with fully specified ('pinned') version numbers; created with `conda env export`.
-    - `requirements.yml`: Top-level runtime and development dependencies with minimal version restrictions (typically a minimum version or a version range); kept manually.
 - `src/pyflexplot/`: Source code of the project package.
-- `tests/test_pyflexplot/`: Unit tests of the project package; run with `pytest`.
-- `tools/`: Scripts primarily for development
-    - `run-mypy.sh`: Run script for the static type checker `mypy`.
-    - `setup_env.sh`: Script to create new conda environments; see `tools/setup_env.sh -h` for all available options.
-    - `setup_miniconda.sh`: Script to install miniconda.
+- `tests/`: Unit tests of the project package; run with `pytest`.
 - `.gitignore`: Files and folders ignored by `git`.
 - `.pre-commit-config.yaml`: Configuration of pre-commit hooks, which are formatters and checkers run before a successful commit.
 - `AUTHORS.md`: Project authors.
@@ -146,38 +128,27 @@ Following is a description of the most important files and folders in the projec
 - `LICENSE`: License of the project.
 - `MANIFEST.in`: Files installed alongside the source code.
 - `pyproject.toml`: Main package specification file, including build dependencies, metadata and the configurations of development tools like `black`, `pytest`, `mypy` etc.
+- `poetry.lock`: File containing all the dependency versions of pyflexplot.
 - `README.md`: Description of the project.
 - `USAGE.md`: Information on how to use the package.
 
 ## Managing dependencies
 
-PyFlexPlot uses [Conda](https://docs.conda.io/en/latest/) to manage dependencies. (Also check out [Mamba](https://mamba.readthedocs.io/en/latest/) if you like your package installations fast.) Dependencies are specified in YAML files, of which there are two:
+PyFlexPlot uses [poetry](https://python-poetry.org/) to manage dependencies. Dependencies are specified in the `pyproject.toml` file.
 
-- `requirements/requirements.yml`: Top-level runtime and development dependencies with minimal version restrictions (typically a minimum version or a version range); kept manually.
-- `requirements/environment.yml`: Full tree of runtime and development dependencies with fully specified ('pinned') version numbers; created with `conda env export`.
-
-The pinned `environment.yml` file should be used to create reproducible environments for development or deployment. This ensures reproducible results across machines and users. The unpinned `requirements.yml` file has two main purposes: (i) keeping track of the top-level dependencies, and (ii) periodically updating the pinned `environment.yml` file to the latest package versions.
-
-After introducing new first-level dependencies to your requirements, you have to update the environment files in order to be able to create reproducible environments for deployment and production.
-Updating the environment files involves the following steps:
-
-1. Creating an environment from your top-level dependencies in `requirements/requirements.yml`
-2. Exporting this environment to `requirements/environment.yml`
-
-Alternatively, use the provided script
-
-```bash
-./tools/setup_env.sh -ue
-```
-
-to create a environment from unpinned (`-u`) runtime and development dependencies and export (`-e`) it (consider throwing in `-m` for good measure to speed things up with `mamba`).
-
-_Note that the separation of unpinned runtime and development dependencies into separate files (`requirements.yml` and `dev-requirements.yml`, respectively) has been given up because when creating an environment from multiple YAML files (with `conda env create` and `conda env update`), only the version restrictions in the last file are guaranteed to be respected, so when installing devevelopment dependencies from `dev-requirements.yml` into an environment created from `requirements.yml`, the solver does not take version restrictions in the latter file into account anymore, potentially resulting in inconsistent production and development environments. Given the negligible overhead (in terms of memory etc.) of installing development dependencies in production environments, they are only separated from the runtime dependencies in `requirements.yml` by a comment._
+> poetry keeps all the dependency versions pinned in the poetry.lock file, which needs to be included in the repository.
 
 ## How to provide executable scripts
 
 By default, a single executable script called pyflexplot is provided. It is created when the package is installed. When you call it, the main function (`cli`) in `src/pyflexplot/cli.py` is called.
 
-When the package is installed, a executable script named `pyflexplot` is created in the bin folder of the active conda environment. Upon calling this script in the shell, the `main` function in `src/pyflexplot/cli.py` is executed.
+When the package is installed, a executable script named `pyflexplot` is created in the bin folder of the active poetry environment. Upon calling this script in the shell, the `main` function in `src/pyflexplot/cli.py` is executed.
 
 The scripts, their names and entry points are specified in `pyproject.toml` in the `[project.scripts]` section. Just add additional entries to provide more scripts to the users of your package.
+
+
+### Testing and Coding Standards
+
+Testing your code and compliance with the most important Python standards is a requirement for Python software written in SEN. To make the life of package
+administrators easier, the most important checks are run automatically on GitHub actions. If your code goes into production, it must additionally be tested on CSCS
+machines, which is only possible with a Jenkins pipeline (GitHub actions is running on a GitHub server).
