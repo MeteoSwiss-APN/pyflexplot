@@ -19,6 +19,10 @@ You can install pyflexplot from MCH pypi repository using pip:
 
 ## Run pyflexplot
 
+The primary command for pyflexplot follows this structure:
+
+```bash
+pyflexplot [OPTIONS] CONFIG_FILE_DIRECTORY
 To use all allocated cpus, add the following option to the pyflexplot command
 
     --num-procs=$SLURM_CPUS_PER_TASK
@@ -74,7 +78,11 @@ or as a batch job (recommended)
       $CONDA_PREFIX/bin/pyflexplot --preset $preset \
         --merge-pdfs --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK
 
-Example using operational Flexpart ensemble output
+Specify a custom Flexpart output file (in NetCDF format) as input by adding the option:
+
+```bash
+  --setup infile <netcdf-file>
+Example using operational Flexpart ensemble output based on COSMO-2E
 ```
 exp=test-2e
 preset=opr/cosmo-2e/all_pdf
@@ -146,8 +154,12 @@ After job completion, list and visualize results with
 ### Updating the Test References
 
 Pyflexplot includes a set of functionality tests that compare generated output against predefined reference data.
-These reference files, which are in the .py format, are derived from and stored alongside the original data in the tests/data directory.
-To update these references, uncomment the lines of code in the test file you wish to update and run the test.
+These reference files, which contain summary dicts, are stored as tests/slow/pyflexplot/test_plots/ref_*.py files.
+To update these reference files, uncomment the following line towards the end of the test file  [`tests/slow/test_pyflexplot/test_plots/shared.py`](tests/slow/test_pyflexplot/test_plots/shared.py):
+
+       _TestBase = _TestCreateReference
+
+Then re-run the (slow) tests to generate the new reference files. After generating the new reference files, comment out the above line again as it was before or simply revert the file with git.
 
 
 ## Key Features
