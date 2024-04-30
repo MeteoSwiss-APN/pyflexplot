@@ -110,3 +110,6 @@ venv_*/
 
 # VS Code
 .vscode
+
+# Local poetry config
+poetry.toml
