@@ -4,12 +4,34 @@ PyFlexPlot is a Python-based tool to visualize FLEXPART dispersion simulation re
 
 ## Table of Contents
 
+- [Features](#key-features)
 - [Installation](#installation)
 - [Run pyflexplot](#run-pyflexplot)
   - [Examples](#examples-how-to-run-pyflexplot)
-- [Features](#key-features)
 - [External Links](#external-links)
 - [License](#license)
+
+
+## Key Features
+
+### PDF and PNG Files
+
+Pyflexplot allows to visualize data on a map plot and save the output in either PDF or PNG format. To utilize this feature, simply adjust the outfile variable with the appropriate file extension.
+![Example Image Output](img/integrated_concentration_site-Goesgen_species-1_domain-full_lang-de_ts-20200217T0900.png)
+
+### Shape File Generation
+
+Furthermore, Pyflexplot provides the functionality to export data into shape files (.shp) to utilize them in GIS programs such as QGIS 3. The output is a ZIP archive containing the essential components of a shapefile: .shp, .dbf, .shx, .prj, and .shp.xml.
+Key aspects of this feature include:
+
+- __Filtering Zero Values__: The tool initially removes zero values from fields (e.g., concentration) before processing.
+- __Logarithmic Transformation__: Field values undergo a log_10 transformation to optimize the visualization of data ranges.
+- __Precision Handling__: The transformed field values are recorded with 15 decimal places, accommodating the precision limitations of some GIS software.
+- __Metadata Storage__: Information, such as details about released materials, are stored within a .shp.xml file as metadata.
+
+### Scaling the field values
+
+Another feature is to manipulate the field values by scaling with an arbitrary factor. This factor can be set in the preset with the variable `multiplier`.
 
 ## Installation
 
@@ -181,28 +203,6 @@ To update these reference files, uncomment the following line towards the end of
        _TestBase = _TestCreateReference
 
 Then re-run the (slow) tests to generate the new reference files. After generating the new reference files, comment out the above line again as it was before or simply revert the file with git.
-
-
-## Key Features
-
-### PDF and PNG Files
-
-Pyflexplot allows to visualize data on a map plot and save the output in either PDF or PNG format. To utilize this feature, simply adjust the outfile variable with the appropriate file extension.
-![Example Image Output](img/integrated_concentration_site-Goesgen_species-1_domain-full_lang-de_ts-20200217T0900.png)
-
-### Shape File Generation
-
-Furthermore, Pyflexplot provides the functionality to export data into shape files (.shp) to utilize them in GIS programs such as QGIS 3. The output is a ZIP archive containing the essential components of a shapefile: .shp, .dbf, .shx, .prj, and .shp.xml.
-Key aspects of this feature include:
-
-- __Filtering Zero Values__: The tool initially removes zero values from fields (e.g., concentration) before processing.
-- __Logarithmic Transformation__: Field values undergo a log_10 transformation to optimize the visualization of data ranges.
-- __Precision Handling__: The transformed field values are recorded with 15 decimal places, accommodating the precision limitations of some GIS software.
-- __Metadata Storage__: Information, such as details about released materials, are stored within a .shp.xml file as metadata.
-
-### Scaling the field values
-
-Another feature is to manipulate the field values by scaling with an arbitrary factor. This factor can be set in the preset with the variable `multiplier`.
 
 ## External Links
 
