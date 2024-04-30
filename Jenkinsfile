@@ -44,8 +44,6 @@ class Globals {
     static String deployEnv = ''
 }
 
-// TODO RMF-81 add documentation stage
-
 @Library('dev_tools@main') _
 pipeline {
     agent { label 'podman' }
