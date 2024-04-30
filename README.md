@@ -238,12 +238,12 @@ poetry run pytest
 
 Run pylint
 ```bash
-poetry run pylint model_data_poller
+poetry run pylint pyflexplot
 ```
 
 Run mypy
 ```bash
-poetry run mypy model_data_poller
+poetry run mypy pyflexplot
 ```
 
 ### Updating the Test References
