@@ -8,6 +8,7 @@ PyFlexPlot is a Python-based tool to visualize FLEXPART dispersion simulation re
 - [Installation](#installation)
 - [Run pyflexplot](#run-pyflexplot)
   - [Examples](#examples-how-to-run-pyflexplot)
+- [Development (CSCS)](#development)
 - [External Links](#external-links)
 - [License](#license)
 
@@ -193,6 +194,57 @@ After job completion, list and visualize results with
 
     ls $dest/*pdf
     evince $dest/*pdf
+
+
+## Development
+
+__Prerequisites__: Git, [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
+
+### Install dependencies & start the service locally (CSCS)
+
+Clone the repo and enter the project folder:
+```bash
+git clone git@github.com:MeteoSwiss-APN/pyflexplot.git && cd pyflexplot
+```
+
+Configure Poetry to not create a new virtual environment. If it detects an already enabled virtual (eg Conda) environment it will install dependencies into it:
+```bash
+poetry config --local virtualenvs.create false
+```
+
+Create an Conda (or mamba/micomamba) environment with only desired Python version and activate:
+```bash
+conda create --prefix ./.conda-env python=3.10
+conda activate ./.conda-env
+```
+
+Go into the pyproject.toml and replace `hub.meteoswiss.ch` with `service.meteoswiss.ch`. (This is required because we are external to MCH at CSCS. This modification is a temporary measure until the URLs for Nexus are unified). 
+```bash
+poetry lock --no-update
+```
+Do not commit your modified poetry.lock and pyproject.toml with these changes, as the CICD pipeline needs them as they were originally. 
+
+Install packages
+```bash
+poetry install
+```
+
+### Run the tests and quality tools
+
+Run tests
+```bash
+poetry run pytest
+```
+
+Run pylint
+```bash
+poetry run pylint model_data_poller
+```
+
+Run mypy
+```bash
+poetry run mypy model_data_poller
+```
 
 ### Updating the Test References
 
