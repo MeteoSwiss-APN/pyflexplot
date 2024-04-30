@@ -2,8 +2,10 @@
 
 ## Development Lead
 
-- Stefan Ruedisuehli <stefan.ruedisuehli@env.ethz.ch>
+- Pirmin Kaufmann <Pirmin.Kaufmann@meteoswiss.ch>
 
 ## Contributors
 
-None yet. Why not be the first?
+- Stefan Ruedisuehli <Stefan.Ruedisuehli@env.ethz.ch>
+- Néstor Tarin Burriel <Nestor.TarinBurriel@meteoswiss.ch> 
+- Victoria Cherkas <Victoria.Cherkas@meteoswiss.ch>

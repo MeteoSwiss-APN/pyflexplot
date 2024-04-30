@@ -4,7 +4,7 @@ name = "pyflexplot"
 # the patch version is calculated when releasing the library
 version = "2.0"
 description = "PyFlexPlot - Visualize and post-process FLEXPART dispersion simulation results stored in NetCDF format"
-authors = ["Stefan Ruedisuehli <stefan.ruedisuehli@env.ethz.ch>"]
+authors = ["Pirmin Kaufmann <pirmin.kaufmann@meteoswiss.ch>", "Stefan Ruedisuehli <stefan.ruedisuehli@env.ethz.ch>"]
 packages = [
     { include = "pyflexplot", from = "src" },
     { include = "srtools", from = "src" },
