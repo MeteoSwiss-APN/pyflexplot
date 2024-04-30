@@ -1,3 +1,8 @@
+"""
+This Jenkinsfile builds an image containing pyflexplot, runs the tests in the container, and can deploy the image to AWS.
+Deployments to target environments other than AWS are not yet implemented in this Jenkinsfile.
+"""
+
 class Globals {
     // constants
     static final String PROJECT = 'pyflexplot'
