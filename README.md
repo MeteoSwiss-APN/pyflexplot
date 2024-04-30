@@ -23,6 +23,14 @@ The primary command for pyflexplot follows this structure:
 
 ```bash
 pyflexplot [OPTIONS] CONFIG_FILE_DIRECTORY
+```
+
+To see the available options, run:
+
+ ```bash
+ pyflexplot --help
+ ```
+
 To use all allocated cpus, add the following option to the pyflexplot command
 
     --num-procs=$SLURM_CPUS_PER_TASK
@@ -53,37 +61,50 @@ Create an output directory
     dest=plot_$exp
     mkdir $dest
 
-Run all presets for pdf graphics format with the default input data
+There are several default config files available under [`src/pyflexplot/data/presets/opr`](src/pyflexplot/data/presets/opr/).
+To run the program for all presets that produce the graphics in PDF format, define the `preset` variable as:
 
     preset='opr/*/all_pdf'
 
-or choose an appropriate preset (define the variable preset)
+This preset however only works for the default (test) input files.
 
-| Model            | Type                 | Preset                           |
-|------------------|----------------------|----------------------------------|
-| FLEXPART-IFS     | Global output:       | preset=opr/ifs-hres/all_pdf      |
-| FLEXPART-IFS     | Europe output:       | preset=opr/ifs-hres-eu/all_pdf   |
-| FLEXPART-COSMO   | deterministic output:| preset=opr/cosmo-1e-ctrl/all_pdf |
-| FLEXPART-COSMO   | deterministic output:| preset=opr/cosmo-2e-ctrl/all_pdf |
-| FLEXPART-COSMO-1E| ensemble output:     | preset=opr/cosmo-1e/all_pdf      |
-| FLEXPART-COSMO-2E| ensemble output:     | preset=opr/cosmo-2e/all_pdf      |
+To produce graphics for a specific FLEXPART output, select the fitting specific preset from the table below and define the `preset` variable accordingly:
 
-and run pyflexplot with the chosen preset interactively
+| Model                 | Type         | Define Preset Variable             |
+|-----------------------|--------------|------------------------------------|
+| FLEXPART-IFS          | global       | `preset=opr/ifs-hres/all_pdf`      |
+| FLEXPART-IFS          | Europe       | `preset=opr/ifs-hres-eu/all_pdf`   |
+| FLEXPART-COSMO-1E-CTRL| deterministic| `preset=opr/cosmo-1e-ctrl/all_pdf` |
+| FLEXPART-COSMO-2E-CTRL| deterministic| `preset=opr/cosmo-2e-ctrl/all_pdf` |
+| FLEXPART-COSMO-1E     | ensemble     | `preset=opr/cosmo-1e/all_pdf`      |
+| FLEXPART-COSMO-2E     | ensemble     | `preset=opr/cosmo-2e/all_pdf`      |
+| FLEXPART-ICON-CH1-CTRL| deterministic| `preset=opr/icon-ch1-ctrl/all_pdf` |
+| FLEXPART-ICON-CH2-EPS | ensemble     | `preset=opr/icon-ch2-eps/all_pdf`  |
 
-    pyflexplot --preset "$preset" --merge-pdfs --dest=$dest
-
-or as a batch job (recommended)
-
-    batchPP -t 2 -T 10 -n pfp_$exp -- \
-      $CONDA_PREFIX/bin/pyflexplot --preset $preset \
-        --merge-pdfs --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK
-
-Specify a custom Flexpart output file (in NetCDF format) as input by adding the option:
+After selecting a preset, run pyflexplot interactively for the default test data:
 
 ```bash
-  --setup infile <netcdf-file>
-Example using operational Flexpart ensemble output based on COSMO-2E
+pyflexplot --preset "$preset" --merge-pdfs --dest=$dest
 ```
+
+Alternatively, specify the FLEXPART output file in NetCDF format as input data:
+
+```bash
+pyflexplot --preset "$preset" --merge-pdfs --dest=$dest --setup infile <netcdf-file>
+```
+
+For ensemble input, the placeholder `{ens_member:03}` may be used within the path of `<netcdf-file>`. Instead of `03` for `%03d`, other formats for the ensemble member field can be used.
+
+Alternatively run as a batch job (recommended)
+```bash
+batchPP -t 2 -T 10 -n pfp_$exp -- \
+  $CONDA_PREFIX/bin/pyflexplot --preset $preset \
+  --merge-pdfs --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK
+```
+
+
+Example using operational Flexpart ensemble output based on COSMO-2E
+```bash
 exp=test-2e
 preset=opr/cosmo-2e/all_pdf
 basetime=$(date --utc --date="today 00" +%Y%m%d%H)
