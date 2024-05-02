@@ -96,7 +96,6 @@ pipeline {
                                 ]
                             ]
                         ]) {
-                        Globals.awsEcrRepo = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
                     }
 
                     // Determine the type of build
@@ -137,6 +136,7 @@ pipeline {
                         } else {
                             Globals.imageTag = "${Globals.IMAGE_NAME}:${shortBranchName}"
                         }
+                        Globals.awsEcrRepo = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
                         Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.AWS_IMAGE_NAME}-${Globals.deployEnv}:${shortBranchName}"
                         echo "Using container version ${Globals.imageTag}"
                     }
