@@ -34,7 +34,6 @@ pyflexplot  = "pyflexplot.cli.cli:cli"
 pytrajplot  = "pytrajplot.cli:cli"
 crop-netcdf = "srtools.crop_netcdf:main"
 
-# TODO RMF-81 how to use service.meteoswiss.ch so we do not need to adapt it when calling it from CSCS?
 [[tool.poetry.source]]
 name = "pypi-meteoswiss"
 url = "https://hub.meteoswiss.ch/nexus/repository/python-all/simple"

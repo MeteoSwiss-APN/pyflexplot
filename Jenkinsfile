@@ -84,7 +84,6 @@ pipeline {
 
                     Globals.deployEnv = params.environment[-4..-1]
 
-                    // TODO RMF-81 can we calculate the awsEcrRepo in a later stage? the awsEcrImageTag depends on both awsEcrRepo and shortBranchName
                     withVault(
                         configuration: [vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
                                         vaultCredentialId: 'flexpart-cosmo-approle',
@@ -309,21 +308,6 @@ pipeline {
             }
         }
 
-        stage('Restart Deployment') {
-            when { expression { Globals.restart } }
-            steps {
-                // TODO RMF-81 add deployment steps
-                echo 'Not yet implemented'
-            }
-        }
-
-        stage('Delete Deployment') {
-            when { expression { Globals.deleteContainer } }
-            steps {
-                // TODO RMF-81 add deployment steps
-                echo 'Not yet implemented'
-            }
-        }
     }
 
 

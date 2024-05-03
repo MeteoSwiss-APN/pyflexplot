@@ -1,4 +1,3 @@
-# TODO RMF-81 Move this into IaC separate project? -> then the IaC should also push the image (which needs to be pulled from nexus first)
 terraform {
   required_version = "~> 1.0"
 
