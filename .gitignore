@@ -25,6 +25,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.terraform/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -109,3 +110,9 @@ venv_*/
 
 # VS Code
 .vscode
+
+# Local poetry config
+poetry.toml
+
+# Conda environment for local CSCS development
+.conda-env

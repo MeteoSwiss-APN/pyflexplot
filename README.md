@@ -1,82 +1,46 @@
 # PyFlexPlot
 
-PyFlexPlot is a Python-based tool to visualize/post-process FLEXPART dispersion simulation results stored in NetCDF format.
+PyFlexPlot is a Python-based tool to visualize FLEXPART dispersion simulation results stored in NetCDF format.
 
 ## Table of Contents
 
-- [Prerequisites and Cloning the Repository](#prerequisites-and-cloning-the-repository)
-- [Getting Started](#getting-started)
-- [Usage](#usage)
-  - [Usage Example](#usage-example)
-- [Developer Notes](#developer-notes)
-  - [Implemented Debugging Features](#implemented-debugging-features)
-  - [Roadmap to your first Contribution](#roadmap-to-your-first-contribution)
-  - [Testing and Coding Standards](#testing-and-coding-standards)
-    - [Pre-commit on GitHub Actions](#pre-commit-on-github-actions)
-    - [Jenkins](#jenkins)
-    - [Updating the Test References](#updating-the-test-references)
 - [Features](#key-features)
-- [Credits](#credits)
+- [Installation](#installation)
+- [Run pyflexplot](#run-pyflexplot)
+  - [Examples](#examples-how-to-run-pyflexplot)
+- [Development (CSCS)](#development)
 - [External Links](#external-links)
 - [License](#license)
 
-## Prerequisites and Cloning the Repository
 
-Before you get started with this repository, ensure you have the following software tools installed on your system: Git, Python and Conda.
+## Key Features
 
-To get a local copy of this repository, run the following commands and naviate into the repository:
+### PDF and PNG Files
 
-```bash
-git clone https://github.com/MeteoSwiss-APN/pyflexplot <custom_directory_name>
-cd <custom_directory_name>
-```
+Pyflexplot allows to visualize data on a map plot and save the output in either PDF or PNG format. To utilize this feature, simply adjust the outfile variable with the appropriate file extension.
+![Example Image Output](img/integrated_concentration_site-Goesgen_species-1_domain-full_lang-de_ts-20200217T0900.png)
 
-## Getting Started
+### Shape File Generation
 
-Once you created or cloned this repository, make sure the installation is running properly. Install the package dependencies with the provided script `setup_env.sh`.
-Check available options with
+Furthermore, Pyflexplot provides the functionality to export data into shape files (.shp) to utilize them in GIS programs such as QGIS 3. The output is a ZIP archive containing the essential components of a shapefile: .shp, .dbf, .shx, .prj, and .shp.xml.
+Key aspects of this feature include:
 
-```bash
-tools/setup_env.sh -h
-```
+- __Filtering Zero Values__: The tool initially removes zero values from fields (e.g., concentration) before processing.
+- __Logarithmic Transformation__: Field values undergo a log_10 transformation to optimize the visualization of data ranges.
+- __Precision Handling__: The transformed field values are recorded with 15 decimal places, accommodating the precision limitations of some GIS software.
+- __Metadata Storage__: Information, such as details about released materials, are stored within a .shp.xml file as metadata.
 
-We distinguish pinned installations based on exported (reproducible) environments and free installations where the installation
-is based on top-level dependencies listed in `requirements/requirements.yml`. If you start developing, you might want to do an unpinned installation and export the environment:
+### Scaling the field values
 
-```bash
-tools/setup_env.sh -u -e -n <custom_environment_name>
-```
+Another feature is to manipulate the field values by scaling with an arbitrary factor. This factor can be set in the preset with the variable `multiplier`.
 
-*Hint*: If you are the package administrator, it is a good idea to understand what this script does, you can do everything manually with `conda` instructions.
+## Installation
 
-The package itself is installed with `pip`. As all dependencies have already been installed by Conda, use the `--no-deps` option for pip. For development, install the package in "editable" mode:
+You can install pyflexplot from MCH pypi repository using pip:
 
-```bash
-conda activate <custom_environment_name>
-pip install --no-deps --editable .
-```
+    pip install pyflexplot -i https://service.meteoswiss.ch/nexus/repository/python-all/simple
 
-*Warning:* Make sure you use the right pip, i.e. the one from the installed conda environment (`which pip` should point to something like `path/to/miniconda/envs/<custom_environment_name>/bin/pip`).
-
-Once your package is installed, navigate to the root directory and run the tests by typing:
-
-```bash
-cd <custom_directory_name>
-conda activate <custom_environment_name>
-pytest
-```
-
-If the tests pass, you are good to go. If not, contact the package administrator Stefan Ruedisuehli. Make sure to update your requirement files and export your environments after installation
-every time you add new imports while developing. Check the next section to find some guidance on the development process if you are new to Python and/or SEN.
-
-## Usage
-
-To utilize pyflexplot, first ensure you are in the root directory of the project and have activated the necessary conda environment:
-
-```bash
-cd <custom_directory_name>
-conda activate <custom_environment_name>
-```
+## Run pyflexplot
 
 The primary command for pyflexplot follows this structure:
 
@@ -90,30 +54,40 @@ To see the available options, run:
  pyflexplot --help
  ```
 
-To utilize all available CPUs for the command, add the option:
+To use all allocated cpus, add the following option to the pyflexplot command
 
-```bash
- --num-procs=$SLURM_CPUS_PER_TASK
-```
+    --num-procs=$SLURM_CPUS_PER_TASK
 
-### Usage Example
+If you want to run the following examples interatcively,
+you may want do allocate parallel resources, e.g. 10 cores
 
-After you've set up pyflexplot ([Prerequisites and cloning the repository](#prerequisites-and-cloning-the-repository) and [Getting started](#getting-started)),
-you'll need to specify a configuration file and an output directory.
-Define the variable `dest` to contain the name of the output directory, e.g.:
+    salloc -c 10
 
-```bash
-dest=plot-test/
-```
+Run `pyflexplot`
+Important: Free resources when done!
 
-Note: The directory will be automatically created if it doesn't already exist.
+    exit
+
+### Examples how to run pyflexplot
+
+Example using default input file.
+This example assumes you are in the pyflexplot directory.
+
+Default input files are searched for in  `./data`.
+Link the default input files if you want to use these for tests.
+
+    ln -s /store/mch/msopr/pyflexplot_testdata data
+
+Create an output directory
+
+    exp=test
+    dest=plot_$exp
+    mkdir $dest
 
 There are several default config files available under [`src/pyflexplot/data/presets/opr`](src/pyflexplot/data/presets/opr/).
 To run the program for all presets that produce the graphics in PDF format, define the `preset` variable as:
 
- ```bash
-preset='opr/*/all_pdf'
-```
+    preset='opr/*/all_pdf'
 
 This preset however only works for the default (test) input files.
 
@@ -144,109 +118,146 @@ pyflexplot --preset "$preset" --merge-pdfs --dest=$dest --setup infile <netcdf-f
 
 For ensemble input, the placeholder `{ens_member:03}` may be used within the path of `<netcdf-file>`. Instead of `03` for `%03d`, other formats for the ensemble member field can be used.
 
-## Developer Notes
-
-As this package was created with the SEN Python blueprint, it comes with a stack of development tools, which are described in more detail on the [Website](https://meteoswiss-apn.github.io/mch-python-blueprint/). Here, we give a brief overview on what is implemented.
-
-### Implemented Debugging Features
-
-pyflexplot offers several debugging options to assist in troubleshooting and
-refining your workflow (see ```pyflexplot -h```).
-Here are some of the key debugging features:
-
- ```text
---pdb / --no-pdb                Drop into debugger when an exception is raised.  [default: no-pdb]
---preset-cat PATTERN            Show the contents of preset setup files
---only N                        Only create the first N plots based on the given setup.
---raise / --no-raise            Raise exception in place of user-friendly but uninformative error message.
---dry-run                       Perform a trial run with no changes made.
---merge-pdfs-dry                Merge PDF plots even in a dry run.
-```
-
-### Roadmap to your first Contribution
-
-Generally, the source code of your library is located in `src/<library_name>`. The blueprint will generate some example code in `mutable_number.py`, `utils.py` and `cli.py`. `cli.py` thereby serves as an entry
-point for functionalities you want to execute from the command line, it is based on the Click library. If you do not need interactions with the command line, you should remove `cli.py`. Moreover, of course there exist other options for command line interfaces,
-a good overview may be found [here](https://realpython.com/comparing-python-command-line-parsing-libraries-argparse-docopt-click/), we recommend however to use click. The provided example
-code should provide some guidance on how the individual source code files interact within the library. In addition to the example code in `src/<library_name>`, there are examples for
-unit tests in `tests/<library_name>/`, which can be triggered with `pytest` from the command line. Once you implemented a feature (and of course you also
-implemented a meaningful test ;-)), you are likely willing to commit it. First, go to the root directory of your package and run pytest.
-
+Alternatively run as a batch job (recommended)
 ```bash
-conda activate <custom_environment_name>
-cd <custom_directory_name>
-pytest
+batchPP -t 2 -T 10 -n pfp_$exp -- \
+  $CONDA_PREFIX/bin/pyflexplot --preset $preset \
+  --merge-pdfs --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK
 ```
 
-If you use the tools provided by the blueprint as is, pre-commit will not be triggered locally but only if you push to the main branch
-(or push to a PR to the main branch). If you consider it useful, you can set up pre-commit to run locally before every commit by initializing it once. In the root directory of
-your package, type `pre-commit install`. If you run `pre-commit` without having it installed before, it will fail, and the only way to recover it is to do a forced reinstallation (`conda install --force-reinstall pre-commit`).
 
-Alternatively, you can instead run `pre-commit` selectively, without installing and whenever you want, by typing
-
+Example using operational Flexpart ensemble output based on COSMO-2E
 ```bash
-pre-commit run --all-files
+exp=test-2e
+preset=opr/cosmo-2e/all_pdf
+basetime=$(date --utc --date="today 00" +%Y%m%d%H)
+infile000=$(echo /store/mch/msopr/osm/COSMO-2E/FCST${basetime:2:2}/${basetime:2:8}_5??/flexpart_c/000/grid_conc_*_BEZ.nc)
+infile=${infile000/\/000\//\/\{ens_member:03\}\/}
+dest=plot_${basetime:2:8}
+mkdir $dest
+batchPP -t 1 -T 10 -n pfp-$exp -- \
+  $CONDA_PREFIX/bin/pyflexplot --preset $preset \
+    --merge-pdfs --setup infile $infile --setup base_time $basetime --dest=$dest \
+    --num-procs=\$SLURM_CPUS_PER_TASK
 ```
 
-Note that mypy and pylint take a bit of time, so it is really
-up to you, if you want to use pre-commit locally or not. In any case, after running pytest, you can commit and the linters will run at the latest on the GitHub actions server,
-when you push your changes to the main branch. Note that pytest is currently not invoked by pre-commit, so it will not run automatically. Automated testing can be set up with
-GitHub Actions or be implemented in a Jenkins pipeline (template for a plan available in `jenkins/`. See the next section for more details.
+The following expamles use FLEXPART output generated with the test-fp script
+in the test subdirectory of the flexpart repository of MeteoSwiss. Define FP_JOBS
+as path to the FLEXPART output files, e.g.
 
-### Testing and Coding Standards
+    FP_JOBS=/scratch/kaufmann/flexpart/job
 
-Testing your code and compliance with the most important Python standards is a requirement for Python software written in SEN. To make the life of package
-administrators easier, the most important checks are run automatically on GitHub actions. If your code goes into production, it must additionally be tested on CSCS
-machines, which is only possible with a Jenkins pipeline (GitHub actions is running on a GitHub server).
+Write output to a location where you have write access, e.g.
 
-### Pre-commit on GitHub Actions
+    FP_OUT=$SCRATCH/flexpart/job
 
-`.github/workflows/pre-commit.yml` contains a hook that will trigger the creation of your environment (unpinned) on the GitHub actions server and
-then run various formatters and linters through pre-commit. This hook is only triggered upon pushes to the main branch (in general: don't do that)
-and in pull requests to the main branch.
+After additionally defining preset and exp, create the output directory
+and submit a job with
 
-### Jenkins
+    infile=$(echo $FP_JOBS/$exp/output/*.nc)
+    basetime=$(cat $FP_JOBS/$exp/output/plot_info)
+    dest=$FP_OUT/$exp/plots
+    mkdir -p $dest
 
-A jenkinsfile is available in the `jenkins/` folder. It can be used for a multibranch jenkins project, which builds
-both commits on branches and PRs. Your jenkins pipeline will not be set up
-automatically. If you need to run your tests on CSCS machines, contact DevOps to help you with the setup of the pipelines. Otherwise, you can ignore the jenkinsfiles
-and exclusively run your tests and checks on GitHub actions.
+and submit the job with the batchPP command as above
+
+Example: FLEXPART with COSMO-2E Control Run
+
+    preset=opr/cosmo-2e-ctrl/all_pdf
+    exp=1074
+
+Example: FLEXPART with COSMO-1E Control Run
+
+    preset=opr/cosmo-1e-ctrl/all_pdf
+    exp=1076
+
+Example: FLEXPART with COSMO-2E Ensemble Run.
+For ensembles, the infile needs to be a pattern rather than a single file
+
+    preset=opr/cosmo-2e/all_pdf
+    exp=short-bug
+    infile000=$(echo $FP_JOBS/$exp/output/000/*.nc)
+    infile=${infile000/\/000\//\/\{ens_member:03\}\/}
+
+Example: New test case with cloud crossing dateline from both sides
+
+    exp=test
+    preset=opr/ifs-hres/all_pdf
+    infile=data/ifs-hres/grid_conc_20220406180000_Chmelnyzkyj.nc
+    basetime=2022040612
+    dest=plot_$exp
+    mkdir $dest
+
+submit job with batchPP command above
+
+After job completion, list and visualize results with
+
+    ls $dest/*pdf
+    evince $dest/*pdf
+
+
+## Development
+
+__Prerequisites__: Git, [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
+
+### Install dependencies & start the service locally (CSCS)
+
+Clone the repo and enter the project folder:
+```bash
+git clone git@github.com:MeteoSwiss-APN/pyflexplot.git && cd pyflexplot
+```
+
+Configure Poetry to not create a new virtual environment. If it detects an already enabled virtual (eg Conda) environment it will install dependencies into it:
+```bash
+poetry config --local virtualenvs.create false
+```
+
+Create an Conda (or mamba/micomamba) environment with only desired Python version and activate:
+```bash
+conda create --prefix ./.conda-env python=3.10
+conda activate ./.conda-env
+```
+
+Go into the pyproject.toml and replace `hub.meteoswiss.ch` with `service.meteoswiss.ch`. (This is required because we are external to MCH at CSCS. This modification is a temporary measure until the URLs for Nexus are unified). 
+```bash
+poetry lock --no-update
+```
+Do not commit your modified poetry.lock and pyproject.toml with these changes, as the CICD pipeline needs them as they were originally. 
+
+Install packages
+```bash
+poetry install
+```
+
+### Run the tests and quality tools
+
+Run tests
+```bash
+poetry run pytest
+```
+
+Run pylint
+```bash
+poetry run pylint pyflexplot
+```
+
+Run mypy
+```bash
+poetry run mypy pyflexplot
+```
 
 ### Updating the Test References
 
 Pyflexplot includes a set of functionality tests that compare generated output against predefined reference data.
-These reference files, which are in the .py format, are derived from and stored alongside the original data in the tests/data directory.
-To update these references, uncomment the lines of code in the test file you wish to update and run the test.
+These reference files, which contain summary dicts, are stored as tests/slow/pyflexplot/test_plots/ref_*.py files.
+To update these reference files, uncomment the following line towards the end of the test file  [`tests/slow/test_pyflexplot/test_plots/shared.py`](tests/slow/test_pyflexplot/test_plots/shared.py):
 
-## Key Features
+       _TestBase = _TestCreateReference
 
-### PDF and PNG Files
-
-Pyflexplot allows to visualize data on a map plot and save the output in either PDF or PNG format. To utilize this feature, simply adjust the outfile variable with the appropriate file extension.
-![Example Image Output](img/integrated_concentration_site-Goesgen_species-1_domain-full_lang-de_ts-20200217T0900.png)
-
-### Shape File Generation
-
-Furthermore, Pyflexplot provides the functionality to export data into shape files (.shp) to utilize them in GIS programs such as QGIS 3. The output is a ZIP archive containing the essential components of a shapefile: .shp, .dbf, .shx, .prj, and .shp.xml.
-Key aspects of this feature include:
-
-- __Filtering Zero Values__: The tool initially removes zero values from fields (e.g., concentration) before processing.
-- __Logarithmic Transformation__: Field values undergo a log_10 transformation to optimize the visualization of data ranges.
-- __Precision Handling__: The transformed field values are recorded with 15 decimal places, accommodating the precision limitations of some GIS software.
-- __Metadata Storage__: Information, such as details about released materials, are stored within a .shp.xml file as metadata.
-
-### Scaling the field values
-
-Another feature is to manipulate the field values by scaling with an arbitrary factor. This factor can be set in the preset with the variable `multiplier`.
-
-## Credits
-
-This package was created with [`copier`](https://github.com/copier-org/copier) and the [`MeteoSwiss-APN/mch-python-blueprint`](https://github.com/MeteoSwiss-APN/mch-python-blueprint) project template.
+Then re-run the (slow) tests to generate the new reference files. After generating the new reference files, comment out the above line again as it was before or simply revert the file with git.
 
 ## External Links
 
-- [copier](https://github.com/copier-org/copier) - Based library and CLI app for rendering project templates.
-- [mch-python-blueprint](https://github.com/MeteoSwiss-APN/mch-python-blueprint) - Project template embedded in this project based on copier.
 - [pyshp](https://github.com/GeospatialPython/pyshp) - Python module to generate Shapefiles
 
 ## License
