@@ -77,7 +77,7 @@ def main(
 
     # Check if temporary directory (if given) already exists
     if tmp_dir != "." and Path(tmp_dir).exists():
-        log(dbg="using existing temporary directory '{tmp_dir}'")
+        log(dbg="Using existing temporary directory '{tmp_dir}'")
 
     preset_setup_file_paths = ctx.obj.get("preset_setup_file_paths", [])
     setup_groups = prepare_setups(
