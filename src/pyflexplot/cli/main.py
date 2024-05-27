@@ -41,6 +41,10 @@ from ..plots import format_out_file_paths
 from ..setups.plot_setup import PlotSetupGroup
 from ..setups.setup_file import SetupFile
 from ..utils.logging import log
+from ..s3.s3 import download_key_from_bucket, split_s3_uri, expand_key
+from ..config.service_settings import Bucket
+
+from pyflexplot import CONFIG
 
 
 # pylint: disable=R0912  # too-many-branches (>12)
@@ -266,6 +270,27 @@ def prepare_setups(
     setup_groups = read_setup_groups(
         setup_file_paths, preset_setup_file_paths, input_setup_params
     )
+
+    s3_input = False
+    bucket: Bucket = CONFIG.main.aws.s3.input
+    s3_keys_to_get = set()
+
+    for setup_group in setup_groups:
+        if setup_group.infile.startswith("s3://"):
+            ens_member_ids = setup_group.ens_member_ids
+            s3_input = True
+            bucket.name, key, filename = split_s3_uri(setup_group.infile)
+            s3_keys_to_get.add(key)
+            setup_group.override_s3_infile_location(Path(CONFIG.main.local.paths.input), filename)
+
+    if s3_input:
+        for key in s3_keys_to_get:
+            if '{ens_member:' in key:
+                expanded_keys = expand_key(key, ens_member_ids)
+                for expanded_key in expanded_keys:
+                    download_key_from_bucket(expanded_key, bucket, Path(CONFIG.main.local.paths.input))
+            else:
+                download_key_from_bucket(key, bucket, Path(CONFIG.main.local.paths.input))
 
     if suffixes:
         # Replace outfile suffixes by one or more; may increase oufile number

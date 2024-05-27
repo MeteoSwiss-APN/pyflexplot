@@ -25,6 +25,8 @@ WORKDIR /src/app-root
 
 FROM base AS runner
 
+RUN mkdir /src/app-root/data /src/app-root/ouput
+
 ENTRYPOINT ["pyflexplot"]
 
 FROM base AS tester

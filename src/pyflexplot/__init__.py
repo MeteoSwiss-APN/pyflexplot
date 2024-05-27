@@ -1,6 +1,7 @@
 """Top-level package for PyFlexPlot."""
 
 # Standard library
+import os
 import importlib.metadata
 import logging as _logging
 import sys as _sys
@@ -13,6 +14,7 @@ import matplotlib as _mpl
 
 # Local
 from .utils.logging import add_logging_level as _add_logging_level
+from .config.service_settings import ServiceSettings
 
 try:
     import cartopy as _cartopy  # isort:skip
@@ -107,3 +109,5 @@ except ImportError:
     _ipy = None
 else:
     _ipy = IPython.terminal.embed.embed
+
+CONFIG = ServiceSettings('settings.yaml', os.path.join(os.path.dirname(__file__), 'config'))

@@ -11,6 +11,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
+from typing import TypeAlias
 
 # Third-party
 import toml
@@ -103,7 +104,7 @@ class SetupFile:
         elif each_only is not None:
             if each_only < 0:
                 raise ValueError("each_only must not be negative", each_only)
-        KeyT = Tuple[str, Optional[Tuple[int, ...]]]
+        KeyT: TypeAlias = Tuple[str, Optional[Tuple[int, ...]]]
         setups_by_infiles: Dict[KeyT, List[PlotSetup]] = {}
         n_setups = 0
         for path in paths:
