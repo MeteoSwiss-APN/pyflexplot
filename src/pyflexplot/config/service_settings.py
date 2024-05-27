@@ -18,7 +18,6 @@ class AWS(BaseModel):
 
 class Paths(BaseModel):
     input: str
-    output: str
 
 class LocalSettings(BaseModel):
     paths: Paths

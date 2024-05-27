@@ -41,7 +41,7 @@ from ..plots import format_out_file_paths
 from ..setups.plot_setup import PlotSetupGroup
 from ..setups.setup_file import SetupFile
 from ..utils.logging import log
-from ..s3.s3 import download_key_from_bucket, split_s3_uri, expand_key
+from ..s3.s3 import download_key_from_bucket, split_s3_uri, expand_key, upload_outpaths_to_s3
 from ..config.service_settings import Bucket
 
 from pyflexplot import CONFIG
@@ -155,6 +155,8 @@ def main(
             if not dry_run:
                 log(dbg=f"remove {path}")
                 Path(path).unlink()
+
+    upload_outpaths_to_s3(all_out_file_paths)
 
     # Remove temporary directory (if given) unless it already existed before
     remove_tmpdir = tmp_dir and not dry_run and not os.listdir(tmp_dir)

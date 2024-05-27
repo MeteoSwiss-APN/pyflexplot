@@ -33,6 +33,9 @@ def expand_key(key: str, ens_member_ids: Tuple[int]) -> list[str]:
 
 def split_s3_uri(infile: str) -> Tuple[str, str, str]:
 
+    if not infile.startswith("s3:/"):
+        raise ValueError(f'{infile} must be an S3 URI.')
+
     _, bucket_name, *key_prefix = [s for s in infile.split("/") if s]
     key = "/".join(key_prefix)
     filename = key_prefix[-1]
@@ -57,37 +60,27 @@ def download_key_from_bucket(key: str, bucket: Bucket, dst_dir: Path, filename: 
     path = dst_dir / filename
     if not os.path.exists( path.parent ):
         os.makedirs( path.parent )
-    _LOGGER.info('Downloading %s from bucket %s to %s', key, bucket.name, path)
     with open(path, 'wb') as data:
         client.download_fileobj(bucket.name, key, data)
+    _LOGGER.info('Finished downloading %s from bucket %s to %s', key, bucket.name, path)
 
     return path
 
 
-def upload_directory(directory: Path,
+def upload_outpaths_to_s3(upload_outpaths_to_s3: list[str],
                     bucket: Bucket = Bucket(
                         region = CONFIG.main.aws.s3.output.region, 
                         name = CONFIG.main.aws.s3.output.name,
                         retries = CONFIG.main.aws.s3.output.retries), 
-                    parent: str | None = None) -> None:
-
-    # Verify directory exists
-    if not directory.is_dir():
-        _LOGGER.error("Directory is empty, cannot upload: %s ", directory)
-        raise RuntimeError("Directory provided to upload does not exist.")
-
+                    ) -> None:
     try:
         client = boto3.Session().client('s3', region_name=bucket.region)
 
-        path_list = [Path(f) for f in glob.iglob(str(directory)+'/**', recursive=True) if os.path.isfile(f)]
-        if parent:
-            path_list = [f for f in path_list if f.parent.name == parent]
-
-        for path in path_list:
-            key = path.name
+        for outpath in upload_outpaths_to_s3:
+            key = Path(outpath).name
             try:
-                _LOGGER.info("Uploading file: %s to bucket: %s with key: %s", path, bucket.name, key)
-                client.upload_file(path, bucket.name, key)
+                _LOGGER.info("Uploading file: %s to bucket: %s with key: %s", outpath, bucket.name, key)
+                client.upload_file(outpath, bucket.name, key)
             except ClientError as e:
                 _LOGGER.error(e)
     except Exception as err:

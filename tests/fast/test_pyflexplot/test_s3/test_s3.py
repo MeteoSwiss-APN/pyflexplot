@@ -6,7 +6,7 @@ import boto3
 from moto import mock_aws
 import pytest
 
-from pyflexplot.s3.s3 import download_keys_from_bucket, upload_directory
+from pyflexplot.s3.s3 import download_key_from_bucket, upload_outpaths_to_s3, expand_key, split_s3_uri
 from pyflexplot import CONFIG
 from pyflexplot.config.service_settings import Bucket
 
@@ -43,54 +43,122 @@ def s3(aws_credentials):
         yield s3
 
 
-@pytest.fixture(scope="session")
-def resource_dir() -> Path:
-    resource: Path = Path(os.path.dirname(os.path.realpath(__file__))) / 'resource'
-    return resource
+def test_expand_key_valid():
+    result = expand_key("data_{ens_member:03}.nc", (1, 2, 3))
+    expected = ["data_001.nc", "data_002.nc", "data_003.nc"]
+    assert result == expected
+
+    result = expand_key("data_{ens_member:03d}.nc", (1, 2, 3))
+    expected = ["data_001.nc", "data_002.nc", "data_003.nc"]
+    assert result == expected
+
+def test_expand_key_no_ensemble_members():
+    with pytest.raises(ValueError) as exc_info:
+        expand_key("data_{ens_member:03}.nc", ())
+    assert str(exc_info.value) == "Must provide list of ensemble members as argument to expand key data_{ens_member:03}.nc."
+
+def test_expand_key_invalid_pattern():
+    with pytest.raises(RuntimeError) as exc_info:
+        expand_key("data.nc", (1, 2, 3))
+    assert str(exc_info.value) == "Cannot expand key, key must contain pattern {ens_member:03} or {ens_member:03d}"
 
 
-def test_download_keys_from_bucket(s3, model_data):
+def test_split_s3_uri():
+    result = split_s3_uri("s3://my_bucket/path/to/my_file.txt")
+    expected = ("my_bucket", "path/to/my_file.txt", "my_file.txt")
+    assert result == expected
+
+def test_split_s3_uri_root_file():
+    result = split_s3_uri("s3://my_bucket/my_file.txt")
+    expected = ("my_bucket", "my_file.txt", "my_file.txt")
+    assert result == expected
+
+def test_split_s3_uri_with_slashes():
+    result = split_s3_uri("s3:///my_bucket///path///to///my_file.txt")
+    expected = ("my_bucket", "path/to/my_file.txt", "my_file.txt")
+    assert result == expected
+
+def test_split_s3_uri_invalid():
+    with pytest.raises(ValueError) as exc_info:
+        split_s3_uri("invalid_s3_uri")
+    assert str(exc_info.value) == "invalid_s3_uri must be an S3 URI."
+
+
+def test_download_key_from_bucket(s3):
     
-    bucket = Bucket(
-        region = CONFIG.main.aws.s3.model_data.region, 
-        name = CONFIG.main.aws.s3.model_data.name
-        )
+    bucket = CONFIG.main.aws.s3.input   
+    
+    test_files: list[Path] = []
 
-    some_files = list(model_data.iterdir())[4:7]
-    _add_files_to_bucket(bucket, some_files, s3)
+    try:
+        for i in range(5):
+            temp_file = tempfile.NamedTemporaryFile(delete=False, prefix=f"test_file_{i}_", suffix=".txt")
+            test_files.append(Path(str(temp_file.name)))
+            
+            with open(Path(str(temp_file.name)), 'w') as f:
+                f.write(f"Dummy data for test file {i}\n")
+        
+        _add_files_to_bucket(bucket, test_files, s3)
 
-    expected_objs = {file.name for file in some_files}
-    expected_objs.pop()
+        expected_objs = {file.name for file in test_files}
+        expected_objs.pop()
 
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        actual_objs = download_keys_from_bucket(list(expected_objs), Path(tmpdirname), bucket) 
+        actual_objs = []
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            for key in expected_objs:
+                actual_objs.append(download_key_from_bucket(key, bucket, Path(tmpdirname)) )
 
-    for obj in actual_objs:
-        assert obj.name in expected_objs
-    assert len(expected_objs) == len(actual_objs)
-    assert len(actual_objs) < len(some_files)
+        for obj in actual_objs:
+            assert obj.name in expected_objs
+        assert len(expected_objs) == len(actual_objs)
+        assert len(actual_objs) < len(test_files)
+
+    finally:
+        # Cleanup: Delete the created files
+        for file in test_files:
+            try:
+                os.remove(file)
+            except OSError as e:
+                print(f"Error deleting file {file}: {e}")
 
 
-def test_upload_directory(s3, landuse_data):
+def test_upload_outpaths_to_s3(s3):
 
     # given
-    bucket = Bucket(
-        region = CONFIG.main.aws.s3.output.region, 
-        name = CONFIG.main.aws.s3.output.name
-    )
+    bucket = CONFIG.main.aws.s3.output
 
-    # when
-    upload_directory(landuse_data, bucket)
+    test_files = []
 
-    # then
-    assert 'Contents' in s3.list_objects(Bucket = bucket.name)
+    try:
+        for i in range(5):
+            temp_file = tempfile.NamedTemporaryFile(delete=False, prefix=f"test_file_{i}", suffix=".txt")
+            test_files.append(Path(str(temp_file.name)))
+            
+            with open(Path(str(temp_file.name)), 'w') as f:
+                f.write(f"Dummy data for test file {i}\n")
+        
+        # when
+        upload_outpaths_to_s3(test_files, bucket)
 
-    for path in landuse_data.iterdir():
+        # then
+        assert 'Contents' in s3.list_objects(Bucket = bucket.name)
 
-        # check the files were uploaded as expected
-        actual = s3.get_object(Bucket = bucket.name, Key = path.name)["Body"].read()
-        with open(path, mode='rb') as f:
-            assert actual == f.read()
+        for path in test_files :
+
+            # check the files were uploaded as expected
+            actual = s3.get_object(Bucket = bucket.name, Key = path.name)["Body"].read()
+            with open(path, mode='rb') as f:
+                assert actual == f.read() 
+            
+    finally:
+        # Cleanup: Delete the created files
+        for file in test_files:
+            try:
+                os.remove(file)
+            except OSError as e:
+                print(f"Error deleting file {file}: {e}")
+
+
 
 def _add_files_to_bucket(bucket: Bucket, files: list[Path], s3) -> None:
 

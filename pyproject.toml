@@ -35,12 +35,12 @@ crop-netcdf = "srtools.crop_netcdf:main"
 
 [[tool.poetry.source]]
 name = "pypi-meteoswiss"
-url = "https://hub.meteoswiss.ch/nexus/repository/python-all/simple"
+url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
 priority = "primary"
 
 [[tool.poetry.source]]
 name = "pypi-mch-publish"
-url = "https://hub.meteoswiss.ch/nexus/repository/python-mch/"
+url = "https://service.meteoswiss.ch/nexus/repository/python-mch/"
 
 [tool.poetry.dependencies]
 python = "~3.10"  # python version restricted by pillow

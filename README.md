@@ -58,8 +58,8 @@ To use all allocated cpus, add the following option to the pyflexplot command
 
     --num-procs=$SLURM_CPUS_PER_TASK
 
-If you want to run the following examples interatcively,
-you may want do allocate parallel resources, e.g. 10 cores
+If you want to run the following examples interactively,
+you may want to allocate parallel resources, e.g. 10 cores
 
     salloc -c 10
 
