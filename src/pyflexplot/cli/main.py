@@ -41,7 +41,7 @@ from ..plots import format_out_file_paths
 from ..setups.plot_setup import PlotSetupGroup
 from ..setups.setup_file import SetupFile
 from ..utils.logging import log
-from ..s3.s3 import download_key_from_bucket, split_s3_uri, expand_key, upload_outpaths_to_s3
+from ..s3 import download_key_from_bucket, split_s3_uri, expand_key, upload_outpaths_to_s3
 from ..config.service_settings import Bucket
 
 from pyflexplot import CONFIG
@@ -156,7 +156,7 @@ def main(
                 log(dbg=f"remove {path}")
                 Path(path).unlink()
 
-    upload_outpaths_to_s3(all_out_file_paths)
+    upload_outpaths_to_s3(all_out_file_paths, setup_groups[0]._setups[0].model)
 
     # Remove temporary directory (if given) unless it already existed before
     remove_tmpdir = tmp_dir and not dry_run and not os.listdir(tmp_dir)
@@ -290,9 +290,9 @@ def prepare_setups(
             if '{ens_member:' in key:
                 expanded_keys = expand_key(key, ens_member_ids)
                 for expanded_key in expanded_keys:
-                    download_key_from_bucket(expanded_key, bucket, Path(CONFIG.main.local.paths.input))
+                    download_key_from_bucket(expanded_key,  Path(CONFIG.main.local.paths.input), bucket)
             else:
-                download_key_from_bucket(key, bucket, Path(CONFIG.main.local.paths.input))
+                download_key_from_bucket(key, Path(CONFIG.main.local.paths.input), bucket)
 
     if suffixes:
         # Replace outfile suffixes by one or more; may increase oufile number

@@ -23,7 +23,7 @@ class BaseServiceSettings(BaseSettings):
     The Custom BaseSettings class is a derivative of Pydantic's BaseSettings class. It introduces the ability to read
     settings values from a series of YAML files, providing an additional source for configuration data.
     """
-    model_config = SettingsConfigDict(env_nested_delimiter='__', extra=Extra.allow)
+    model_config = SettingsConfigDict(env_nested_delimiter='__', extra='allow')
 
     def __init__(self, settings_file_names: Union[str, list[str]], settings_dirname: str, **values: Any):
         """

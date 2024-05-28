@@ -1,15 +1,13 @@
 import os
 import logging
-import glob
 from pathlib import Path
 from typing import Tuple
 
 import boto3
 from botocore.exceptions import ClientError
 from pyflexplot.config.service_settings import Bucket
+from pyflexplot.setups.model_setup import ModelSetup
 from pyflexplot import CONFIG
-
-client = boto3.Session().client('s3', region_name=CONFIG.main.aws.s3.input.region)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +39,10 @@ def split_s3_uri(infile: str) -> Tuple[str, str, str]:
     filename = key_prefix[-1]
     return bucket_name, key, filename
 
-def download_key_from_bucket(key: str, bucket: Bucket, dst_dir: Path, filename: str | None = None) -> list[Path]:
+def download_key_from_bucket(key: str, 
+                             dst_dir: Path, 
+                             bucket: Bucket = CONFIG.main.aws.s3.input,
+                             filename: str | None = None) -> Path:
     """ 
     Download objects with key from S3 bucket. Filename of resulting local file is the value of the key.
 
@@ -50,6 +51,9 @@ def download_key_from_bucket(key: str, bucket: Bucket, dst_dir: Path, filename: 
 
         bucket: S3 bucket from where data will be fetched.
     """
+
+    client = boto3.Session().client('s3', region_name=bucket.region)
+
 
     if not os.path.exists( dst_dir ):
         os.makedirs( dst_dir )
@@ -68,16 +72,18 @@ def download_key_from_bucket(key: str, bucket: Bucket, dst_dir: Path, filename: 
 
 
 def upload_outpaths_to_s3(upload_outpaths_to_s3: list[str],
-                    bucket: Bucket = Bucket(
-                        region = CONFIG.main.aws.s3.output.region, 
-                        name = CONFIG.main.aws.s3.output.name,
-                        retries = CONFIG.main.aws.s3.output.retries), 
+                    model: ModelSetup,
+                    bucket: Bucket = CONFIG.main.aws.s3.output, 
                     ) -> None:
+    
+    if not model:
+        raise ValueError("Model object must be provided to upload to S3, \
+                         model name and base time are used in the object key.")
     try:
         client = boto3.Session().client('s3', region_name=bucket.region)
 
         for outpath in upload_outpaths_to_s3:
-            key = Path(outpath).name
+            key = f"{model.name}/{model.base_time}/{Path(outpath).name}"
             try:
                 _LOGGER.info("Uploading file: %s to bucket: %s with key: %s", outpath, bucket.name, key)
                 client.upload_file(outpath, bucket.name, key)

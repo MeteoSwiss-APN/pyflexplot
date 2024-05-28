@@ -866,7 +866,7 @@ class PlotSetupGroup:
                 )
         return None if inplace else obj
 
-    def override_s3_infile_location(self, dest: Path, filename: str | None = None) -> None:
+    def override_s3_infile_location(self, dest: Path, filename: str) -> None:
         """Override infile from s3 URI to a local path.
 
         Args:

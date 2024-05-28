@@ -6,24 +6,26 @@ import boto3
 from moto import mock_aws
 import pytest
 
-from pyflexplot.s3.s3 import download_key_from_bucket, upload_outpaths_to_s3, expand_key, split_s3_uri
+from pyflexplot.s3 import (
+    download_key_from_bucket, 
+    upload_outpaths_to_s3, 
+    expand_key, 
+    split_s3_uri)
 from pyflexplot import CONFIG
 from pyflexplot.config.service_settings import Bucket
+from pyflexplot.setups.model_setup import ModelSetup
 
 
-@pytest.fixture(scope="function")
-def aws_credentials():
-    """
-    Mocked AWS credentials for moto.
-    Strictly not necessary, but it's a good safety net if somehow the regular connection is invoked.
-    """
-    os.environ["AWS_ACCESS_KEY_ID"] = "testing"
-    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
-    os.environ["AWS_SECURITY_TOKEN"] = "testing"
-    os.environ["AWS_SESSION_TOKEN"] = "testing"
-    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-    if os.getenv("AWS_PROFILE"):
-        del os.environ["AWS_PROFILE"]
+
+@pytest.fixture(autouse=True)
+def aws_credentials(monkeypatch):
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", 'testing')
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", 'testing')
+    monkeypatch.setenv("AWS_SECURITY_TOKEN", 'testing')
+    monkeypatch.setenv("AWS_SESSION_TOKEN", 'testing')
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
+    if "AWS_PROFILE" in os.environ:
+        monkeypatch.delenv("AWS_PROFILE")
 
 
 @pytest.fixture(scope="function")
@@ -86,7 +88,7 @@ def test_split_s3_uri_invalid():
 
 def test_download_key_from_bucket(s3):
     
-    bucket = CONFIG.main.aws.s3.input   
+    bucket = CONFIG.main.aws.s3.input
     
     test_files: list[Path] = []
 
@@ -106,7 +108,7 @@ def test_download_key_from_bucket(s3):
         actual_objs = []
         with tempfile.TemporaryDirectory() as tmpdirname:
             for key in expected_objs:
-                actual_objs.append(download_key_from_bucket(key, bucket, Path(tmpdirname)) )
+                actual_objs.append(download_key_from_bucket(key, Path(tmpdirname), bucket))
 
         for obj in actual_objs:
             assert obj.name in expected_objs
@@ -127,6 +129,8 @@ def test_upload_outpaths_to_s3(s3):
     # given
     bucket = CONFIG.main.aws.s3.output
 
+    model = ModelSetup(name = 'COSMO-1E', base_time='1234')
+
     test_files = []
 
     try:
@@ -138,7 +142,7 @@ def test_upload_outpaths_to_s3(s3):
                 f.write(f"Dummy data for test file {i}\n")
         
         # when
-        upload_outpaths_to_s3(test_files, bucket)
+        upload_outpaths_to_s3(test_files, model, bucket=bucket)
 
         # then
         assert 'Contents' in s3.list_objects(Bucket = bucket.name)
@@ -146,7 +150,7 @@ def test_upload_outpaths_to_s3(s3):
         for path in test_files :
 
             # check the files were uploaded as expected
-            actual = s3.get_object(Bucket = bucket.name, Key = path.name)["Body"].read()
+            actual = s3.get_object(Bucket = bucket.name, Key = f"{model.name}/{model.base_time}/{path.name}")["Body"].read()
             with open(path, mode='rb') as f:
                 assert actual == f.read() 
             
