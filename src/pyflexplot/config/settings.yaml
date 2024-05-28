@@ -12,4 +12,4 @@ main:
         retries: 10
   local:
     paths:
-      input: /scratch/mch/vcherkas/flexpart-cosmo-sandbox/pyflexplot/input
+      input: /src/app-root/data
