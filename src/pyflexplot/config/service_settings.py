@@ -7,7 +7,7 @@ from .base_settings import BaseServiceSettings
 class Bucket(BaseModel):
     region: str
     name: str
-    retries: int | None
+    retries: int
 
 class S3(BaseModel):
     input: Bucket
@@ -18,6 +18,7 @@ class AWS(BaseModel):
 
 class Paths(BaseModel):
     input: str
+    output: str
 
 class LocalSettings(BaseModel):
     paths: Paths

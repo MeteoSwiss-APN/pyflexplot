@@ -33,17 +33,19 @@ from srutils.pdf import MultiPagePDF
 from srutils.pdf import PdfReadError
 from srutils.str import sorted_paths
 
-# Local
-from ..input.field import FieldGroup
-from ..input.read_fields import read_fields
-from ..plots import create_plot
-from ..plots import format_out_file_paths
-from ..setups.plot_setup import PlotSetupGroup
-from ..setups.setup_file import SetupFile
-from ..utils.logging import log
-from ..s3 import download_key_from_bucket, split_s3_uri, expand_key, upload_outpaths_to_s3
-from ..config.service_settings import Bucket
-
+from pyflexplot.input.field import FieldGroup
+from pyflexplot.input.read_fields import read_fields
+from pyflexplot.plots import create_plot
+from pyflexplot.plots import format_out_file_paths
+from pyflexplot.setups.plot_setup import PlotSetupGroup
+from pyflexplot.setups.setup_file import SetupFile
+from pyflexplot.utils.logging import log
+from pyflexplot.s3 import (
+    download_key_from_bucket, 
+    split_s3_uri,
+    expand_key, 
+    upload_outpaths_to_s3)
+from pyflexplot.config.service_settings import Bucket
 from pyflexplot import CONFIG
 
 
@@ -73,6 +75,9 @@ def main(
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
     if dest_dir is None:
         dest_dir = "."
+    if dest_dir.startswith('s3://'):
+        s3_dest = dest_dir
+        dest_dir = CONFIG.main.local.paths.output
     if tmp_dir is None:
         if auto_tmp:
             tmp_dir = f"tmp-pyflexplot-{int(time.time())}"
@@ -156,7 +161,16 @@ def main(
                 log(dbg=f"remove {path}")
                 Path(path).unlink()
 
-    upload_outpaths_to_s3(all_out_file_paths, setup_groups[0]._setups[0].model)
+    if s3_dest:
+        bucket_name, _, _ = split_s3_uri(s3_dest)
+        # Take the bucket region and retries from CONFIG
+        # but override the name from CLI input --dest.
+        bucket = CONFIG.main.aws.s3.output
+        bucket.name = bucket_name
+        upload_outpaths_to_s3(
+            all_out_file_paths,
+            setup_groups[0]._setups[0].model,
+            bucket=bucket)
 
     # Remove temporary directory (if given) unless it already existed before
     remove_tmpdir = tmp_dir and not dry_run and not os.listdir(tmp_dir)
@@ -283,16 +297,24 @@ def prepare_setups(
             s3_input = True
             bucket.name, key, filename = split_s3_uri(setup_group.infile)
             s3_keys_to_get.add(key)
-            setup_group.override_s3_infile_location(Path(CONFIG.main.local.paths.input), filename)
+            setup_group.override_s3_infile_location(
+                Path(CONFIG.main.local.paths.input), 
+                filename)
 
     if s3_input:
         for key in s3_keys_to_get:
             if '{ens_member:' in key:
                 expanded_keys = expand_key(key, ens_member_ids)
                 for expanded_key in expanded_keys:
-                    download_key_from_bucket(expanded_key,  Path(CONFIG.main.local.paths.input), bucket)
+                    download_key_from_bucket(
+                        expanded_key,
+                        Path(CONFIG.main.local.paths.input),
+                        bucket)
             else:
-                download_key_from_bucket(key, Path(CONFIG.main.local.paths.input), bucket)
+                download_key_from_bucket(
+                    key,
+                    Path(CONFIG.main.local.paths.input),
+                    bucket)
 
     if suffixes:
         # Replace outfile suffixes by one or more; may increase oufile number

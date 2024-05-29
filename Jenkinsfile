@@ -138,6 +138,7 @@ pipeline {
                         Globals.awsEcrRepo = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
                         Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.AWS_IMAGE_NAME}-${Globals.deployEnv}:${shortBranchName}"
                         echo "Using container version ${Globals.imageTag}"
+                        echo "Using awsEcrRepo ${Globals.awsEcrRepo}"
                     }
                 }
             }

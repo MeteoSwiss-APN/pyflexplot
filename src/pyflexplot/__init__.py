@@ -110,4 +110,7 @@ except ImportError:
 else:
     _ipy = IPython.terminal.embed.embed
 
-CONFIG = ServiceSettings('settings.yaml', os.path.join(os.path.dirname(__file__), 'config'))
+CONFIG = ServiceSettings(
+    'settings.yaml', 
+    os.path.join(os.path.dirname(__file__), 'config')
+    )

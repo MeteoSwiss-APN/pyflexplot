@@ -13,3 +13,4 @@ main:
   local:
     paths:
       input: /src/app-root/data
+      output: /src/app-root/output
