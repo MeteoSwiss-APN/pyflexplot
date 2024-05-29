@@ -80,6 +80,11 @@ def test_split_s3_uri_with_slashes():
     expected = ("my_bucket", "path/to/my_file.txt", "my_file.txt")
     assert result == expected
 
+def test_split_s3_uri_only_bucket():
+    result = split_s3_uri("s3://my_bucket")
+    expected = ("my_bucket", "", "")
+    assert result == expected
+
 def test_split_s3_uri_invalid():
     with pytest.raises(ValueError) as exc_info:
         split_s3_uri("invalid_s3_uri")

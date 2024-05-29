@@ -29,13 +29,12 @@ def expand_key(key: str, ens_member_ids: tuple[int, ...] | None) -> list[str]:
       keys using ensemble member identifiers."""
 
     if not ens_member_ids:
-        raise ValueError(f"Must provide list of \
-                         ensemble members as argument to expand key {key}.")
+        raise ValueError(
+            f"Must provide list of ensemble members as argument to expand key {key}.")
 
     search_patterns = ["{ens_member:03}", "{ens_member:03d}"]
 
-    validation_msg = f"Cannot expand key, \
-        key must contain pattern {' or '.join(search_patterns)}"
+    validation_msg = f"Cannot expand key, key must contain pattern {' or '.join(search_patterns)}"
 
     if not any(pattern in key for pattern in search_patterns):
         raise RuntimeError(validation_msg)
@@ -65,7 +64,7 @@ def download_key_from_bucket(key: str,
                              bucket: Bucket = CONFIG.main.aws.s3.input,
                              filename: str | None = None) -> Path:
     """ 
-    Download objects with key from S3 bucket. \
+    Download objects with key from S3 bucket.
     Filename of resulting local file is the value of the key.
 
     Args:
