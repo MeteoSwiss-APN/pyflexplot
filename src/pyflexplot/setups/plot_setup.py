@@ -9,6 +9,7 @@ the docstring of the class method ``Setup.create``.
 import dataclasses as dc
 from copy import deepcopy
 from pprint import pformat
+from pathlib import Path
 from typing import Any
 from typing import Collection
 from typing import Dict
@@ -864,6 +865,45 @@ class PlotSetupGroup:
                     raw_dimensions, species_ids, inplace=True
                 )
         return None if inplace else obj
+
+    def override_s3_infile_location(self, dest: Path, filename: str) -> None:
+        """Override infile from s3 URI to a local path.
+
+        Args:
+            dest: Parent directory where S3 object will be downloaded to. Filename is kept as key in S3 if filename not provided.
+
+        """
+        if not dest:
+            raise ValueError("Destination path must be provided as argument.")
+        
+        new_setups: List[PlotSetup] = []
+
+        for setup in self:
+            old_infiles: List[str] = (
+                [setup.files.input]
+                if isinstance(setup.files.input, str)
+                else list(setup.files.input)
+            )
+            new_infiles: List[str] = []
+            for old_infile in list(old_infiles):
+                if old_infile.startswith('s3://'):
+                    if not filename:
+                        _, _, *key_prefix = [ s for s in old_infile.split("/") if s ]
+                        filename = key_prefix[-1]
+                new_infiles.append(f"{dest / filename}")
+
+            new_setup = setup.derive(
+                {
+                    "files": {
+                        "input": next(iter(new_infiles))
+                        if len(new_infiles) == 1
+                        else tuple(new_infiles)
+                    }
+                }
+            )
+            new_setups.append(new_setup)
+        self._setups = new_setups
+
 
     def override_output_suffixes(self, suffix: Union[str, Collection[str]]) -> None:
         """Override output file suffixes one or more times.

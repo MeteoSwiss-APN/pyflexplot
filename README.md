@@ -58,8 +58,8 @@ To use all allocated cpus, add the following option to the pyflexplot command
 
     --num-procs=$SLURM_CPUS_PER_TASK
 
-If you want to run the following examples interatcively,
-you may want do allocate parallel resources, e.g. 10 cores
+If you want to run the following examples interactively,
+you may want to allocate parallel resources, e.g. 10 cores
 
     salloc -c 10
 
@@ -195,6 +195,19 @@ After job completion, list and visualize results with
     ls $dest/*pdf
     evince $dest/*pdf
 
+### Running Pyflexplot with S3 input (and output)
+
+In order to download input NETCDF data from S3, and S3 URI can be specified as the setup parameter `infile` as below:
+
+```bash
+pyflexplot --preset "$preset" --merge-pdfs --dest=$dest --setup infile s3://<s3-bucket-name>/flexpart_cosmo-2e_2021030503_{ens_member:03d}_MUE.nc
+```
+
+In order to output the resulting plots to an S3 bucket, specify the S3 bucket name as the `--dest`. The plots will still be created locally at the dest dir path defined in the config/settings.yaml
+
+```bash
+pyflexplot --preset "$preset" --merge-pdfs --dest=s3://<s3-bucket-name>
+```
 
 ## Development
 
@@ -238,12 +251,12 @@ poetry run pytest
 
 Run pylint
 ```bash
-poetry run pylint pyflexplot
+poetry run pylint
 ```
 
 Run mypy
 ```bash
-poetry run mypy pyflexplot
+poetry run mypy
 ```
 
 ### Updating the Test References

@@ -1,0 +1,16 @@
+main:
+  app_name: Pyflexplot
+  aws:
+    s3:
+      input:
+        region: eu-central-2
+        name: meteoswiss-flexpart-flexpart-output-dev
+        retries: 10
+      output:
+        region: eu-central-2
+        name: meteoswiss-flexpart-pyflexplot-output-dev
+        retries: 10
+  local:
+    paths:
+      input: /src/app-root/data
+      output: /src/app-root/output

@@ -12,7 +12,7 @@ from shapely.errors import ShapelyDeprecationWarning
 # Local
 from .. import __version__
 from .. import presets_data_path
-from .click import click_prepare_setup_params
+from .click import click_validate_setup_params
 from .click import click_set_pdb
 from .click import click_set_raise
 from .click import click_set_verbosity
@@ -178,7 +178,7 @@ click.option = lambda *args, **kwargs: _click_option(
     metavar="PARAM VALUE",
     nargs=2,
     multiple=True,
-    callback=wrap_callback(click_prepare_setup_params),
+    callback=wrap_callback(click_validate_setup_params),
 )
 @click.option(
     "--show-version/--no-show-version",

@@ -33,8 +33,7 @@ def click_exit(ctx: Context, msg: str, stat: int = 0) -> None:
 
 
 # pylint: disable=W0613  # unused-argument (param)
-def click_prepare_setup_params(ctx, param, value):
-    # pylint: disable=W0613  # unused-argument
+def click_validate_setup_params(ctx, param, value):
     if not value:
         return None
     for raw_name, raw_value in value:

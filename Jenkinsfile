@@ -95,49 +95,49 @@ pipeline {
                                 ]
                             ]
                         ]) {
-                    }
-
-                    // Determine the type of build
-                    switch (params.buildChoice) {
-                        case 'Build':
-                            Globals.build = true
-                            break
-                        case 'Deploy':
-                            Globals.deploy = true
-                            break
-                        case 'Release':
-                            Globals.release = true
-                            Globals.build = true
-                            break
-                        case 'Restart':
-                            Globals.restart = true
-                            break
-                        case 'Delete':
-                            Globals.deleteContainer = true
-                            break
-                        case 'Trivy-Scan':
-                            Globals.runTrivyScan = true
-                            break
-                    }
-
-                    if (Globals.build || Globals.deploy || Globals.runTrivyScan) {
-                        echo 'Starting with calulating version'
-                        def shortBranchName = env.BRANCH_NAME.replaceAll("[^a-zA-Z0-9]+", "").take(30).toLowerCase()
-                        try {
-                            Globals.version = sh(script: "git describe --tags --match v[0-9]*", returnStdout: true).trim()
-                        } catch (err) {
-                            def version = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                            Globals.version = "${shortBranchName}-${version}"
+                        // Determine the type of build
+                        switch (params.buildChoice) {
+                            case 'Build':
+                                Globals.build = true
+                                break
+                            case 'Deploy':
+                                Globals.deploy = true
+                                break
+                            case 'Release':
+                                Globals.release = true
+                                Globals.build = true
+                                break
+                            case 'Restart':
+                                Globals.restart = true
+                                break
+                            case 'Delete':
+                                Globals.deleteContainer = true
+                                break
+                            case 'Trivy-Scan':
+                                Globals.runTrivyScan = true
+                                break
                         }
-                        echo "Using version ${Globals.version}"
-                        if (env.BRANCH_NAME == 'main') {
-                            Globals.imageTag = "${Globals.IMAGE_NAME}:latest"
-                        } else {
-                            Globals.imageTag = "${Globals.IMAGE_NAME}:${shortBranchName}"
+    
+                        if (Globals.build || Globals.deploy || Globals.runTrivyScan) {
+                            echo 'Starting with calulating version'
+                            def shortBranchName = env.BRANCH_NAME.replaceAll("[^a-zA-Z0-9]+", "").take(30).toLowerCase()
+                            try {
+                                Globals.version = sh(script: "git describe --tags --match v[0-9]*", returnStdout: true).trim()
+                            } catch (err) {
+                                def version = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                                Globals.version = "${shortBranchName}-${version}"
+                            }
+                            echo "Using version ${Globals.version}"
+                            if (env.BRANCH_NAME == 'main') {
+                                Globals.imageTag = "${Globals.IMAGE_NAME}:latest"
+                            } else {
+                                Globals.imageTag = "${Globals.IMAGE_NAME}:${shortBranchName}"
+                            }
+                            Globals.awsEcrRepo = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
+                            Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.AWS_IMAGE_NAME}-${Globals.deployEnv}:${shortBranchName}"
+                            echo "Using container version ${Globals.imageTag}"
+                            echo "Using awsEcrRepo ${Globals.awsEcrRepo}"
                         }
-                        Globals.awsEcrRepo = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
-                        Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.AWS_IMAGE_NAME}-${Globals.deployEnv}:${shortBranchName}"
-                        echo "Using container version ${Globals.imageTag}"
                     }
                 }
             }
