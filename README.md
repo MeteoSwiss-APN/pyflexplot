@@ -74,9 +74,10 @@ Example using default input file.
 This example assumes you are in the pyflexplot directory.
 
 Default input files are searched for in  `./data`.
-Link the default input files if you want to use these for tests.
+If you want to use the files as defined in the presets for your tests,
+link thm into the root of the repository. At CSCS on Alps, use:
 
-    ln -s /store/mch/msopr/pyflexplot_testdata data
+    ln -s /store_new/mch/msopr/pyflexplot_testdata data
 
 Create an output directory
 
@@ -91,7 +92,8 @@ To run the program for all presets that produce the graphics in PDF format, defi
 
 This preset however only works for the default (test) input files.
 
-To produce graphics for a specific FLEXPART output, select the fitting specific preset from the table below and define the `preset` variable accordingly:
+To produce graphics for a specific FLEXPART output, select the
+corresponding preset from the table below and define the `preset` variable accordingly:
 
 | Model                 | Type         | Define Preset Variable             |
 |-----------------------|--------------|------------------------------------|
@@ -110,23 +112,26 @@ After selecting a preset, run pyflexplot interactively for the default test data
 pyflexplot --preset "$preset" --merge-pdfs --dest=$dest
 ```
 
-Alternatively, specify the FLEXPART output file in NetCDF format as input data:
+On the production server at the CSCS, run it as a batch job using the `batchPP` utility:
 
-```bash
-pyflexplot --preset "$preset" --merge-pdfs --dest=$dest --setup infile <netcdf-file>
-```
-
-For ensemble input, the placeholder `{ens_member:03}` may be used within the path of `<netcdf-file>`. Instead of `03` for `%03d`, other formats for the ensemble member field can be used.
-
-Alternatively run as a batch job (recommended)
 ```bash
 batchPP -t 2 -T 10 -n pfp_$exp -- \
   $CONDA_PREFIX/bin/pyflexplot --preset $preset \
   --merge-pdfs --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK
 ```
 
+To use your own FLEXPART output file in NetCDF format as input for pyflexplot,
+specify it as second argument to the `--setup` option as follows:
 
-Example using operational Flexpart ensemble output based on COSMO-2E
+```bash
+pyflexplot --preset "$preset" --merge-pdfs --dest=$dest --setup infile <netcdf-file>
+```
+
+To use a FLEXPART ensemble as input, the placeholder `{ens_member:03}` may be used within the path of *\<netcdf-file\>*.
+Instead of `03` for `%03d`, other C-style formats for the ensemble member field can be used.
+
+Example using operational Flexpart ensemble output based on COSMO-2E:
+
 ```bash
 exp=test-2e
 preset=opr/cosmo-2e/all_pdf
@@ -220,41 +225,42 @@ Clone the repo and enter the project folder:
 git clone git@github.com:MeteoSwiss-APN/pyflexplot.git && cd pyflexplot
 ```
 
-Configure Poetry to not create a new virtual environment. If it detects an already enabled virtual (eg Conda) environment it will install dependencies into it:
-```bash
-poetry config --local virtualenvs.create false
-```
-
-Create an Conda (or mamba/micomamba) environment with only desired Python version and activate:
+Create an Conda (or mamba/micromamba) environment with only the desired Python version and activate:
 ```bash
 conda create --prefix ./.conda-env python=3.10
 conda activate ./.conda-env
 ```
 
-Go into the pyproject.toml and replace `hub.meteoswiss.ch` with `service.meteoswiss.ch`. (This is required because we are external to MCH at CSCS. This modification is a temporary measure until the URLs for Nexus are unified). 
-```bash
-poetry lock --no-update
-```
-Do not commit your modified poetry.lock and pyproject.toml with these changes, as the CICD pipeline needs them as they were originally. 
+Install Poetry into this environment and
+configure Poetry to not create a new virtual environment. If it detects an already enabled virtual (eg Conda) environment it will install dependencies into it:
 
-Install packages
+```bash
+conda install poetry
+poetry config --local virtualenvs.create false
+```
+
+Install packages:
+
 ```bash
 poetry install
 ```
 
 ### Run the tests and quality tools
 
-Run tests
+Run tests:
+
 ```bash
 poetry run pytest
 ```
 
-Run pylint
+Run pylint to check code style of modified Python files (if any):
+
 ```bash
 poetry run pylint
 ```
 
-Run mypy
+Run mypy to check typing:
+
 ```bash
 poetry run mypy
 ```
@@ -262,12 +268,18 @@ poetry run mypy
 ### Updating the Test References
 
 Pyflexplot includes a set of functionality tests that compare generated output against predefined reference data.
-These reference files, which contain summary dicts, are stored as tests/slow/pyflexplot/test_plots/ref_*.py files.
-To update these reference files, uncomment the following line towards the end of the test file  [`tests/slow/test_pyflexplot/test_plots/shared.py`](tests/slow/test_pyflexplot/test_plots/shared.py):
+These reference files, which contain summary dicts, begin with `ref_` and have
+the nomal Python file ending `.py`, and are stored in the directory
+`tests/slow/pyflexplot/test_plots`.
+To update these reference files, uncomment the following line near the end
+of the file
+[`shared.py`](tests/slow/test_pyflexplot/test_plots/shared.py)
+in the same directory:
 
        _TestBase = _TestCreateReference
 
-Then re-run the (slow) tests to generate the new reference files. After generating the new reference files, comment out the above line again as it was before or simply revert the file with git.
+Then re-run the (slow) tests to generate the new reference files. After generating the new reference files, comment out the above line again
+or simply revert the file with git.
 
 ## External Links
 
@@ -275,5 +287,5 @@ Then re-run the (slow) tests to generate the new reference files. After generati
 
 ## License
 
-This project is licensed under the terms of the MeteoSwiss. The full license text can be found in the [LICENSE](LICENSE) file.
+This project is licensed under the terms of the MIT License. The full license text can be found in the [LICENSE](LICENSE) file.
 In essence, you are free to use, modify, and distribute the software, provided the associated copyright notice and disclaimers are included.
