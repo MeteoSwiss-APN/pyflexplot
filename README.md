@@ -143,7 +143,7 @@ pyflexplot --preset "$preset" --merge-pdfs --dest=$dest --setup infile <netcdf-f
 To use a FLEXPART ensemble as input, the placeholder `{ens_member:03}` may be used within the path of *\<netcdf-file\>*.
 Instead of `03` for `%03d`, other C-style formats for the ensemble member field can be used.
 
-Example using operational Flexpart ensemble output based on COSMO-2E:
+Example using operational Flexpart ensemble output based on ICON-CH2-EPS:
 
 ```bash
 exp=test-2e
