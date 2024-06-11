@@ -55,20 +55,21 @@ To see the available options, run:
 pyflexplot --help
 ```
 
-To use all allocated cpus, add the following option to the pyflexplot command
-
-```bash
---num-procs=$SLURM_CPUS_PER_TASK
-```
-
 If you want to run the following examples interactively,
-you may want to allocate parallel resources, e.g. 10 cores
+you may want to allocate parallel resources
+with the help of SLURM (if available), e.g. 10 cores:
 
 ```bash
 salloc -c 10
 ```
 
-Run `pyflexplot`
+To use all allocated cpus, add the `--num-procs` option to the pyflexplot command
+(note that for a complete pyflexplot command, the definition of a preset or input and output need to be added, see below):
+
+```bash
+pyflexplot --num-procs=$SLURM_CPUS_PER_TASK
+```
+
 Important: Free resources when done!
 
 ```bash
@@ -88,22 +89,7 @@ link thm into the root of the repository. At CSCS on Alps, use:
 ln -s /store_new/mch/msopr/pyflexplot_testdata data
 ```
 
-Create an output directory
-
-```bash
-exp=test
-dest=plot_$exp
-mkdir $dest
-```
-
 There are several default config files available under [`src/pyflexplot/data/presets/opr`](src/pyflexplot/data/presets/opr/).
-To run the program for all presets that produce the graphics in PDF format, define the `preset` variable as:
-
-```bash
-preset='opr/*/all_pdf'
-```
-
-This preset however only works for the default (test) input files.
 
 To produce graphics for a specific FLEXPART output, select the
 corresponding preset from the table below and define the `preset` variable accordingly:
@@ -119,49 +105,71 @@ corresponding preset from the table below and define the `preset` variable accor
 | FLEXPART-ICON-CH1-CTRL| deterministic| `preset=opr/icon-ch1-ctrl/all_pdf` |
 | FLEXPART-ICON-CH2-EPS | ensemble     | `preset=opr/icon-ch2-eps/all_pdf`  |
 
-After selecting a preset, run pyflexplot interactively for the default test data:
+You may use the `*` wildcard to operate `pyflexplot` with several presets at once. For example, to run pyflexplot with all presets 
+that produce the graphics in PDF format for a specific
+NWP model, define the `preset` variable as one of:
+
+```bash
+preset='opr/cosmo*/all_pdf'
+preset='opr/icon*/all_pdf'
+preset='opr/ifs*/all_pdf'
+```
+
+Note however that the preset in this form requires the respective default input files to be accessible through the `./data` directory link.
+
+Define an output directory and create it, if it does not exist, e.g.
+
+```bash
+nwp=$(echo ${preset} | cut -d/ -f2 | sed 's/*//g') # Extract NWP model name
+dest=plot_$nwp
+mkdir $dest
+```
+
+After selecting a preset, you may run pyflexplot interactively for the default test data:
 
 ```bash
 pyflexplot --preset "$preset" --merge-pdfs --dest=$dest
 ```
 
-On the production server at the CSCS, run it as a batch job using the `batchPP` utility:
+On the production server at the CSCS, it is however highly recommended to create and run a batch job using the `batchPP` utility:
 
 ```bash
-batchPP -t 2 -T 10 -n pfp_$exp -- \
-  $CONDA_PREFIX/bin/pyflexplot --preset $preset \
+batchPP -t 2 -T 10 -n pfp_$nwp -- \
+  $CONDA_PREFIX/bin/pyflexplot --preset "$preset" \
   --merge-pdfs --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK
 ```
 
-To use your own FLEXPART output file in NetCDF format as input for pyflexplot,
-specify it as second argument to the `--setup` option as follows:
+To use your own or an operational FLEXPART output file in NetCDF format as input for pyflexplot,
+modify the settings of the preset with the help of the `--setup` option as follows:
 
 ```bash
 pyflexplot --preset "$preset" --merge-pdfs --dest=$dest --setup infile <netcdf-file>
 ```
 
 To use a FLEXPART ensemble as input, the placeholder `{ens_member:03}` may be used within the path of *\<netcdf-file\>*.
-Instead of `03` for `%03d`, other C-style formats for the ensemble member field can be used.
+Instead of `03` (for `%03d`), another C-style field width for the ensemble member field can be used.
 
 Example using operational Flexpart ensemble output based on ICON-CH2-EPS:
 
 ```bash
-exp=test-2e
-preset=opr/icon-ch2-eps/all_pdf
-basetime=$(date --utc --date="today 00" +%Y%m%d%H)
+preset=opr/icon-ch2-eps/all_pdf  # Preset for ICON-CH2-EPS
+nwp=$(echo ${preset} | cut -d/ -f2 | sed 's/*//g')  # Extract NWP model name
+basetime=$(date --utc --date="today 00" +%Y%m%d%H)  # Recent base time
+# Get name of first input file
 infile000=$(echo /store_new/mch/msopr/osm/ICON-CH2-EPS/FCST${basetime:2:2}/${basetime:2:8}_???/flexpart_c/000/grid_conc_*_BEZ.nc)
-infile=${infile000/\/000\//\/\{ens_member:03\}\/}
-dest=plot_${basetime:2:8}
-mkdir $dest
-batchPP -t 1 -T 10 -n pfp-$exp -- \
+infile=${infile000/\/000\//\/\{ens_member:03\}\/}   # Input file definition
+dest=plot_${basetime:2:8}    # Output directory with base time of NWP model
+mkdir $dest                  # Create output directory
+# Submit job with the help of the batchPP utility
+batchPP -t 1 -T 10 -n pfp-$nwp -- \
   $CONDA_PREFIX/bin/pyflexplot --preset $preset \
     --merge-pdfs --setup infile $infile --setup base_time $basetime --dest=$dest \
     --num-procs=\$SLURM_CPUS_PER_TASK
 ```
 
 The following expamles use FLEXPART output generated with the `test-fp` script
-in the test subdirectory of the flexpart repository of MeteoSwiss. Define FP_JOBS
-as path to the FLEXPART output files, e.g.
+in the `test_meteoswiss` subdirectory of the [flexpart](https://github.com/MeteoSwiss/flexpart) repository of MeteoSwiss. Define `FP_JOBS`
+as path to the FLEXPART output files that are to be used as input for pyflexplot, e.g.
 
 ```bash
 FP_JOBS=$SCRATCH/flexpart/job
@@ -173,51 +181,31 @@ Write output to a location where you have write access, e.g.
 FP_OUT=$SCRATCH/flexpart/job
 ```
 
-After additionally defining the `preset` and `exp` variables, create the output directory
-and submit a job with
+After additionally defining the `preset` as above and `nwp` as the
+job name (directory name below FP_JOBS), create the output directory with
 
 ```bash
-infile=$(echo $FP_JOBS/$exp/output/*.nc)
-basetime=$(cat $FP_JOBS/$exp/output/plot_info)
-dest=$FP_OUT/$exp/plots
+infile=$(echo $FP_JOBS/$nwp/output/*.nc)
+basetime=$(cat $FP_JOBS/$nwp/output/plot_info)
+dest=$FP_OUT/$nwp/plots
 mkdir -p $dest
 ```
 
-and submit the job with the batchPP command as above
+and submit the job with the batchPP command as above.
 
-Example: FLEXPART with COSMO-2E Control Run
+For ensembles, the `infile` needs to be a pattern rather than a single file:
 
-    preset=opr/cosmo-2e-ctrl/all_pdf
-    exp=1074
+```bash
+infile000=$(echo $FP_JOBS/$nwp/output/000/*.nc)
+infile=${infile000/\/000\//\/\{ens_member:03\}\/}
+```
 
-Example: FLEXPART with COSMO-1E Control Run
+After job completion, list and visualize results e.g. with `evince`:
 
-    preset=opr/cosmo-1e-ctrl/all_pdf
-    exp=1076
-
-Example: FLEXPART with COSMO-2E Ensemble Run.
-For ensembles, the infile needs to be a pattern rather than a single file
-
-    preset=opr/cosmo-2e/all_pdf
-    exp=short-bug
-    infile000=$(echo $FP_JOBS/$exp/output/000/*.nc)
-    infile=${infile000/\/000\//\/\{ens_member:03\}\/}
-
-Example: New test case with cloud crossing dateline from both sides
-
-    exp=test
-    preset=opr/ifs-hres/all_pdf
-    infile=data/ifs-hres/grid_conc_20220406180000_Chmelnyzkyj.nc
-    basetime=2022040612
-    dest=plot_$exp
-    mkdir $dest
-
-submit job with batchPP command above
-
-After job completion, list and visualize results with
-
-    ls $dest/*pdf
-    evince $dest/*pdf
+```bash
+ls $dest/*pdf
+evince $dest/*pdf
+```
 
 ### Running Pyflexplot with S3 input (and output)
 
@@ -235,7 +223,9 @@ pyflexplot --preset "$preset" --merge-pdfs --dest=s3://<s3-bucket-name>
 
 ## Development
 
-__Prerequisites__: Git, [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
+__Prerequisites__: Git, [Miniconda](https://docs.anaconda.com/free/miniconda/) 
+(for installation of Poetry) or 
+[Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 
 ### Install dependencies & start the service locally (CSCS)
 
@@ -248,7 +238,7 @@ git clone git@github.com:MeteoSwiss-APN/pyflexplot.git && cd pyflexplot
 Create an Conda (or mamba/micromamba) environment with only the desired Python version and activate:
 
 ```bash
-conda create --prefix ./.conda-env python=3.10
+conda create --yes --prefix ./.conda-env python=3.10
 conda activate ./.conda-env
 ```
 
@@ -256,7 +246,7 @@ Install Poetry into this environment and
 configure Poetry to not create a new virtual environment. If it detects an already enabled virtual (eg Conda) environment it will install dependencies into it:
 
 ```bash
-conda install poetry
+conda install --yes poetry
 poetry config --local virtualenvs.create false
 ```
 
@@ -274,10 +264,10 @@ Run tests:
 poetry run pytest
 ```
 
-Run pylint to check code style of modified Python files (if any):
+Run pylint to check code style of Python files (if any):
 
 ```bash
-poetry run pylint
+poetry run pylint src
 ```
 
 Run mypy to check typing:

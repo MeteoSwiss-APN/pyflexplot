@@ -14,7 +14,7 @@ from .meta_data import MetaData
 
 
 class FlexPartDataFixer:
-    """Fix issues with FlexPart NetCDF output."""
+    """Fix issues with wrong units Flexpart NetCDF output."""
 
     cosmo_models = [
         "COSMO-2",
@@ -41,15 +41,15 @@ class FlexPartDataFixer:
             if unit in ["ng kg-1", "1e-12 kg m-2"]:
                 fact = 1.0e-12
             else:
-                msg = f"model {model}: unrecognized unit '{unit}'; skip variable fixes"
-                log(wrn=msg)
+                # msg = f"model {model}: unrecognized unit '{unit}'; skip variable fixes"
+                # log(wrn=msg)
                 return
         elif model in self.ifs_models:
             if unit in ["ng m-3", "1e-12 kg m-2"]:
                 fact = 1.0e-12
             else:
-                msg = f"model {model}: unrecognized unit '{unit}'; skip variable fixes"
-                log(wrn=msg)
+                # msg = f"model {model}: unrecognized unit '{unit}'; skip variable fixes"
+                # log(wrn=msg)
                 return
         else:
             raise NotImplementedError(f"model '{model}'")
@@ -70,7 +70,9 @@ class FlexPartDataFixer:
             return
         unit = str(mdata.variable.unit)
         if model in self.cosmo_models:
-            if unit == "ng kg-1":
+            if unit == "1e-12 Bq m-3": # Correct unit, only add time unit for integrated values
+                new_unit = "1e-12 Bq h m-3" if integrate else unit
+            elif unit == "ng kg-1":
                 new_unit = "Bq h m-3" if integrate else "Bq m-3"
             elif unit == "1e-12 kg m-2":
                 # new_unit = "Bq h m-2" if integrate else "Bq m-2"
@@ -86,11 +88,13 @@ class FlexPartDataFixer:
                 new_unit = "Bq m-2"
             # SR_TMP >
             else:
-                msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
-                log(wrn=msg)
+                # msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
+                # log(wrn=msg)
                 return
         elif model in self.ifs_models:
-            if unit == "ng m-3":
+            if unit == "1e-12 Bq m-3": # Correct unit, only add time unit for integrated values
+                new_unit = "1e-12 Bq h m-3" if integrate else unit
+            elif unit == "ng m-3":
                 new_unit = "Bq h m-3" if integrate else "Bq m-3"
             elif unit == "1e-12 kg m-2":
                 # new_unit = "Bq h m-2" if integrate else "Bq m-2"
@@ -106,8 +110,8 @@ class FlexPartDataFixer:
                 new_unit = "Bq m-2"
             # SR_TMP >
             else:
-                msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
-                log(wrn=msg)
+                # msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
+                # log(wrn=msg)
                 return
         else:
             raise NotImplementedError(f"model '{model}'")
