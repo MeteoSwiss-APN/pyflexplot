@@ -224,7 +224,7 @@ pyflexplot --preset "$preset" --merge-pdfs --dest=s3://<s3-bucket-name>
 ## Development
 
 __Prerequisites__: Git, [Miniconda](https://docs.anaconda.com/free/miniconda/) 
-(for installation of Poetry) or 
+(for installation of Conda) or 
 [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 
 ### Install dependencies & start the service locally (CSCS)
