@@ -12,7 +12,6 @@ PyFlexPlot is a Python-based tool to visualize FLEXPART dispersion simulation re
 - [External Links](#external-links)
 - [License](#license)
 
-
 ## Key Features
 
 ### PDF and PNG Files
@@ -38,7 +37,9 @@ Another feature is to manipulate the field values by scaling with an arbitrary f
 
 You can install pyflexplot from MCH pypi repository using pip:
 
-    pip install pyflexplot -i https://service.meteoswiss.ch/nexus/repository/python-all/simple
+```bash
+pip install pyflexplot -i https://service.meteoswiss.ch/nexus/repository/python-all/simple
+```
 
 ## Run pyflexplot
 
@@ -50,23 +51,30 @@ pyflexplot [OPTIONS] CONFIG_FILE_DIRECTORY
 
 To see the available options, run:
 
- ```bash
- pyflexplot --help
- ```
-
-To use all allocated cpus, add the following option to the pyflexplot command
-
-    --num-procs=$SLURM_CPUS_PER_TASK
+```bash
+pyflexplot --help
+```
 
 If you want to run the following examples interactively,
-you may want to allocate parallel resources, e.g. 10 cores
+you may want to allocate parallel resources
+with the help of SLURM (if available), e.g. 10 cores:
 
-    salloc -c 10
+```bash
+salloc -c 10
+```
 
-Run `pyflexplot`
+To use all allocated cpus, add the `--num-procs` option to the pyflexplot command
+(note that for a complete pyflexplot command, the definition of a preset or input and output need to be added, see below):
+
+```bash
+pyflexplot --num-procs=$SLURM_CPUS_PER_TASK
+```
+
 Important: Free resources when done!
 
-    exit
+```bash
+exit
+```
 
 ### Examples how to run pyflexplot
 
@@ -74,24 +82,17 @@ Example using default input file.
 This example assumes you are in the pyflexplot directory.
 
 Default input files are searched for in  `./data`.
-Link the default input files if you want to use these for tests.
+If you want to use the files as defined in the presets for your tests,
+link thm into the root of the repository. At CSCS on Alps, use:
 
-    ln -s /store/mch/msopr/pyflexplot_testdata data
-
-Create an output directory
-
-    exp=test
-    dest=plot_$exp
-    mkdir $dest
+```bash
+ln -s /store_new/mch/msopr/pyflexplot_testdata data
+```
 
 There are several default config files available under [`src/pyflexplot/data/presets/opr`](src/pyflexplot/data/presets/opr/).
-To run the program for all presets that produce the graphics in PDF format, define the `preset` variable as:
 
-    preset='opr/*/all_pdf'
-
-This preset however only works for the default (test) input files.
-
-To produce graphics for a specific FLEXPART output, select the fitting specific preset from the table below and define the `preset` variable accordingly:
+To produce graphics for a specific FLEXPART output, select the
+corresponding preset from the table below and define the `preset` variable accordingly:
 
 | Model                 | Type         | Define Preset Variable             |
 |-----------------------|--------------|------------------------------------|
@@ -104,96 +105,107 @@ To produce graphics for a specific FLEXPART output, select the fitting specific 
 | FLEXPART-ICON-CH1-CTRL| deterministic| `preset=opr/icon-ch1-ctrl/all_pdf` |
 | FLEXPART-ICON-CH2-EPS | ensemble     | `preset=opr/icon-ch2-eps/all_pdf`  |
 
-After selecting a preset, run pyflexplot interactively for the default test data:
+You may use the `*` wildcard to operate `pyflexplot` with several presets at once. For example, to run pyflexplot with all presets 
+that produce the graphics in PDF format for a specific
+NWP model, define the `preset` variable as one of:
+
+```bash
+preset='opr/cosmo*/all_pdf'
+preset='opr/icon*/all_pdf'
+preset='opr/ifs*/all_pdf'
+```
+
+Note however that the preset in this form requires the respective default input files to be accessible through the `./data` directory link.
+
+Define an output directory and create it, if it does not exist, e.g.
+
+```bash
+nwp=$(echo ${preset} | cut -d/ -f2 | sed 's/*//g') # Extract NWP model name
+dest=plot_$nwp
+mkdir $dest
+```
+
+After selecting a preset, you may run pyflexplot interactively for the default test data:
 
 ```bash
 pyflexplot --preset "$preset" --merge-pdfs --dest=$dest
 ```
 
-Alternatively, specify the FLEXPART output file in NetCDF format as input data:
+On the production server at the CSCS, it is however highly recommended to create and run a batch job using the `batchPP` utility:
+
+```bash
+batchPP -t 2 -T 10 -n pfp_$nwp -- \
+  $CONDA_PREFIX/bin/pyflexplot --preset "$preset" \
+  --merge-pdfs --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK
+```
+
+To use your own or an operational FLEXPART output file in NetCDF format as input for pyflexplot,
+modify the settings of the preset with the help of the `--setup` option as follows:
 
 ```bash
 pyflexplot --preset "$preset" --merge-pdfs --dest=$dest --setup infile <netcdf-file>
 ```
 
-For ensemble input, the placeholder `{ens_member:03}` may be used within the path of `<netcdf-file>`. Instead of `03` for `%03d`, other formats for the ensemble member field can be used.
+To use a FLEXPART ensemble as input, the placeholder `{ens_member:03}` may be used within the path of *\<netcdf-file\>*.
+Instead of `03` (for `%03d`), another C-style field width for the ensemble member field can be used.
 
-Alternatively run as a batch job (recommended)
+Example using operational Flexpart ensemble output based on ICON-CH2-EPS:
+
 ```bash
-batchPP -t 2 -T 10 -n pfp_$exp -- \
-  $CONDA_PREFIX/bin/pyflexplot --preset $preset \
-  --merge-pdfs --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK
-```
-
-
-Example using operational Flexpart ensemble output based on COSMO-2E
-```bash
-exp=test-2e
-preset=opr/cosmo-2e/all_pdf
-basetime=$(date --utc --date="today 00" +%Y%m%d%H)
-infile000=$(echo /store/mch/msopr/osm/COSMO-2E/FCST${basetime:2:2}/${basetime:2:8}_5??/flexpart_c/000/grid_conc_*_BEZ.nc)
-infile=${infile000/\/000\//\/\{ens_member:03\}\/}
-dest=plot_${basetime:2:8}
-mkdir $dest
-batchPP -t 1 -T 10 -n pfp-$exp -- \
+preset=opr/icon-ch2-eps/all_pdf  # Preset for ICON-CH2-EPS
+nwp=$(echo ${preset} | cut -d/ -f2 | sed 's/*//g')  # Extract NWP model name
+basetime=$(date --utc --date="today 00" +%Y%m%d%H)  # Recent base time
+# Get name of first input file
+infile000=$(echo /store_new/mch/msopr/osm/ICON-CH2-EPS/FCST${basetime:2:2}/${basetime:2:8}_???/flexpart_c/000/grid_conc_*_BEZ.nc)
+infile=${infile000/\/000\//\/\{ens_member:03\}\/}   # Input file definition
+dest=plot_${basetime:2:8}    # Output directory with base time of NWP model
+mkdir $dest                  # Create output directory
+# Submit job with the help of the batchPP utility
+batchPP -t 1 -T 10 -n pfp-$nwp -- \
   $CONDA_PREFIX/bin/pyflexplot --preset $preset \
     --merge-pdfs --setup infile $infile --setup base_time $basetime --dest=$dest \
     --num-procs=\$SLURM_CPUS_PER_TASK
 ```
 
-The following expamles use FLEXPART output generated with the test-fp script
-in the test subdirectory of the flexpart repository of MeteoSwiss. Define FP_JOBS
-as path to the FLEXPART output files, e.g.
+The following expamles use FLEXPART output generated with the `test-fp` script
+in the `test_meteoswiss` subdirectory of the [flexpart](https://github.com/MeteoSwiss/flexpart) repository of MeteoSwiss. Define `FP_JOBS`
+as path to the FLEXPART output files that are to be used as input for pyflexplot, e.g.
 
-    FP_JOBS=/scratch/kaufmann/flexpart/job
+```bash
+FP_JOBS=$SCRATCH/flexpart/job
+```
 
 Write output to a location where you have write access, e.g.
 
-    FP_OUT=$SCRATCH/flexpart/job
+```bash
+FP_OUT=$SCRATCH/flexpart/job
+```
 
-After additionally defining preset and exp, create the output directory
-and submit a job with
+After additionally defining the `preset` as above and `nwp` as the
+job name (directory name below FP_JOBS), create the output directory with
 
-    infile=$(echo $FP_JOBS/$exp/output/*.nc)
-    basetime=$(cat $FP_JOBS/$exp/output/plot_info)
-    dest=$FP_OUT/$exp/plots
-    mkdir -p $dest
+```bash
+infile=$(echo $FP_JOBS/$nwp/output/*.nc)
+basetime=$(cat $FP_JOBS/$nwp/output/plot_info)
+dest=$FP_OUT/$nwp/plots
+mkdir -p $dest
+```
 
-and submit the job with the batchPP command as above
+and submit the job with the batchPP command as above.
 
-Example: FLEXPART with COSMO-2E Control Run
+For ensembles, the `infile` needs to be a pattern rather than a single file:
 
-    preset=opr/cosmo-2e-ctrl/all_pdf
-    exp=1074
+```bash
+infile000=$(echo $FP_JOBS/$nwp/output/000/*.nc)
+infile=${infile000/\/000\//\/\{ens_member:03\}\/}
+```
 
-Example: FLEXPART with COSMO-1E Control Run
+After job completion, list and visualize results e.g. with `evince`:
 
-    preset=opr/cosmo-1e-ctrl/all_pdf
-    exp=1076
-
-Example: FLEXPART with COSMO-2E Ensemble Run.
-For ensembles, the infile needs to be a pattern rather than a single file
-
-    preset=opr/cosmo-2e/all_pdf
-    exp=short-bug
-    infile000=$(echo $FP_JOBS/$exp/output/000/*.nc)
-    infile=${infile000/\/000\//\/\{ens_member:03\}\/}
-
-Example: New test case with cloud crossing dateline from both sides
-
-    exp=test
-    preset=opr/ifs-hres/all_pdf
-    infile=data/ifs-hres/grid_conc_20220406180000_Chmelnyzkyj.nc
-    basetime=2022040612
-    dest=plot_$exp
-    mkdir $dest
-
-submit job with batchPP command above
-
-After job completion, list and visualize results with
-
-    ls $dest/*pdf
-    evince $dest/*pdf
+```bash
+ls $dest/*pdf
+evince $dest/*pdf
+```
 
 ### Running Pyflexplot with S3 input (and output)
 
@@ -211,50 +223,55 @@ pyflexplot --preset "$preset" --merge-pdfs --dest=s3://<s3-bucket-name>
 
 ## Development
 
-__Prerequisites__: Git, [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
+__Prerequisites__: Git, [Miniconda](https://docs.anaconda.com/free/miniconda/) 
+(for installation of Conda) or 
+[Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 
 ### Install dependencies & start the service locally (CSCS)
 
 Clone the repo and enter the project folder:
+
 ```bash
 git clone git@github.com:MeteoSwiss-APN/pyflexplot.git && cd pyflexplot
 ```
 
-Configure Poetry to not create a new virtual environment. If it detects an already enabled virtual (eg Conda) environment it will install dependencies into it:
-```bash
-poetry config --local virtualenvs.create false
-```
+Create a Conda (or mamba/micromamba) environment with only the desired Python version and activate:
 
-Create an Conda (or mamba/micomamba) environment with only desired Python version and activate:
 ```bash
-conda create --prefix ./.conda-env python=3.10
+conda create --yes --prefix ./.conda-env python=3.10
 conda activate ./.conda-env
 ```
 
-Go into the pyproject.toml and replace `hub.meteoswiss.ch` with `service.meteoswiss.ch`. (This is required because we are external to MCH at CSCS. This modification is a temporary measure until the URLs for Nexus are unified). 
-```bash
-poetry lock --no-update
-```
-Do not commit your modified poetry.lock and pyproject.toml with these changes, as the CICD pipeline needs them as they were originally. 
+Install Poetry into this environment and
+configure Poetry to not create a new virtual environment. If it detects an already enabled virtual (eg Conda) environment it will install dependencies into it:
 
-Install packages
+```bash
+conda install --yes poetry
+poetry config --local virtualenvs.create false
+```
+
+Install packages:
+
 ```bash
 poetry install
 ```
 
 ### Run the tests and quality tools
 
-Run tests
+Run tests:
+
 ```bash
 poetry run pytest
 ```
 
-Run pylint
+Run pylint to check code style of Python files (if any):
+
 ```bash
-poetry run pylint
+poetry run pylint src
 ```
 
-Run mypy
+Run mypy to check typing:
+
 ```bash
 poetry run mypy
 ```
@@ -262,12 +279,19 @@ poetry run mypy
 ### Updating the Test References
 
 Pyflexplot includes a set of functionality tests that compare generated output against predefined reference data.
-These reference files, which contain summary dicts, are stored as tests/slow/pyflexplot/test_plots/ref_*.py files.
-To update these reference files, uncomment the following line towards the end of the test file  [`tests/slow/test_pyflexplot/test_plots/shared.py`](tests/slow/test_pyflexplot/test_plots/shared.py):
+These reference files, which contain summary dicts, begin with `ref_` and have
+the nomal Python file ending `.py`, and are stored in the directory
+`tests/slow/pyflexplot/test_plots`.
+To update these reference files, uncomment the following line near the end
+of the file
+[`shared.py`](tests/slow/test_pyflexplot/test_plots/shared.py)
+in the same directory:
 
-       _TestBase = _TestCreateReference
-
-Then re-run the (slow) tests to generate the new reference files. After generating the new reference files, comment out the above line again as it was before or simply revert the file with git.
+```bash
+_TestBase = _TestCreateReference
+```
+Then re-run the (slow) tests to generate the new reference files. After generating the new reference files, comment out the above line again
+or simply revert the file with git.
 
 ## External Links
 
@@ -275,5 +299,5 @@ Then re-run the (slow) tests to generate the new reference files. After generati
 
 ## License
 
-This project is licensed under the terms of the MeteoSwiss. The full license text can be found in the [LICENSE](LICENSE) file.
+This project is licensed under the terms of the MIT License. The full license text can be found in the [LICENSE](LICENSE) file.
 In essence, you are free to use, modify, and distribute the software, provided the associated copyright notice and disclaimers are included.

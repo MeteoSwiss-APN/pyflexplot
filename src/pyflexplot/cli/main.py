@@ -78,6 +78,8 @@ def main(
     if dest_dir.startswith('s3://'):
         s3_dest = dest_dir
         dest_dir = CONFIG.main.local.paths.output
+    else:
+        s3_dest = None
     if tmp_dir is None:
         if auto_tmp:
             tmp_dir = f"tmp-pyflexplot-{int(time.time())}"
