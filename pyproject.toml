@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyflexplot"
-version = "1.1.3"
+version = "1.1.4"
 description = "PyFlexPlot - Visualize and post-process FLEXPART dispersion simulation results stored in NetCDF format"
 readme = "README.md"
 keywords = [
