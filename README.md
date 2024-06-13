@@ -235,7 +235,7 @@ Clone the repo and enter the project folder:
 git clone git@github.com:MeteoSwiss-APN/pyflexplot.git && cd pyflexplot
 ```
 
-Create an Conda (or mamba/micromamba) environment with only the desired Python version and activate:
+Create a Conda (or mamba/micromamba) environment with only the desired Python version and activate:
 
 ```bash
 conda create --yes --prefix ./.conda-env python=3.10
