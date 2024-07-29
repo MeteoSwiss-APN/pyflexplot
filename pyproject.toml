@@ -59,6 +59,7 @@ toml = "^0.10.2"
 typing-extensions = "^4.8.0"
 boto3 = "^1.34.108"
 botocore = "^1.34.109"
+pyyaml = "^6.0.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.3.0"
