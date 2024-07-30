@@ -30,6 +30,7 @@ repos:
             (?x)^(
                 poetry.lock |
                 pyproject.toml |
+                Jenkinsfile |
             )$
 -   repo: local
     hooks:
