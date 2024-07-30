@@ -117,9 +117,9 @@ pipeline {
                                 Globals.runTrivyScan = true
                                 break
                         }
-    
+
                         if (Globals.build || Globals.deploy || Globals.runTrivyScan) {
-                            echo 'Starting with calulating version'
+                            echo 'Starting with calculating version'
                             def shortBranchName = env.BRANCH_NAME.replaceAll("[^a-zA-Z0-9]+", "").take(30).toLowerCase()
                             try {
                                 Globals.version = sh(script: "git describe --tags --match v[0-9]*", returnStdout: true).trim()
@@ -276,7 +276,6 @@ pipeline {
             environment {
                 HTTPS_PROXY="http://proxy.meteoswiss.ch:8080"
                 AWS_DEFAULT_OUTPUT="json"
-                AWS_CA_BUNDLE="/etc/ssl/certs/MCHRoot.crt"
                 PATH = "/opt/maker/tools/terraform:/opt/maker/tools/aws:$PATH"
             }
             steps {
@@ -296,6 +295,11 @@ pipeline {
                     ]
                 ) {
                     sh """
+                        if test -f /etc/ssl/certs/ca-certificates.crt; then
+                            export AWS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+                        else
+                            export AWS_CA_BUNDLE=/etc/ssl/certs/ca-bundle.crt
+                        fi
                         terraform -chdir=infrastructure/aws init -no-color
                         terraform -chdir=infrastructure/aws validate -no-color
                         terraform -chdir=infrastructure/aws apply -var environment=${Globals.deployEnv} -auto-approve
