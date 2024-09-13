@@ -25,7 +25,14 @@ WORKDIR /src/app-root
 
 FROM base AS runner
 
-RUN mkdir /src/app-root/data /src/app-root/ouput
+RUN mkdir /src/app-root/data /src/app-root/output
+
+ENV HTTPS_PROXY=\
+    HTTP_PROXY=\
+    http_proxy=\
+    https_proxy=\
+    NO_PROXY=\
+    no_proxy=
 
 ENTRYPOINT ["pyflexplot"]
 
