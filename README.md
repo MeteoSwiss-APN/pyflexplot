@@ -209,7 +209,7 @@ evince $dest/*pdf
 
 ### Running Pyflexplot with S3 input (and output)
 
-In order to download input NETCDF data from S3, and S3 URI can be specified as the setup parameter `infile` as below:
+In order to download input NETCDF data from S3, and S3 URI can be specified as the setup parameter `infile` as below (example):
 
 ```bash
 pyflexplot --preset "$preset" --merge-pdfs --dest=$dest --setup infile s3://<s3-bucket-name>/flexpart_cosmo-2e_2021030503_{ens_member:03}_MUE.nc
