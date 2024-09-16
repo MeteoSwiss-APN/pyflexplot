@@ -90,9 +90,10 @@ def download_key_from_bucket(key: str,
     path = dst_dir / filename
     if not os.path.exists( path.parent ):
         os.makedirs( path.parent )
+    _LOGGER.info('Downloading %s from bucket %s to %s', key, bucket.name, path)
     with open(path, 'wb') as data:
         client.download_fileobj(bucket.name, key, data)
-    _LOGGER.info('Finished downloading %s from bucket %s to %s', key, bucket.name, path)
+    _LOGGER.debug('Download complete: %s', key, path)
 
     return path
 
