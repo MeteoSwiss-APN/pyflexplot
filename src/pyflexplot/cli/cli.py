@@ -102,15 +102,6 @@ click.option = lambda *args, **kwargs: _click_option(
     default=1,
 )
 @click.option(
-    "--only",
-    help=(
-        "Only create the first N plots based on the given setup. Useful during "
-        "development; not supposed to be used in production."
-    ),
-    type=int,
-    metavar="N",
-)
-@click.option(
     "--open",
     "open_cmd",
     help=(

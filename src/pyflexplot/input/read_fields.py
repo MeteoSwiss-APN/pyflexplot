@@ -81,7 +81,6 @@ def read_fields(
     setup_group: PlotSetupGroup,
     config: Optional[Union[InputConfig, Dict[str, Any]]] = None,
     *,
-    only: Optional[int] = None,
     _override_indir: Optional[str] = None,
     _override_infile: Optional[str] = None,
 ) -> List[FieldGroup]:
@@ -93,8 +92,6 @@ def read_fields(
 
         config (optional): Instance of ``InputConfig``, or dict with parameters
             used to create one.
-
-        only (optional): Restrict the number of fields that are read.
 
         _override_indir (optional): Override directory of
             ``setups.files.input``; should not be used outside of tests.
@@ -142,13 +139,6 @@ def read_fields(
         raw_dimensions=raw_dimensions,
         species_ids=species_ids,
     )
-    # Limit number of plots
-    if only and len(setup_group) > only:
-        log(
-            dbg=f"""[only:{only}]
-            skip {len(setup_group) - only}/{len(setup_group)}"""
-        )
-        setup_group = PlotSetupGroup(list(setup_group)[:only])
 
     # Separate setups of different plot types
     # Each setup may still lead to multiple plots (multiple outfiles/time steps)
@@ -158,10 +148,6 @@ def read_fields(
     field_groups: List[FieldGroup] = []
     for plot_type_setup in plot_type_setups:
         field_groups_i = files.read_fields_over_time(plot_type_setup)
-        if only and len(field_groups) + len(field_groups_i) > only:
-            log(dbg=f"""[only:{only}] skip reading remaining fields after {only}""")
-            field_groups.extend(field_groups_i[: only - len(field_groups)])
-            break
         field_groups.extend(field_groups_i)
 
     n_plt = len(field_groups)
