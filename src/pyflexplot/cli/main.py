@@ -244,7 +244,6 @@ def create_all_plots(
             for args in iter_args:
                 fct(*args)
         log(dbg=f"done processing {setup_group.infile}")
-        n_input_files_todo = iter_state.n_input_files - iter_state.i_input_file
 
     # Sort output file paths with numbered duplicates are in the correct order
     # The latter is necessary because parallel execution randomizes their order

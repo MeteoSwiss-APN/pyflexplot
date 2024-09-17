@@ -88,18 +88,18 @@ class SetupFile:
         override: Mapping[str, Any],
     ) -> List[PlotSetupGroup]:
         
-        KeyT: TypeAlias = Tuple[str, Tuple[int, ...]]
+        key_t: TypeAlias = Tuple[str, Tuple[int, ...]]
         setups_by_infiles: Dict[KeyT, List[PlotSetup]] = {}
-        n_setups = 0
+
         for path in paths:
             setups = cls(path).read(override=override)
             for setup in setups:
-                key: KeyT = (setup.files.input, setup.model.ens_member_id)
+                key: key_t = (setup.files.input, setup.model.ens_member_id)
                 if key not in setups_by_infiles:
                     setups_by_infiles[key] = []
                 if setup not in setups_by_infiles[key]:
                     setups_by_infiles[key].append(setup)
-                    n_setups += 1
+
         return [PlotSetupGroup(setup_lst) for setup_lst in setups_by_infiles.values()]
 
     # pylint: disable=R0912  # too-many-branches (>12)
