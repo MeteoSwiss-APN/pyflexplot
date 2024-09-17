@@ -80,9 +80,6 @@ class SetupFile:
         setups = PlotSetupGroup.create(raw_params_lst)
         return setups
 
-    def write(self, *args, **kwargs) -> None:
-        """Write the setup to a text file in TOML format."""
-        raise NotImplementedError(f"{type(self).__name__}.write")
 
     @classmethod
     def read_many(
@@ -91,7 +88,7 @@ class SetupFile:
         override: Mapping[str, Any],
     ) -> List[PlotSetupGroup]:
         
-        KeyT: TypeAlias = Tuple[str, Optional[Tuple[int, ...]]]
+        KeyT: TypeAlias = Tuple[str, Tuple[int, ...]]
         setups_by_infiles: Dict[KeyT, List[PlotSetup]] = {}
         n_setups = 0
         for path in paths:
