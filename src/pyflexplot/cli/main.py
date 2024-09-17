@@ -306,8 +306,8 @@ def prepare_setups(
     if s3_input:
         for key in s3_keys_to_get:
             if '{ens_member:' in key:
-                expanded_keys = expand_key(key, ens_member_ids)
-                for expanded_key in expanded_keys:
+                for member_id in ens_member_ids:
+                    expanded_key = expand_key(key, member_id)
                     download_key_from_bucket(
                         expanded_key,
                         Path(CONFIG.main.local.paths.input),
