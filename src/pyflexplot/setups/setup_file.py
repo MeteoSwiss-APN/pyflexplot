@@ -51,7 +51,6 @@ class SetupFile:
         self,
         *,
         override: Optional[Mapping[str, Any]] = None,
-        only: Optional[int] = None,
     ) -> PlotSetupGroup:
         """Read the setup from a text file in TOML format."""
         with open(self.path, "r", encoding="utf-8") as f:
@@ -79,10 +78,6 @@ class SetupFile:
         if not raw_params_lst:
             raise Exception(f"no setups defined in file {self.path}")
         setups = PlotSetupGroup.create(raw_params_lst)
-        if only is not None:
-            if only < 0:
-                raise ValueError(f"only must not be negative ({only})")
-            setups = PlotSetupGroup(list(setups)[:only])
         return setups
 
     def write(self, *args, **kwargs) -> None:
@@ -93,25 +88,15 @@ class SetupFile:
     def read_many(
         cls,
         paths: Sequence[Union[Path, str]],
-        override: Optional[Mapping[str, Any]] = None,
-        only: Optional[int] = None,
-        each_only: Optional[int] = None,
+        override: Mapping[str, Any],
     ) -> List[PlotSetupGroup]:
-        if only is not None:
-            if only < 0:
-                raise ValueError("only must not be negative", only)
-            each_only = only
-        elif each_only is not None:
-            if each_only < 0:
-                raise ValueError("each_only must not be negative", each_only)
+        
         KeyT: TypeAlias = Tuple[str, Optional[Tuple[int, ...]]]
         setups_by_infiles: Dict[KeyT, List[PlotSetup]] = {}
         n_setups = 0
         for path in paths:
-            setups = cls(path).read(override=override, only=each_only)
+            setups = cls(path).read(override=override)
             for setup in setups:
-                if only is not None and n_setups >= only:
-                    break
                 key: KeyT = (setup.files.input, setup.model.ens_member_id)
                 if key not in setups_by_infiles:
                     setups_by_infiles[key] = []
