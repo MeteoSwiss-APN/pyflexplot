@@ -25,8 +25,7 @@ from pyflexplot import CONFIG
 _LOGGER = logging.getLogger(__name__)
 
 def expand_key(key: str, ens_member_id: int | None) -> str:
-    """Expand a key pattern into S3 object
-      key using ensemble member identifier."""
+    """Expand a s3 key or file pattern using ensemble member identifier."""
 
     if ens_member_id is None:
         raise ValueError(
@@ -60,15 +59,16 @@ def split_s3_uri(infile: str) -> tuple[str, str, str]:
     return bucket_name, key, filename
 
 def download_key_from_bucket(key: str,
-                             dst_dir: Path,
-                             bucket: Bucket = CONFIG.main.aws.s3.input) -> Path:
+                             dest: Path,
+                             bucket: Bucket = CONFIG.main.aws.s3.input,
+                             ) -> Path:
     """ 
     Download object from S3 bucket.
     Filename of resulting local file is formatted value of the key.
 
     Args:
         key: S3 object key
-        dst_dir: Parent directory to download file to.
+        dest: Path to download file to.
         bucket: S3 bucket from where data will be fetched.
     """
 
@@ -80,18 +80,16 @@ def download_key_from_bucket(key: str,
                                             })
                                         )
     # Make directory if not existing
-    if not os.path.exists( dst_dir ):
-        os.makedirs( dst_dir )
-
-    path = dst_dir / key.replace('/', '-')
+    if not os.path.exists( dest.parent ):
+        os.makedirs( dest.parent )
 
     # Download object
-    with open(path, 'wb') as data:
+    with open(dest, 'wb') as data:
         client.download_fileobj(bucket.name, key, data)
 
-    _LOGGER.info('Finished downloading %s from bucket %s to %s', key, bucket.name, path)
+    _LOGGER.info('Finished downloading %s from bucket %s to %s', key, bucket.name, dest)
 
-    return path
+    return dest
 
 
 def upload_outpaths_to_s3(upload_outpaths: list[str],

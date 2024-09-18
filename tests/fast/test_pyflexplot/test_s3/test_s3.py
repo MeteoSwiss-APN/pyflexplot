@@ -111,7 +111,7 @@ def test_download_key_from_bucket(s3):
         actual_objs = []
         with tempfile.TemporaryDirectory() as tmpdirname:
             for key in expected_objs:
-                actual_objs.append(download_key_from_bucket(key, Path(tmpdirname), bucket))
+                actual_objs.append(download_key_from_bucket(key, Path(tmpdirname)/key, bucket))
 
         for obj in actual_objs:
             assert obj.name in expected_objs

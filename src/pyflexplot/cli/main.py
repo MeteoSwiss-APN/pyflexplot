@@ -265,34 +265,10 @@ def prepare_setups(
         setup_file_paths, preset_setup_file_paths, input_setup_params
     )
 
-    s3_input = False
-    bucket: Bucket = CONFIG.main.aws.s3.input
-    s3_keys_to_get = set()
-
     for setup_group in setup_groups:
         if setup_group.infile.startswith("s3://"):
-            ens_member_ids = setup_group.ens_member_ids
-            s3_input = True
-            bucket.name, key, filename = split_s3_uri(setup_group.infile)
-            s3_keys_to_get.add(key)
-            setup_group.override_s3_infile_location(
-                Path(CONFIG.main.local.paths.input), 
-                filename)
-
-    if s3_input:
-        for key in s3_keys_to_get:
-            if '{ens_member:' in key:
-                for member_id in ens_member_ids:
-                    expanded_key = expand_key(key, member_id)
-                    download_key_from_bucket(
-                        expanded_key,
-                        Path(CONFIG.main.local.paths.input),
-                        bucket)
-            else:
-                download_key_from_bucket(
-                    key,
-                    Path(CONFIG.main.local.paths.input),
-                    bucket)
+            setup_group.fetch_remote_data(
+                Path(CONFIG.main.local.paths.input))
 
     if suffixes:
         # Replace outfile suffixes by one or more; may increase oufile number

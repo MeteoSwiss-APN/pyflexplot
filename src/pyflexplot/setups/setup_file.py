@@ -89,7 +89,7 @@ class SetupFile:
     ) -> List[PlotSetupGroup]:
         
         key_t: TypeAlias = Tuple[str, Tuple[int, ...]]
-        setups_by_infiles: Dict[KeyT, List[PlotSetup]] = {}
+        setups_by_infiles: Dict[key_t, List[PlotSetup]] = {}
 
         for path in paths:
             setups = cls(path).read(override=override)
