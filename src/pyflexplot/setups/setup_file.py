@@ -51,7 +51,6 @@ class SetupFile:
         self,
         *,
         override: Optional[Mapping[str, Any]] = None,
-        only: Optional[int] = None,
     ) -> PlotSetupGroup:
         """Read the setup from a text file in TOML format."""
         with open(self.path, "r", encoding="utf-8") as f:
@@ -79,45 +78,28 @@ class SetupFile:
         if not raw_params_lst:
             raise Exception(f"no setups defined in file {self.path}")
         setups = PlotSetupGroup.create(raw_params_lst)
-        if only is not None:
-            if only < 0:
-                raise ValueError(f"only must not be negative ({only})")
-            setups = PlotSetupGroup(list(setups)[:only])
         return setups
 
-    def write(self, *args, **kwargs) -> None:
-        """Write the setup to a text file in TOML format."""
-        raise NotImplementedError(f"{type(self).__name__}.write")
 
     @classmethod
     def read_many(
         cls,
         paths: Sequence[Union[Path, str]],
-        override: Optional[Mapping[str, Any]] = None,
-        only: Optional[int] = None,
-        each_only: Optional[int] = None,
+        override: Mapping[str, Any],
     ) -> List[PlotSetupGroup]:
-        if only is not None:
-            if only < 0:
-                raise ValueError("only must not be negative", only)
-            each_only = only
-        elif each_only is not None:
-            if each_only < 0:
-                raise ValueError("each_only must not be negative", each_only)
-        KeyT: TypeAlias = Tuple[str, Optional[Tuple[int, ...]]]
-        setups_by_infiles: Dict[KeyT, List[PlotSetup]] = {}
-        n_setups = 0
+        
+        key_t: TypeAlias = Tuple[str, Tuple[int, ...]]
+        setups_by_infiles: Dict[key_t, List[PlotSetup]] = {}
+
         for path in paths:
-            setups = cls(path).read(override=override, only=each_only)
+            setups = cls(path).read(override=override)
             for setup in setups:
-                if only is not None and n_setups >= only:
-                    break
-                key: KeyT = (setup.files.input, setup.model.ens_member_id)
+                key: key_t = (setup.files.input, setup.model.ens_member_id)
                 if key not in setups_by_infiles:
                     setups_by_infiles[key] = []
                 if setup not in setups_by_infiles[key]:
                     setups_by_infiles[key].append(setup)
-                    n_setups += 1
+
         return [PlotSetupGroup(setup_lst) for setup_lst in setups_by_infiles.values()]
 
     # pylint: disable=R0912  # too-many-branches (>12)

@@ -64,7 +64,6 @@ def main(
     merge_pdfs: bool,
     merge_pdfs_dry: bool,
     num_procs: int,
-    only: Optional[int],
     open_cmd: Optional[str],
     keep_merged_pdfs: bool,
     setup_file_paths: Sequence[str],
@@ -95,8 +94,7 @@ def main(
         setup_file_paths,
         preset_setup_file_paths,
         dict(input_setup_params or {}),
-        suffixes,
-        only,
+        suffixes
     )
 
     fct = partial(
@@ -104,7 +102,6 @@ def main(
         setup_groups,
         cache,
         dry_run,
-        only,
         show_version,
         tmp_dir,
     )
@@ -195,7 +192,6 @@ def create_all_plots(
     setup_groups: Sequence[PlotSetupGroup],
     cache: bool,
     dry_run: bool,
-    only: Optional[int],
     show_version: bool,
     tmp_dir: Optional[str],
     pool: Optional[Pool] = None,
@@ -207,15 +203,6 @@ def create_all_plots(
     for iter_state.i_input_file, setup_group in enumerate(
         setup_groups, start=1
     ):  # noqa: E501
-        if only and iter_state.n_field_groups_curr >= only:
-            log(
-                dbg=(
-                    f"""[only:{only}] skip
-                    {ordinal(iter_state.n_field_groups_curr)}"""
-                    " field group"
-                )
-            )
-            break
         log(
             vbs=(
                 f"[{iter_state.i_input_file}/{iter_state.n_input_files}]"
@@ -230,8 +217,7 @@ def create_all_plots(
                 "missing_ok": True,
                 "dry_run": dry_run,
                 "cache_on": cache,
-            },
-            only=(None if not only else only - iter_state.n_field_groups_curr),
+            }
         )
         iter_state.n_field_groups_curr += len(field_groups)
         iter_state.n_field_groups_i = len(field_groups)
@@ -258,16 +244,6 @@ def create_all_plots(
             for args in iter_args:
                 fct(*args)
         log(dbg=f"done processing {setup_group.infile}")
-        n_input_files_todo = iter_state.n_input_files - iter_state.i_input_file
-        maximum_reached = (
-            only and iter_state.n_field_groups_curr >= only and n_input_files_todo
-        )
-        if maximum_reached:
-            log(
-                vbs=f"""[only:{only}] skip remaining
-            {n_input_files_todo} input files"""
-            )
-            break
 
     # Sort output file paths with numbered duplicates are in the correct order
     # The latter is necessary because parallel execution randomizes their order
@@ -279,8 +255,8 @@ def prepare_setups(
     preset_setup_file_paths: Sequence[Union[Path, str]],
     input_setup_params: Mapping[str, Any],
     suffixes: Optional[Union[str, Collection[str]]],
-    only: Optional[int],
 ) -> List[PlotSetupGroup]:
+
     # Extend preset setup file paths
     setup_file_paths = list(setup_file_paths)
 
@@ -289,34 +265,10 @@ def prepare_setups(
         setup_file_paths, preset_setup_file_paths, input_setup_params
     )
 
-    s3_input = False
-    bucket: Bucket = CONFIG.main.aws.s3.input
-    s3_keys_to_get = set()
-
     for setup_group in setup_groups:
         if setup_group.infile.startswith("s3://"):
-            ens_member_ids = setup_group.ens_member_ids
-            s3_input = True
-            bucket.name, key, filename = split_s3_uri(setup_group.infile)
-            s3_keys_to_get.add(key)
-            setup_group.override_s3_infile_location(
-                Path(CONFIG.main.local.paths.input), 
-                filename)
-
-    if s3_input:
-        for key in s3_keys_to_get:
-            if '{ens_member:' in key:
-                expanded_keys = expand_key(key, ens_member_ids)
-                for expanded_key in expanded_keys:
-                    download_key_from_bucket(
-                        expanded_key,
-                        Path(CONFIG.main.local.paths.input),
-                        bucket)
-            else:
-                download_key_from_bucket(
-                    key,
-                    Path(CONFIG.main.local.paths.input),
-                    bucket)
+            setup_group.fetch_remote_data(
+                Path(CONFIG.main.local.paths.input))
 
     if suffixes:
         # Replace outfile suffixes by one or more; may increase oufile number
@@ -327,13 +279,6 @@ def prepare_setups(
     setup_groups = [
         setup_group.compress_partially("files.output") for setup_group in setup_groups
     ]
-    if only:
-        # Restrict the total number of setup objects in the setup groups
-        # Note that the number of plots is likely still higher than only because
-        # each setup can define many plots, but it's a first elimination step
-        setup_groups = restrict_grouped_setups(
-            setup_groups, only, grouped_by="files.input"
-        )
     return setup_groups
 
 
@@ -359,42 +304,6 @@ def read_setup_groups(
             )  # noqa: E501
         ]
     return SetupFile.read_many(setup_file_paths, override=input_setup_params)
-
-
-# noqa: E501
-def restrict_grouped_setups(
-    setup_groups: Sequence[PlotSetupGroup],
-    only: int,
-    *,
-    grouped_by: str = "group",  # noqa: E501
-) -> List[PlotSetupGroup]:
-    """Restrict total number of ``Setup``s in ``SetupGroup``s."""
-    old_setup_groups = copy(setup_groups)
-    new_setup_groups: List[PlotSetupGroup] = []
-    n_setups_old = sum(map(len, old_setup_groups))
-    n_setups_new = 0
-    for setup_group in old_setup_groups:
-        if n_setups_new + len(setup_group) > only:
-            setup_group = PlotSetupGroup(
-                list(setup_group)[: only - n_setups_new]
-            )  # noqa: E501
-            new_setup_groups.append(setup_group)
-            n_setups_new += len(setup_group)
-            assert n_setups_new == only
-            break
-        n_setups_new += len(setup_group)
-        new_setup_groups.append(setup_group)
-    n_groups_old = len(old_setup_groups)
-    n_groups_new = len(new_setup_groups)
-    if n_setups_new < n_setups_old:
-        log(
-            dbg=(
-                f"[only:{only}] skip {n_setups_old - n_setups_new}/{n_setups_old}"  # noqa: E501
-                f" setups and {n_groups_old - n_groups_new}"
-                f"/{n_groups_old} {grouped_by}s"
-            )
-        )
-    return new_setup_groups
 
 
 def get_pid() -> int:

@@ -46,22 +46,20 @@ def s3(aws_credentials):
 
 
 def test_expand_key_valid():
-    result = expand_key("data_{ens_member:03}.nc", (1, 2, 3))
-    expected = ["data_001.nc", "data_002.nc", "data_003.nc"]
-    assert result == expected
+    result = expand_key("data_{ens_member:03}.nc", 1)
+    assert result == "data_001.nc"
 
-    result = expand_key("data_{ens_member:03d}.nc", (1, 2, 3))
-    expected = ["data_001.nc", "data_002.nc", "data_003.nc"]
-    assert result == expected
+    result = expand_key("data_{ens_member:03d}.nc", 21)
+    assert result == "data_021.nc"
 
 def test_expand_key_no_ensemble_members():
     with pytest.raises(ValueError) as exc_info:
-        expand_key("data_{ens_member:03}.nc", ())
-    assert str(exc_info.value) == "Must provide list of ensemble members as argument to expand key data_{ens_member:03}.nc."
+        expand_key("data_{ens_member:03}.nc", None)
+    assert str(exc_info.value) == "Must provide ensemble member id as argument to expand key data_{ens_member:03}.nc."
 
 def test_expand_key_invalid_pattern():
     with pytest.raises(RuntimeError) as exc_info:
-        expand_key("data.nc", (1, 2, 3))
+        expand_key("data.nc", 1)
     assert str(exc_info.value) == "Cannot expand key, key must contain pattern {ens_member:03} or {ens_member:03d}"
 
 
@@ -113,7 +111,7 @@ def test_download_key_from_bucket(s3):
         actual_objs = []
         with tempfile.TemporaryDirectory() as tmpdirname:
             for key in expected_objs:
-                actual_objs.append(download_key_from_bucket(key, Path(tmpdirname), bucket))
+                actual_objs.append(download_key_from_bucket(key, Path(tmpdirname)/key, bucket))
 
         for obj in actual_objs:
             assert obj.name in expected_objs

@@ -102,14 +102,6 @@ def _custom_showwarnings(message, category, filename, lineno, file=None, line=No
 _warnings.showwarning = _custom_showwarnings
 
 
-# Shorthand to embed IPython shell (handy during development/debugging)
-try:
-    import IPython  # isort:skip
-except ImportError:
-    _ipy = None
-else:
-    _ipy = IPython.terminal.embed.embed
-
 CONFIG = ServiceSettings(
     'settings.yaml', 
     os.path.join(os.path.dirname(__file__), 'config')

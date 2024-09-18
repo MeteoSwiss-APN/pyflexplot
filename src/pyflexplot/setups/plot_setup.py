@@ -47,6 +47,13 @@ from .plot_panel_setup import PlotPanelSetupGroup
 from .plot_panel_setup import PlotPanelSetupGroupFormatter
 
 
+from pyflexplot import CONFIG
+from pyflexplot.s3 import (
+    download_key_from_bucket, 
+    split_s3_uri,
+    expand_key)
+from pyflexplot.config.service_settings import Bucket
+
 # SR_TMP <<< TODO cleaner solution
 def is_plot_setup_param(param: str, recursive: bool = False) -> bool:
     if recursive:
@@ -866,31 +873,37 @@ class PlotSetupGroup:
                 )
         return None if inplace else obj
 
-    def override_s3_infile_location(self, dest: Path, filename: str) -> None:
+    def fetch_remote_data(self, dest: Path) -> None:
+
+        bucket: Bucket = CONFIG.main.aws.s3.input
+
+        _, key, _ = split_s3_uri(self.infile)
+
+        destination = Path(CONFIG.main.local.paths.input) / key.replace('/', '-')
+
+        if '{ens_member:' in key:
+            for member_id in self.ens_member_ids:
+                expanded_key = expand_key(key, member_id)
+                expanded_dest = Path(expand_key(str(destination), member_id))
+                download_key_from_bucket(expanded_key, expanded_dest, bucket)
+        else:
+            download_key_from_bucket(key, destination, bucket)
+
+        self.override_s3_infile_location(destination)
+
+    def override_s3_infile_location(self, dest: Path) -> None:
         """Override infile from s3 URI to a local path.
 
         Args:
-            dest: Parent directory where S3 object will be downloaded to. Filename is kept as key in S3 if filename not provided.
+            dest: Destination where S3 object has been downloaded to.
 
         """
-        if not dest:
-            raise ValueError("Destination path must be provided as argument.")
         
         new_setups: List[PlotSetup] = []
 
         for setup in self:
-            old_infiles: List[str] = (
-                [setup.files.input]
-                if isinstance(setup.files.input, str)
-                else list(setup.files.input)
-            )
-            new_infiles: List[str] = []
-            for old_infile in list(old_infiles):
-                if old_infile.startswith('s3://'):
-                    if not filename:
-                        _, _, *key_prefix = [ s for s in old_infile.split("/") if s ]
-                        filename = key_prefix[-1]
-                new_infiles.append(f"{dest / filename}")
+            new_infiles: List[str] = [f"{dest}"]
+
 
             new_setup = setup.derive(
                 {

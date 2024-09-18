@@ -24,13 +24,12 @@ from pyflexplot import CONFIG
 
 _LOGGER = logging.getLogger(__name__)
 
-def expand_key(key: str, ens_member_ids: tuple[int, ...] | None) -> list[str]:
-    """Expand a key pattern into multiple S3 object
-      keys using ensemble member identifiers."""
+def expand_key(key: str, ens_member_id: int | None) -> str:
+    """Expand a s3 key or file pattern using ensemble member identifier."""
 
-    if not ens_member_ids:
+    if ens_member_id is None:
         raise ValueError(
-            f"Must provide list of ensemble members as argument to expand key {key}.")
+            f"Must provide ensemble member id as argument to expand key {key}.")
 
     search_patterns = ["{ens_member:03}", "{ens_member:03d}"]
 
@@ -41,9 +40,9 @@ def expand_key(key: str, ens_member_ids: tuple[int, ...] | None) -> list[str]:
 
     for pattern in search_patterns:
         if pattern in key:
-            return [key.replace(pattern, f"{i:03}") for i in ens_member_ids]
+            return key.replace(pattern, f"{ens_member_id:03}")
 
-    return []
+    return key
 
 def split_s3_uri(infile: str) -> tuple[str, str, str]:
     """Split an S3 URI into bucket name, key, and filename."""
@@ -60,16 +59,16 @@ def split_s3_uri(infile: str) -> tuple[str, str, str]:
     return bucket_name, key, filename
 
 def download_key_from_bucket(key: str,
-                             dst_dir: Path,
+                             dest: Path,
                              bucket: Bucket = CONFIG.main.aws.s3.input,
-                             filename: str | None = None) -> Path:
+                             ) -> Path:
     """ 
-    Download objects with key from S3 bucket.
-    Filename of resulting local file is the value of the key.
+    Download object from S3 bucket.
+    Filename of resulting local file is formatted value of the key.
 
     Args:
-        dst_dir: Parent directory to download file to.
-
+        key: S3 object key
+        dest: Path to download file to.
         bucket: S3 bucket from where data will be fetched.
     """
 
@@ -80,22 +79,20 @@ def download_key_from_bucket(key: str,
                                                 'mode': 'standard'
                                             })
                                         )
+    # Make directory if not existing
+    if not os.path.exists( dest.parent ):
+        os.makedirs( dest.parent )
 
-    if not os.path.exists( dst_dir ):
-        os.makedirs( dst_dir )
 
-    if not filename:
-        filename = key.split('/')[-1]
+    # Download object
+    _LOGGER.info('Downloading %s from bucket %s to %s', key, bucket.name, dest)
 
-    path = dst_dir / filename
-    if not os.path.exists( path.parent ):
-        os.makedirs( path.parent )
-    _LOGGER.info('Downloading %s from bucket %s to %s', key, bucket.name, path)
-    with open(path, 'wb') as data:
+    with open(dest, 'wb') as data:
         client.download_fileobj(bucket.name, key, data)
-    _LOGGER.debug('Download complete: %s', key, path)
 
-    return path
+    _LOGGER.info('Finished downloading %s from bucket %s to %s', key, bucket.name, dest)
+
+    return dest
 
 
 def upload_outpaths_to_s3(upload_outpaths: list[str],
