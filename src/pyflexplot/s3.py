@@ -83,7 +83,10 @@ def download_key_from_bucket(key: str,
     if not os.path.exists( dest.parent ):
         os.makedirs( dest.parent )
 
+
     # Download object
+    _LOGGER.info('Downloading %s from bucket %s to %s', key, bucket.name, dest)
+
     with open(dest, 'wb') as data:
         client.download_fileobj(bucket.name, key, data)
 
