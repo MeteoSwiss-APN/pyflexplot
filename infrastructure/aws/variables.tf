@@ -11,7 +11,7 @@ variable "image_tag" {
 }
 
 locals {
-  service_name     = "flexpart-cosmo-pyflexplot"
-  service_name_tag = "flexpart-cosmo-pyflexplot"
+  service_name     = "dispersionmodelling-flexpart-cosmo-pyflexplot"
+  service_name_tag = "dispersionmodelling-flexpart-cosmo-pyflexplot"
   resource_suffix  = "-${var.environment}"
 }
