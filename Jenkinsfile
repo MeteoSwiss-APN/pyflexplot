@@ -86,11 +86,11 @@ pipeline {
 
                     withVault(
                         configuration: [vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
-                                        vaultCredentialId: 'flexpart-cosmo-approle',
+                                        vaultCredentialId: 'dispersionmodelling-approle',
                                         engineVersion: 2],
                         vaultSecrets: [
                             [
-                                path: "flexpart-cosmo/${params.environment}-secrets", engineVersion: 2, secretValues: [
+                                path: "dispersionmodelling/${params.environment}-secrets", engineVersion: 2, secretValues: [
                                     [envVar: 'AWS_ACCOUNT_ID', vaultKey: 'aws-account-id']
                                 ]
                             ]
@@ -281,11 +281,11 @@ pipeline {
             steps {
                 withVault(
                     configuration: [vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
-                                    vaultCredentialId: 'flexpart-cosmo-approle',
+                                    vaultCredentialId: 'dispersionmodelling-approle',
                                     engineVersion: 2],
                     vaultSecrets: [
                         [
-                            path: "flexpart-cosmo/${params.environment}-secrets", engineVersion: 2, secretValues: [
+                            path: "dispersionmodelling/${params.environment}-secrets", engineVersion: 2, secretValues: [
                                 [envVar: 'TF_TOKEN_app_terraform_io', vaultKey: 'terraform-token'],
                                 [envVar: 'TF_WORKSPACE', vaultKey: 'terraform-workspace-pyflexplot'],
                                 [envVar: 'AWS_ACCESS_KEY_ID', vaultKey: 'jenkins-aws-access-key'],
