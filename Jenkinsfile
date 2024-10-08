@@ -9,7 +9,7 @@ class Globals {
     static final String IMAGE_REPO = 'docker-intern-nexus.meteoswiss.ch'
     static final String IMAGE_NAME = 'docker-intern-nexus.meteoswiss.ch/flexpart-cosmo/pyflexplot'
 
-    static final String AWS_IMAGE_NAME = 'mch-meteoswiss-flexpart-cosmo-pyflexplot-repository'
+    static final String AWS_IMAGE_NAME = 'mch-meteoswiss-dispersionmodelling-flexpart-cosmo-pyflexplot-repository'
     static final String AWS_REGION = 'eu-central-2'
 
     // sets the pipeline to execute all steps related to building the service
@@ -58,7 +58,7 @@ pipeline {
                description: 'Build type',
                name: 'buildChoice')
 
-        choice(choices: ['flexpart-cosmo-devt'],
+        choice(choices: ['devt', 'depl', 'prod'],
                description: 'Environment',
                name: 'environment')
     }
@@ -82,15 +82,15 @@ pipeline {
                 script {
                     echo 'Starting with Preflight'
 
-                    Globals.deployEnv = params.environment[-4..-1]
+                    Globals.deployEnv = params.environment
 
                     withVault(
                         configuration: [vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
-                                        vaultCredentialId: 'flexpart-cosmo-approle',
+                                        vaultCredentialId: 'dispersionmodelling-approle',
                                         engineVersion: 2],
                         vaultSecrets: [
                             [
-                                path: "flexpart-cosmo/${params.environment}-secrets", engineVersion: 2, secretValues: [
+                                path: "dispersionmodelling/dispersionmodelling-${params.environment}-secrets", engineVersion: 2, secretValues: [
                                     [envVar: 'AWS_ACCOUNT_ID', vaultKey: 'aws-account-id']
                                 ]
                             ]
@@ -281,11 +281,11 @@ pipeline {
             steps {
                 withVault(
                     configuration: [vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
-                                    vaultCredentialId: 'flexpart-cosmo-approle',
+                                    vaultCredentialId: 'dispersionmodelling-approle',
                                     engineVersion: 2],
                     vaultSecrets: [
                         [
-                            path: "flexpart-cosmo/${params.environment}-secrets", engineVersion: 2, secretValues: [
+                            path: "dispersionmodelling/dispersionmodelling-${params.environment}-secrets", engineVersion: 2, secretValues: [
                                 [envVar: 'TF_TOKEN_app_terraform_io', vaultKey: 'terraform-token'],
                                 [envVar: 'TF_WORKSPACE', vaultKey: 'terraform-workspace-pyflexplot'],
                                 [envVar: 'AWS_ACCESS_KEY_ID', vaultKey: 'jenkins-aws-access-key'],
