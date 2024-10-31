@@ -41,9 +41,9 @@ from pyflexplot.setups.plot_setup import PlotSetupGroup
 from pyflexplot.setups.setup_file import SetupFile
 from pyflexplot.utils.logging import log
 from pyflexplot.s3 import (
-    download_key_from_bucket, 
+    download_key_from_bucket,
     split_s3_uri,
-    expand_key, 
+    expand_key,
     upload_outpaths_to_s3)
 from pyflexplot.config.service_settings import Bucket
 from pyflexplot import CONFIG
@@ -160,6 +160,8 @@ def main(
                 log(dbg=f"remove {path}")
                 Path(path).unlink()
 
+    remaining_paths = [item for item in all_out_file_paths if item not in redundant_shape_files]
+
     if s3_dest:
         bucket_name, _, _ = split_s3_uri(s3_dest)
         # Take the bucket region and retries from CONFIG
@@ -167,7 +169,7 @@ def main(
         bucket = CONFIG.main.aws.s3.output
         bucket.name = bucket_name
         upload_outpaths_to_s3(
-            all_out_file_paths,
+            remaining_paths,
             setup_groups[0]._setups[0].model,
             bucket=bucket)
 
@@ -182,8 +184,8 @@ def main(
             os.rmdir(dir_path)
 
     if open_cmd:
-        log(vbs=f"open {len(all_out_file_paths)} plots:")
-        open_plots(open_cmd, all_out_file_paths, dry_run)
+        log(vbs=f"open {len(remaining_paths)} plots:")
+        open_plots(open_cmd, remaining_paths, dry_run)
 
     return 0
 
