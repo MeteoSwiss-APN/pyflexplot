@@ -160,7 +160,7 @@ def main(
                 log(dbg=f"remove {path}")
                 Path(path).unlink()
 
-    remaining_paths = [item for item in all_out_file_paths if item not in redundant_shape_files]
+    items_in_dest = [str(file) for file in Path(dest_dir).iterdir() if file.is_file()]
 
     if s3_dest:
         bucket_name, _, _ = split_s3_uri(s3_dest)
@@ -169,7 +169,7 @@ def main(
         bucket = CONFIG.main.aws.s3.output
         bucket.name = bucket_name
         upload_outpaths_to_s3(
-            remaining_paths,
+            items_in_dest,
             setup_groups[0]._setups[0].model,
             bucket=bucket)
 
@@ -184,8 +184,8 @@ def main(
             os.rmdir(dir_path)
 
     if open_cmd:
-        log(vbs=f"open {len(remaining_paths)} plots:")
-        open_plots(open_cmd, remaining_paths, dry_run)
+        log(vbs=f"open {len(all_out_file_paths)} plots:")
+        open_plots(open_cmd, all_out_file_paths, dry_run)
 
     return 0
 
