@@ -160,7 +160,7 @@ def main(
                 log(dbg=f"remove {path}")
                 Path(path).unlink()
 
-    items_in_dest = [file for file in Path(dest_dir).iterdir() if file.is_file()]
+    items_in_dest = [str(file) for file in Path(dest_dir).iterdir() if file.is_file()]
 
     if s3_dest:
         bucket_name, _, _ = split_s3_uri(s3_dest)
