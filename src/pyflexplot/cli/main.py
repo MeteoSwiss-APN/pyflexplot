@@ -184,8 +184,8 @@ def main(
             os.rmdir(dir_path)
 
     if open_cmd:
-        log(vbs=f"open {len(remaining_paths)} plots:")
-        open_plots(open_cmd, remaining_paths, dry_run)
+        log(vbs=f"open {len(all_out_file_paths)} plots:")
+        open_plots(open_cmd, all_out_file_paths, dry_run)
 
     return 0
 
