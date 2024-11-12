@@ -7,10 +7,12 @@ class Globals {
     // constants
     static final String PROJECT = 'pyflexplot'
     static final String IMAGE_REPO = 'docker-intern-nexus.meteoswiss.ch'
-    static final String IMAGE_NAME = 'docker-intern-nexus.meteoswiss.ch/flexpart-cosmo/pyflexplot'
+    static final String IMAGE_NAME = 'docker-intern-nexus.meteoswiss.ch/numericalweatherpredictions/dispersionmodelling/flexpart-ifs/pyflexplot'
 
-    static final String AWS_IMAGE_NAME = 'mch-meteoswiss-dispersionmodelling-flexpart-cosmo-pyflexplot-repository'
+    static final String AWS_IMAGE_NAME = 'numericalweatherpredictions/dispersionmodelling/flexpart-ifs/pyflexplot'
     static final String AWS_REGION = 'eu-central-2'
+
+    static final String AWS_ECR_REPO = '493666016161.dkr.ecr.eu-central-2.amazonaws.com'
 
     // sets the pipeline to execute all steps related to building the service
     static boolean build = false
@@ -20,6 +22,9 @@ class Globals {
 
     // sets the pipeline to execute all steps related to releasing the service
     static boolean release = false
+
+    // sets the pipeline to execute all steps related to create and publish artifacts
+    static boolean publishArtifacts = false
 
     // sets the pipeline to execute all steps related to deployment of the service
     static boolean deploy = false
@@ -54,13 +59,14 @@ pipeline {
     agent { label 'podman' }
 
     parameters {
-        choice(choices: ['Build', 'Deploy', 'Release', 'Restart', 'Delete', 'Trivy-Scan'],
+        choice(choices: ['Build', 'Publish Artifacts',  'Deploy', 'Release', 'Restart', 'Delete', 'Trivy-Scan'],
                description: 'Build type',
                name: 'buildChoice')
 
         choice(choices: ['devt', 'depl', 'prod'],
                description: 'Environment',
                name: 'environment')
+        booleanParam(name: 'PUSH_IMAGES_TO_ECR', defaultValue: false, description: 'Push images to ECR?')
     }
 
     options {
@@ -74,6 +80,8 @@ pipeline {
 
     environment {
         scannerHome = tool name: 'Sonarqube-certs-PROD', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+        PATH = "/opt/maker/tools/aws:$PATH"
+        TAG = "${sh(script: "echo `date +%g%m.$GIT_COMMIT`", returnStdout: true).trim()}"
     }
 
     stages {
@@ -100,6 +108,9 @@ pipeline {
                             case 'Build':
                                 Globals.build = true
                                 break
+                            case 'Publish Artifacts':
+                                Globals.publishArtifacts = true
+                                break
                             case 'Deploy':
                                 Globals.deploy = true
                                 break
@@ -118,7 +129,7 @@ pipeline {
                                 break
                         }
 
-                        if (Globals.build || Globals.deploy || Globals.runTrivyScan) {
+                        if (Globals.build || Globals.publishArtifacts || Globals.deploy || Globals.runTrivyScan) {
                             echo 'Starting with calculating version'
                             def shortBranchName = env.BRANCH_NAME.replaceAll("[^a-zA-Z0-9]+", "").take(30).toLowerCase()
                             try {
@@ -132,10 +143,11 @@ pipeline {
                                 Globals.imageTag = "${Globals.IMAGE_NAME}:latest"
                             } else {
                                 Globals.imageTag = "${Globals.IMAGE_NAME}:${shortBranchName}"
-                            }
-                            Globals.awsEcrRepo = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
-                            Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.AWS_IMAGE_NAME}-${Globals.deployEnv}:${shortBranchName}"
-                            echo "Using container version ${Globals.imageTag}"
+                            } 
+
+                            Globals.awsEcrRepo = "493666016161.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
+                            Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.AWS_IMAGE_NAME}:${TAG}"
+                            echo "Using container version ${Globals.awsEcrImageTag}"
                             echo "Using awsEcrRepo ${Globals.awsEcrRepo}"
                         }
                     }
@@ -148,11 +160,11 @@ pipeline {
             steps {
                 echo "Starting with Build image"
                 sh """
-                podman build --pull --build-arg VERSION=${Globals.version} --target tester -t ${Globals.imageTag}-tester .
+                podman build --pull --build-arg VERSION=${Globals.version} --target tester -t ${Globals.awsEcrImageTag}-tester .
                 mkdir -p test_reports
                 """
                 echo "Starting with unit-testing including coverage"
-                sh "podman run --rm -v \$(pwd)/test_reports:/src/app-root/test_reports ${Globals.imageTag}-tester sh -c '. ./test_ci.sh && run_tests_with_coverage'"
+                sh "podman run --rm -v \$(pwd)/test_reports:/src/app-root/test_reports ${Globals.awsEcrImageTag}-tester sh -c '. ./test_ci.sh && run_tests_with_coverage'"
             }
             post {
                 always {
@@ -167,11 +179,11 @@ pipeline {
             steps {
                 script {
                     echo("---- LYNT ----")
-                    sh "podman run --rm -v \$(pwd)/test_reports:/src/app-root/test_reports ${Globals.imageTag}-tester sh -c '. ./test_ci.sh && run_pylint'"
+                    sh "podman run --rm -v \$(pwd)/test_reports:/src/app-root/test_reports ${Globals.awsEcrImageTag}-tester sh -c '. ./test_ci.sh && run_pylint'"
 
                     try {
                         echo("---- TYPING CHECK ----")
-                        sh "podman run --rm -v \$(pwd)/test_reports:/src/app-root/test_reports ${Globals.imageTag}-tester sh -c '. ./test_ci.sh && run_mypy'"
+                        sh "podman run --rm -v \$(pwd)/test_reports:/src/app-root/test_reports ${Globals.awsEcrImageTag}-tester sh -c '. ./test_ci.sh && run_mypy'"
                         recordIssues(qualityGates: [[threshold: 10, type: 'TOTAL', unstable: false]], tools: [myPy(pattern: 'test_reports/mypy.log')])
                     }
                     catch (err) {
@@ -212,37 +224,57 @@ pipeline {
         }
 
         stage('Create Artifacts') {
-            when { expression { Globals.build || Globals.deploy} }
+            when { expression { Globals.build || Globals.publishArtifacts || Globals.deploy} }
             steps {
                 script {
-                    sh "podman build --pull --target runner --build-arg VERSION=${Globals.version} -t ${Globals.imageTag} ."
+                    sh """
+                    podman build --pull --target runner --build-arg VERSION=${Globals.version} -t ${Globals.awsEcrImageTag} .
+                    """
                 }
             }
         }
 
         stage('Publish Artifacts') {
-            when { expression { Globals.deploy } }
+            when { expression { Globals.publishArtifacts || Globals.deploy } }
             environment {
                 REGISTRY_AUTH_FILE = "$workspace/.containers/auth.json"
+                PATH = "$HOME/tools/openshift-client-tools:$PATH"
             }
             steps {
                 script {
-                    if (expression { Globals.deploy }) {
+                    if (Globals.deploy || Globals.publishArtifacts) {
                         echo "---- PUBLISH IMAGE ----"
-                        withCredentials([usernamePassword(credentialsId: 'openshift-nexus',
-                            passwordVariable: 'NXPASS', usernameVariable: 'NXUSER')]) {
-                            sh """
-                            echo $NXPASS | podman login ${Globals.IMAGE_REPO} -u $NXUSER --password-stdin
-                            podman push ${Globals.imageTag}
-                            """
+                        if (params.PUSH_IMAGES_TO_ECR) {
+                            withCredentials([usernamePassword(credentialsId: 'aws-icon-sandbox',
+                                                            passwordVariable: 'AWS_SECRET_ACCESS_KEY',
+                                                            usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
+                                echo "---- PUBLISH IMAGE TO ECR ----"
+                                sh """
+                                #!/bin/bash
+
+                                if test -f /etc/ssl/certs/ca-certificates.crt; then
+                                    export AWS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+                                else
+                                    export AWS_CA_BUNDLE=/etc/ssl/certs/ca-bundle.crt
+                                fi
+                                aws ecr get-login-password --region eu-central-2 | podman login --username AWS --password-stdin --cert-dir /etc/ssl/certs ${Globals.awsEcrRepo}
+
+                                podman push --cert-dir /etc/ssl/certs ${Globals.awsEcrImageTag}
+                                """
+                            }
                         }
                     }
                 }
             }
             post {
                 cleanup {
-                    sh "podman logout docker-intern-nexus.meteoswiss.ch || true"
-                    sh 'oc logout || true'
+                    script {
+                        sh "podman logout docker-intern-nexus.meteoswiss.ch || true"
+                        if (params.PUSH_IMAGES_TO_ECR) {
+                            sh "podman logout ${Globals.awsEcrRepo} || true"
+                        }
+                        sh 'oc logout || true'
+                    }
                 }
             }
         }
@@ -261,7 +293,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'openshift-nexus',
                     passwordVariable: 'NXPASS', usernameVariable: 'NXUSER')]) {
                     sh "echo $NXPASS | podman login ${Globals.IMAGE_REPO} -u $NXUSER --password-stdin"
-                    runDevScript("test/trivyscanner.py ${Globals.imageTag}")
+                    runDevScript("test/trivyscanner.py ${Globals.awsEcrImageTag}")
                 }
             }
             post {
@@ -317,8 +349,7 @@ pipeline {
 
     post {
         cleanup {
-            sh "podman image rm -f ${Globals.imageTag}-tester || true"
-            sh "podman image rm -f ${Globals.imageTag} || true"
+            sh "podman image rm -f ${Globals.awsEcrImageTag}-tester || true"
             sh "podman image rm -f ${Globals.awsEcrImageTag} || true"
         }
         failure {
