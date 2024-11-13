@@ -94,7 +94,7 @@ def wrap_pdb(fct):
             if isinstance(e, click.exceptions.Exit):
                 if e.exit_code == 0:  # pylint: disable=E1101  # no-member
                     sys.exit(0)
-            pdb = __import__("ipdb")  # trick pre-commit hook "debug-statements"
+            pdb = __import__("ipdb")
             traceback.print_exc()
             click.echo()
             pdb.post_mortem()
