@@ -3,10 +3,6 @@ terraform {
 
   cloud {
     organization = "meteoswiss"
-
-    workspaces {
-      name = "flexpart-cosmo-pyflexplot-devt"
-    }
   }
 
   required_providers {
