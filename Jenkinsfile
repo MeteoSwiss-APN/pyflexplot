@@ -7,12 +7,10 @@ class Globals {
     // constants
     static final String PROJECT = 'pyflexplot'
     static final String IMAGE_REPO = 'docker-intern-nexus.meteoswiss.ch'
-    static final String IMAGE_NAME = 'docker-intern-nexus.meteoswiss.ch/numericalweatherpredictions/dispersionmodelling/flexpart-ifs/pyflexplot'
+    static final String IMAGE_NAME = 'docker-intern-nexus.meteoswiss.ch/numericalweatherpredictions/dispersionmodelling/pyflexplot'
 
-    static final String AWS_IMAGE_NAME = 'numericalweatherpredictions/dispersionmodelling/flexpart-ifs/pyflexplot'
+    static final String AWS_IMAGE_NAME = 'numericalweatherpredictions/dispersionmodelling/pyflexplot'
     static final String AWS_REGION = 'eu-central-2'
-
-    static final String AWS_ECR_REPO = '493666016161.dkr.ecr.eu-central-2.amazonaws.com'
 
     // sets the pipeline to execute all steps related to building the service
     static boolean build = false
@@ -22,9 +20,6 @@ class Globals {
 
     // sets the pipeline to execute all steps related to releasing the service
     static boolean release = false
-
-    // sets the pipeline to execute all steps related to create and publish artifacts
-    static boolean publishArtifacts = false
 
     // sets the pipeline to execute all steps related to deployment of the service
     static boolean deploy = false
@@ -52,6 +47,12 @@ class Globals {
 
     // the target environment to deploy (e.g., devt, depl, prod)
     static String deployEnv = ''
+
+    // the Vault credititalId
+    static String vaultCredentialId = ''
+
+    // the Vault path
+    static String vaultPath = ''
 }
 
 @Library('dev_tools@main') _
@@ -59,14 +60,17 @@ pipeline {
     agent { label 'podman' }
 
     parameters {
-        choice(choices: ['Build', 'Publish Artifacts',  'Deploy', 'Release', 'Restart', 'Delete', 'Trivy-Scan'],
+        choice(choices: ['Build', 'Deploy', 'Release', 'Restart', 'Delete', 'Trivy-Scan'],
                description: 'Build type',
                name: 'buildChoice')
 
         choice(choices: ['devt', 'depl', 'prod'],
                description: 'Environment',
                name: 'environment')
-        booleanParam(name: 'PUSH_IMAGES_TO_ECR', defaultValue: false, description: 'Push images to ECR?')
+
+        choice(choices: ['aws-dispersionmodelling-devt', 'aws-icon-sandbox'],
+               description: 'AWS Account',
+               name: 'awsAccount')
     }
 
     options {
@@ -80,8 +84,6 @@ pipeline {
 
     environment {
         scannerHome = tool name: 'Sonarqube-certs-PROD', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-        PATH = "/opt/maker/tools/aws:$PATH"
-        TAG = "${sh(script: "echo `date +%g%m.$GIT_COMMIT`", returnStdout: true).trim()}"
     }
 
     stages {
@@ -92,13 +94,22 @@ pipeline {
 
                     Globals.deployEnv = params.environment
 
+
+                    if (params.awsAccount == 'aws-dispersionmodelling-devt') {
+                        vaultCredentialId = "dispersionmodelling-approle"
+                        vaultPath = "dispersionmodelling/dispersionmodelling-${params.environment}-secrets"
+                    } else if (params.awsAccount == 'aws-icon-sandbox') {
+                        vaultCredentialId = "iwf2-poc-approle"
+                        vaultPath = "iwf2-poc/dispersionmodelling-${params.environment}-secrets"
+                    }
+
                     withVault(
                         configuration: [vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
-                                        vaultCredentialId: 'dispersionmodelling-approle',
+                                        vaultCredentialId: vaultCredentialId,
                                         engineVersion: 2],
                         vaultSecrets: [
                             [
-                                path: "dispersionmodelling/dispersionmodelling-${params.environment}-secrets", engineVersion: 2, secretValues: [
+                                path: vaultPath, engineVersion: 2, secretValues: [
                                     [envVar: 'AWS_ACCOUNT_ID', vaultKey: 'aws-account-id']
                                 ]
                             ]
@@ -107,9 +118,6 @@ pipeline {
                         switch (params.buildChoice) {
                             case 'Build':
                                 Globals.build = true
-                                break
-                            case 'Publish Artifacts':
-                                Globals.publishArtifacts = true
                                 break
                             case 'Deploy':
                                 Globals.deploy = true
@@ -129,7 +137,7 @@ pipeline {
                                 break
                         }
 
-                        if (Globals.build || Globals.publishArtifacts || Globals.deploy || Globals.runTrivyScan) {
+                        if (Globals.build || Globals.deploy || Globals.runTrivyScan) {
                             echo 'Starting with calculating version'
                             def shortBranchName = env.BRANCH_NAME.replaceAll("[^a-zA-Z0-9]+", "").take(30).toLowerCase()
                             try {
@@ -143,11 +151,10 @@ pipeline {
                                 Globals.imageTag = "${Globals.IMAGE_NAME}:latest"
                             } else {
                                 Globals.imageTag = "${Globals.IMAGE_NAME}:${shortBranchName}"
-                            } 
-
-                            Globals.awsEcrRepo = "493666016161.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
-                            Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.AWS_IMAGE_NAME}:${TAG}"
-                            echo "Using container version ${Globals.awsEcrImageTag}"
+                            }
+                            Globals.awsEcrRepo = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
+                            Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.AWS_IMAGE_NAME}-${Globals.deployEnv}:${shortBranchName}"
+                            echo "Using container version ${Globals.imageTag}"
                             echo "Using awsEcrRepo ${Globals.awsEcrRepo}"
                         }
                     }
@@ -160,11 +167,11 @@ pipeline {
             steps {
                 echo "Starting with Build image"
                 sh """
-                podman build --pull --build-arg VERSION=${Globals.version} --target tester -t ${Globals.awsEcrImageTag}-tester .
+                podman build --pull --build-arg VERSION=${Globals.version} --target tester -t ${Globals.imageTag}-tester .
                 mkdir -p test_reports
                 """
                 echo "Starting with unit-testing including coverage"
-                sh "podman run --rm -v \$(pwd)/test_reports:/src/app-root/test_reports ${Globals.awsEcrImageTag}-tester sh -c '. ./test_ci.sh && run_tests_with_coverage'"
+                sh "podman run --rm -v \$(pwd)/test_reports:/src/app-root/test_reports ${Globals.imageTag}-tester sh -c '. ./test_ci.sh && run_tests_with_coverage'"
             }
             post {
                 always {
@@ -179,11 +186,11 @@ pipeline {
             steps {
                 script {
                     echo("---- LYNT ----")
-                    sh "podman run --rm -v \$(pwd)/test_reports:/src/app-root/test_reports ${Globals.awsEcrImageTag}-tester sh -c '. ./test_ci.sh && run_pylint'"
+                    sh "podman run --rm -v \$(pwd)/test_reports:/src/app-root/test_reports ${Globals.imageTag}-tester sh -c '. ./test_ci.sh && run_pylint'"
 
                     try {
                         echo("---- TYPING CHECK ----")
-                        sh "podman run --rm -v \$(pwd)/test_reports:/src/app-root/test_reports ${Globals.awsEcrImageTag}-tester sh -c '. ./test_ci.sh && run_mypy'"
+                        sh "podman run --rm -v \$(pwd)/test_reports:/src/app-root/test_reports ${Globals.imageTag}-tester sh -c '. ./test_ci.sh && run_mypy'"
                         recordIssues(qualityGates: [[threshold: 10, type: 'TOTAL', unstable: false]], tools: [myPy(pattern: 'test_reports/mypy.log')])
                     }
                     catch (err) {
@@ -224,57 +231,38 @@ pipeline {
         }
 
         stage('Create Artifacts') {
-            when { expression { Globals.build || Globals.publishArtifacts || Globals.deploy} }
+            when { expression { Globals.build || Globals.deploy} }
             steps {
                 script {
-                    sh """
-                    podman build --pull --target runner --build-arg VERSION=${Globals.version} -t ${Globals.awsEcrImageTag} .
-                    """
+                    sh "podman build --pull --target runner --build-arg VERSION=${Globals.version} -t ${Globals.imageTag} ."
                 }
             }
         }
 
         stage('Publish Artifacts') {
-            when { expression { Globals.publishArtifacts || Globals.deploy } }
+            when { expression { Globals.deploy } }
             environment {
                 REGISTRY_AUTH_FILE = "$workspace/.containers/auth.json"
                 PATH = "$HOME/tools/openshift-client-tools:$PATH"
             }
             steps {
                 script {
-                    if (Globals.deploy || Globals.publishArtifacts) {
+                    if (expression { Globals.deploy }) {
                         echo "---- PUBLISH IMAGE ----"
-                        if (params.PUSH_IMAGES_TO_ECR) {
-                            withCredentials([usernamePassword(credentialsId: 'aws-icon-sandbox',
-                                                            passwordVariable: 'AWS_SECRET_ACCESS_KEY',
-                                                            usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
-                                echo "---- PUBLISH IMAGE TO ECR ----"
-                                sh """
-                                #!/bin/bash
-
-                                if test -f /etc/ssl/certs/ca-certificates.crt; then
-                                    export AWS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-                                else
-                                    export AWS_CA_BUNDLE=/etc/ssl/certs/ca-bundle.crt
-                                fi
-                                aws ecr get-login-password --region eu-central-2 | podman login --username AWS --password-stdin --cert-dir /etc/ssl/certs ${Globals.awsEcrRepo}
-
-                                podman push --cert-dir /etc/ssl/certs ${Globals.awsEcrImageTag}
-                                """
-                            }
+                        withCredentials([usernamePassword(credentialsId: 'openshift-nexus',
+                            passwordVariable: 'NXPASS', usernameVariable: 'NXUSER')]) {
+                            sh """
+                            echo $NXPASS | podman login ${Globals.IMAGE_REPO} -u $NXUSER --password-stdin
+                            podman push ${Globals.imageTag}
+                            """
                         }
                     }
                 }
             }
             post {
                 cleanup {
-                    script {
-                        sh "podman logout docker-intern-nexus.meteoswiss.ch || true"
-                        if (params.PUSH_IMAGES_TO_ECR) {
-                            sh "podman logout ${Globals.awsEcrRepo} || true"
-                        }
-                        sh 'oc logout || true'
-                    }
+                    sh "podman logout docker-intern-nexus.meteoswiss.ch || true"
+                    sh 'oc logout || true'
                 }
             }
         }
@@ -293,7 +281,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'openshift-nexus',
                     passwordVariable: 'NXPASS', usernameVariable: 'NXUSER')]) {
                     sh "echo $NXPASS | podman login ${Globals.IMAGE_REPO} -u $NXUSER --password-stdin"
-                    runDevScript("test/trivyscanner.py ${Globals.awsEcrImageTag}")
+                    runDevScript("test/trivyscanner.py ${Globals.imageTag}")
                 }
             }
             post {
@@ -313,13 +301,11 @@ pipeline {
             steps {
                 withVault(
                     configuration: [vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
-                                    vaultCredentialId: 'dispersionmodelling-approle',
+                                    vaultCredentialId: Globals.vaultCredentialId,
                                     engineVersion: 2],
                     vaultSecrets: [
                         [
-                            path: "dispersionmodelling/dispersionmodelling-${params.environment}-secrets", engineVersion: 2, secretValues: [
-                                [envVar: 'TF_TOKEN_app_terraform_io', vaultKey: 'terraform-token'],
-                                [envVar: 'TF_WORKSPACE', vaultKey: 'terraform-workspace-pyflexplot'],
+                            path: Globals.vaultPath, engineVersion: 2, secretValues: [
                                 [envVar: 'AWS_ACCESS_KEY_ID', vaultKey: 'jenkins-aws-access-key'],
                                 [envVar: 'AWS_SECRET_ACCESS_KEY', vaultKey: 'jenkins-aws-secret-key']
                             ]
@@ -332,9 +318,6 @@ pipeline {
                         else
                             export AWS_CA_BUNDLE=/etc/ssl/certs/ca-bundle.crt
                         fi
-                        terraform -chdir=infrastructure/aws init -no-color
-                        terraform -chdir=infrastructure/aws validate -no-color
-                        terraform -chdir=infrastructure/aws apply -var environment=${Globals.deployEnv} -auto-approve
 
                         aws ecr get-login-password --region ${Globals.AWS_REGION} | podman login -u AWS --password-stdin ${Globals.awsEcrRepo}
                         podman build --pull --target runner --build-arg VERSION=${Globals.version} -t ${Globals.awsEcrImageTag} .
@@ -343,13 +326,13 @@ pipeline {
                 }
             }
         }
-
     }
 
 
     post {
         cleanup {
-            sh "podman image rm -f ${Globals.awsEcrImageTag}-tester || true"
+            sh "podman image rm -f ${Globals.imageTag}-tester || true"
+            sh "podman image rm -f ${Globals.imageTag} || true"
             sh "podman image rm -f ${Globals.awsEcrImageTag} || true"
         }
         failure {
