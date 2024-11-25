@@ -6,15 +6,11 @@ main:
         region: eu-central-2
         name: meteoswiss-flexpart-flexpart-output-dev
         endpoint_url: ""
-        s3_access_key: ""
-        s3_secret_key: ""
         retries: 10
       output:
         region: eu-central-2
         name: meteoswiss-flexpart-pyflexplot-output-dev
         endpoint_url: ""
-        s3_access_key: ""
-        s3_secret_key: ""
         retries: 10
   local:
     paths:

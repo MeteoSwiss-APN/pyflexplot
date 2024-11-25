@@ -73,7 +73,7 @@ def download_key_from_bucket(key: str,
         bucket: S3 bucket from where data will be fetched.
     """
 
-    client = _configure_s3_client(bucket)
+    client = _create_s3_client(bucket)
 
     # Make directory if not existing
     if not os.path.exists( dest.parent ):
@@ -102,7 +102,7 @@ def upload_outpaths_to_s3(upload_outpaths: list[str],
         raise ValueError("Model object must be provided to upload to S3, \
                          model name and base time are used in the object key.")
     try:
-        client = _configure_s3_client(bucket)
+        client = _create_s3_client(bucket)
 
         for outpath in upload_outpaths:
             key = f"{model.name}/{model.base_time}/{Path(outpath).name}"
@@ -145,23 +145,21 @@ def _retry_with_backoff(fn: Callable,
             time.sleep(sleep)
             x += 1
 
-def _configure_s3_client(bucket):
+def _create_s3_client(bucket):
     """
-    Configures the S3 client based on the bucket's platform.
+    Creates and configures the S3 client based on the bucket's endpoint.
 
     Args:
         bucket: An object containing bucket configuration attributes.
-                Must include 'name', 'retries' and optionally 'endpoint_url', 's3_access_key', and 's3_secret_key'.
+                Must include 'name', 'retries' and optionally 'endpoint_url'.
 
     Returns:
         A configured boto3 S3 client.
     """
-    common_config = Config(
-        retries={
-            'max_attempts': int(bucket.retries),
-            'mode': 'standard'
-        }
-    )
+    retries_config = {
+        'max_attempts': bucket.retries,
+        'mode': 'standard'
+    }
 
     # Check if endpoint_url is present to differentiate between AWS and other platforms
     if hasattr(bucket, 'endpoint_url') and bucket.endpoint_url.strip():
@@ -169,9 +167,7 @@ def _configure_s3_client(bucket):
         return boto3.Session().client(
             's3',
             endpoint_url=bucket.endpoint_url,
-            aws_access_key_id=bucket.s3_access_key,
-            aws_secret_access_key=bucket.s3_secret_key,
-            config=common_config
+            config=Config(retries=retries_config)
         )
     else:
         # AWS S3 configuration
@@ -179,9 +175,6 @@ def _configure_s3_client(bucket):
             's3',
             config=Config(
                 region_name=bucket.region,
-                retries={
-                    'max_attempts': int(bucket.retries),
-                    'mode': 'standard'
-                }
+                retries=retries_config
             )
         )
