@@ -8,7 +8,7 @@ model = "ICON-CH2-EPS"
 lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = true
-outfile = "ensemble_{ens_variable}_{plot_variable}_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+outfile = "forecast-iconch2eps-dispersion~{base_time}~{plot_variable}-{ens_variable}~{domain}~{release_site}~1~{time_step}.png"
 
 [_base._concentration]
 plot_variable = "concentration"
@@ -44,10 +44,10 @@ ens_param_thr = 0
 ens_variable = "probability"
 ens_param_thr = 0
 
-[_base._concentration."_probability+"."_multipanel_time+"]
-plot_type = "multipanel"
-multipanel_param = "time"
-time = [2, 4, 8, -1]
+# [_base._concentration."_probability+"."_multipanel_time+"]
+# plot_type = "multipanel"
+# multipanel_param = "time"
+# time = [2, 4, 8, -1]
 
 [_base._concentration._integr."_pctl95+"]
 ens_variable = "percentile"
@@ -59,17 +59,17 @@ ens_param_pctl = 95
 ens_variable = "percentile"
 ens_param_pctl = 95
 
-[_base._tot_deposition."_multipanel_pctl+"]
-plot_type = "multipanel"
-multipanel_param = "ens_param_pctl"
-ens_variable = "percentile"
-ens_param_pctl = [5, 50, 75, 95]
+# [_base._tot_deposition."_multipanel_pctl+"]
+# plot_type = "multipanel"
+# multipanel_param = "ens_param_pctl"
+# ens_variable = "percentile"
+# ens_param_pctl = [5, 50, 75, 95]
 
-[_base._concentration._integr."_multipanel_pctl+"]
-plot_type = "multipanel"
-multipanel_param = "ens_param_pctl"
-ens_variable = "percentile"
-ens_param_pctl = [5, 50, 75, 95]
+# [_base._concentration._integr."_multipanel_pctl+"]
+# plot_type = "multipanel"
+# multipanel_param = "ens_param_pctl"
+# ens_variable = "percentile"
+# ens_param_pctl = [5, 50, 75, 95]
 
 [_base._concentration._cloud]
 ens_param_mem_min = 2

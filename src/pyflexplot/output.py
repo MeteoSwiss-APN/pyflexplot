@@ -1,4 +1,5 @@
 """Output."""
+
 # Standard library
 import os
 import re
@@ -83,7 +84,7 @@ class FilePathFormatter:
         # Prepare base time
         base_time = self._format_time_step(
             cast(int, setup.model.base_time), setup.files.output_time_format
-        )[0]
+        )
 
         # Prepare plot variable
         plot_variable = setup.panels.collect_equal("plot_variable")
@@ -207,7 +208,7 @@ class FilePathFormatter:
                 formatted_key = "+".join([f"{{{f}}}".format(v) for v in val])
 
                 # Replace format key in the path by the just formatted string
-                start, end = path[: m.span()[0]], path[m.span()[1] :]
+                start, end = path[:m.span()[0]], path[m.span()[1]:]
                 path = f"{start}{formatted_key}{end}"
 
         # Check that all keys have been formatted
