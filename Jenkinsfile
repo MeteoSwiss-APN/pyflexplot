@@ -68,7 +68,7 @@ pipeline {
                description: 'Environment',
                name: 'environment')
 
-        choice(choices: ['aws-dispersionmodelling-devt', 'aws-icon-sandbox'],
+        choice(choices: ['aws-dispersionmodelling', 'aws-icon-sandbox'],
                description: 'AWS Account',
                name: 'awsAccount')
     }
@@ -84,6 +84,7 @@ pipeline {
 
     environment {
         scannerHome = tool name: 'Sonarqube-certs-PROD', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+        TF_WORKSPACE = "flexpart-cosmo-pyflexplot-${params.environment}"
     }
 
     stages {
@@ -95,21 +96,21 @@ pipeline {
                     Globals.deployEnv = params.environment
 
 
-                    if (params.awsAccount == 'aws-dispersionmodelling-devt') {
-                        vaultCredentialId = "dispersionmodelling-approle"
-                        vaultPath = "dispersionmodelling/dispersionmodelling-${params.environment}-secrets"
+                    if (params.awsAccount == 'aws-dispersionmodelling') {
+                        Globals.vaultCredentialId = "dispersionmodelling-approle"
+                        Globals.vaultPath = "dispersionmodelling/dispersionmodelling-${Globals.deployEnv}-secrets"
                     } else if (params.awsAccount == 'aws-icon-sandbox') {
-                        vaultCredentialId = "iwf2-poc-approle"
-                        vaultPath = "iwf2-poc/dispersionmodelling-${params.environment}-secrets"
+                        Globals.vaultCredentialId = "iwf2-poc-approle"
+                        Globals.vaultPath = "iwf2-poc/dispersionmodelling-${Globals.deployEnv}-secrets"
                     }
 
                     withVault(
                         configuration: [vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
-                                        vaultCredentialId: vaultCredentialId,
+                                        vaultCredentialId: Globals.vaultCredentialId,
                                         engineVersion: 2],
                         vaultSecrets: [
                             [
-                                path: vaultPath, engineVersion: 2, secretValues: [
+                                path: Globals.vaultPath, engineVersion: 2, secretValues: [
                                     [envVar: 'AWS_ACCOUNT_ID', vaultKey: 'aws-account-id']
                                 ]
                             ]
@@ -299,53 +300,82 @@ pipeline {
                 PATH = "/opt/maker/tools/terraform:/opt/maker/tools/aws:$PATH"
             }
             steps {
-                withVault(
-                    configuration: [vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
-                                    vaultCredentialId: Globals.vaultCredentialId,
-                                    engineVersion: 2],
-                    vaultSecrets: [
+                script {
+                    // Define Vault Secrets
+                    def baseVaultSecrets = [
                         [
-                            path: Globals.vaultPath, engineVersion: 2, secretValues: [
+                            path: Globals.vaultPath,
+                            engineVersion: 2,
+                            secretValues: [
                                 [envVar: 'AWS_ACCESS_KEY_ID', vaultKey: 'jenkins-aws-access-key'],
                                 [envVar: 'AWS_SECRET_ACCESS_KEY', vaultKey: 'jenkins-aws-secret-key']
                             ]
                         ]
                     ]
-                ) {
-                    sh """
-                        if test -f /etc/ssl/certs/ca-certificates.crt; then
-                            export AWS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-                        else
-                            export AWS_CA_BUNDLE=/etc/ssl/certs/ca-bundle.crt
-                        fi
 
-                        aws ecr get-login-password --region ${Globals.AWS_REGION} | podman login -u AWS --password-stdin ${Globals.awsEcrRepo}
-                        podman build --pull --target runner --build-arg VERSION=${Globals.version} -t ${Globals.awsEcrImageTag} .
-                        podman push ${Globals.awsEcrImageTag}
-                    """
+                    // Add Terraform secrets only for aws-dispersionmodelling
+                    def terraformSecrets = []
+                    if (params.awsAccount == 'aws-dispersionmodelling') {
+                        terraformSecrets = [
+                            [
+                                path: Globals.vaultPath,
+                                engineVersion: 2,
+                                secretValues: [
+                                    [envVar: 'TF_TOKEN_app_terraform_io', vaultKey: 'terraform-token'],
+                                ]
+                            ]
+                        ]
+                    }
+
+                    withVault(
+                        configuration: [
+                            vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
+                            vaultCredentialId: Globals.vaultCredentialId,
+                            engineVersion: 2
+                        ],
+                        vaultSecrets: baseVaultSecrets + terraformSecrets
+                    ) {
+                        sh """
+                            if test -f /etc/ssl/certs/ca-certificates.crt; then
+                                export AWS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+                            else
+                                export AWS_CA_BUNDLE=/etc/ssl/certs/ca-bundle.crt
+                            fi
+
+                            # Check if the account is aws-dispersionmodelling-devt
+                            if [ "${params.awsAccount}" = "aws-dispersionmodelling" ]; then
+                                terraform -chdir=infrastructure/aws init -no-color
+                                terraform -chdir=infrastructure/aws validate -no-color
+                                terraform -chdir=infrastructure/aws apply -var environment=${Globals.deployEnv} -auto-approve
+
+                            aws ecr get-login-password --region ${Globals.AWS_REGION} | podman login -u AWS --password-stdin ${Globals.awsEcrRepo}
+                            podman build --pull --target runner --build-arg VERSION=${Globals.version} -t ${Globals.awsEcrImageTag} .
+                            podman push ${Globals.awsEcrImageTag}
+                        """
+                    }
                 }
             }
-        }
-    }
 
 
-    post {
-        cleanup {
-            sh "podman image rm -f ${Globals.imageTag}-tester || true"
-            sh "podman image rm -f ${Globals.imageTag} || true"
-            sh "podman image rm -f ${Globals.awsEcrImageTag} || true"
-        }
-        failure {
-            echo 'Sending email'
-            sh 'df -h'
-            emailext(subject: "${currentBuild.fullDisplayName}: ${currentBuild.currentResult}",
-                attachLog: true,
-                attachmentsPattern: 'generatedFile.txt',
-                body: "Job '${env.JOB_NAME} #${env.BUILD_NUMBER}': ${env.BUILD_URL}",
-                recipientProviders: [requestor(), developers()])
-        }
-        success {
-            echo 'Build succeeded'
+            post {
+                cleanup {
+                    sh "podman image rm -f ${Globals.imageTag}-tester || true"
+                    sh "podman image rm -f ${Globals.imageTag} || true"
+                    sh "podman image rm -f ${Globals.awsEcrImageTag} || true"
+                }
+                failure {
+                    echo 'Sending email'
+                    sh 'df -h'
+                    emailext(subject: "${currentBuild.fullDisplayName}: ${currentBuild.currentResult}",
+                        attachLog: true,
+                        attachmentsPattern: 'generatedFile.txt',
+                        body: "Job '${env.JOB_NAME} #${env.BUILD_NUMBER}': ${env.BUILD_URL}",
+                        recipientProviders: [requestor(), developers()])
+                }
+                success {
+                    echo 'Build succeeded'
+                }
+            }
         }
     }
 }
