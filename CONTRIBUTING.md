@@ -54,7 +54,6 @@ Ready to contribute? Here's how to set up `pyflexplot` for local development.
     ```bash
     cd pyflexplot/
     poetry install
-    poetry run pre-commit install
     ```
 
 4. Create a branch for local development:
@@ -65,16 +64,18 @@ Ready to contribute? Here's how to set up `pyflexplot` for local development.
 
     Now you can make your changes locally.
 
-5. When you're done with a change, format and check the code using various installed tools like `black`, `isort`, `mypy`, `flake8` or `pylint`. Those that are set up as pre-commit hooks can be run together with:
+5. When you're done with a change, format and check the code using various installed tools like `isort`, `mypy` or `pylint`.
 
     ```bash
-    pre-commit run -a
+    poetry run pylint src/pyflexplot
+    poetry run mypy src/pyflexplot
+    poetry run isort src/pyflexplot
     ```
 
     Next, ensure that the code does what it is supposed to do by running the tests with pytest:
 
     ```bash
-    pytest
+    poetry run pytest
     ```
 
 6. Commit your changes and push your branch to GitHub:
@@ -100,8 +101,8 @@ Before you submit a pull request, check that it meets these guidelines:
 For a subset of tests or a specific test, run:
 
 ```bash
-pytest tests.test_pyflexplot
-pytest tests.test_pyflexplot/test_feature::test_edge_case
+poetry run pytest tests.test_pyflexplot
+poetry run pytest tests.test_pyflexplot/test_feature::test_edge_case
 ```
 
 ## Versioning
@@ -111,26 +112,6 @@ In order to release a new version of your project, follow these steps:
 - Make sure everything is committed, cleaned up and validating (duh!). Don't forget to keep track of the changes in `HISTORY.md`.
 - Increase the version number that is hardcoded in `pyproject.toml` (and only there) and commit.
 - Either create a (preferentially annotated) tag with `git tag`, or directly create a release on GitHub.
-
-## Project Structure
-
-Following is a description of the most important files and folders in the project in alphabetic order.
-
-- `docs/`: Documentation.
-- `jenkins/`: Jenkins setup.
-- `src/pyflexplot/`: Source code of the project package.
-- `tests/`: Unit tests of the project package; run with `pytest`.
-- `.gitignore`: Files and folders ignored by `git`.
-- `.pre-commit-config.yaml`: Configuration of pre-commit hooks, which are formatters and checkers run before a successful commit.
-- `AUTHORS.md`: Project authors.
-- `CONTRIBUTING.md`: Instructions on how to contribute to the project.
-- `HISTORY.md`: List of changes for each version of the project.
-- `LICENSE`: License of the project.
-- `MANIFEST.in`: Files installed alongside the source code.
-- `pyproject.toml`: Main package specification file, including build dependencies, metadata and the configurations of development tools like `black`, `pytest`, `mypy` etc.
-- `poetry.lock`: File containing all the dependency versions of pyflexplot.
-- `README.md`: Description of the project.
-- `USAGE.md`: Information on how to use the package.
 
 ## Managing dependencies
 
