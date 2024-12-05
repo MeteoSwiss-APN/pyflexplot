@@ -11,6 +11,7 @@ import os
 import logging
 import random
 import time
+import uuid
 from pathlib import Path
 from typing import Callable
 
@@ -83,7 +84,6 @@ def download_key_from_bucket(key: str,
     if not os.path.exists( dest.parent ):
         os.makedirs( dest.parent )
 
-
     # Download object
     _LOGGER.info('Downloading %s from bucket %s to %s', key, bucket.name, dest)
 
@@ -106,23 +106,29 @@ def upload_outpaths_to_s3(upload_outpaths: list[str],
         raise ValueError("Model object must be provided to upload to S3, \
                          model name and base time are used in the object key.")
     try:
-        client = boto3.Session().client('s3', config=Config(
-                                            region_name=bucket.region,
-                                            retries={
-                                                'max_attempts': int(bucket.retries),
-                                                'mode': 'standard'
-                                            })
-                                        )
+        sts_client = boto3.client('sts')
+        assumed_role = sts_client.assume_role(
+            RoleArn=str(bucket.roleArn),
+            RoleSessionName=f'pyflexplot_output_publisher_{str(uuid.uuid4())}'
+        )
+        Credentials = assumed_role['Credentials']
+        client = boto3.client(
+            's3',
+            aws_access_key_id=Credentials['AccessKeyId'],
+            aws_secret_access_key=Credentials['SecretAccessKey'],
+            aws_session_token=Credentials['SessionToken']
+        )
 
         for outpath in upload_outpaths:
             key = f"{model.name}/{model.base_time}/{Path(outpath).name}"
+            target_object_key = f"{bucket.object_prefix}/output/{key}"
             try:
                 _LOGGER.info("Uploading file: %s \
                              to bucket: %s \
                              with key: %s", outpath, bucket.name, key)
                 _retry_with_backoff(
                     client.upload_file,
-                    args=[outpath, bucket.name, key],
+                    args=[outpath, bucket.name, target_object_key],
                     retries=int(bucket.retries)
                     )
             except ClientError as e:
@@ -130,7 +136,6 @@ def upload_outpaths_to_s3(upload_outpaths: list[str],
     except Exception as err:
         _LOGGER.error('Error uploading paths to S3.')
         raise err
-
 
 def _retry_with_backoff(fn: Callable,
                         args: list | None = None,

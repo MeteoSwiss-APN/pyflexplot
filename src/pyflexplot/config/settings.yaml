@@ -8,7 +8,9 @@ main:
         retries: 10
       output:
         region: eu-central-2
-        name: meteoswiss-flexpart-pyflexplot-output-dev
+        name: fabio-ap-aws-dispers-wcet8ppwxpp35ucdyhhpfnshyq7mneuc2b-s3alias
+        roleArn: arn:aws:iam::637423512920:role/FabioSolutionAccess-aws-dispersionmodelling-devt
+        object_prefix: ch.meteoswiss.dispersionmodelling
         retries: 10
   local:
     paths:
