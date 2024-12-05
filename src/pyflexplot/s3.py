@@ -11,6 +11,7 @@ import os
 import logging
 import random
 import time
+import uuid
 from pathlib import Path
 from typing import Callable
 
@@ -180,6 +181,9 @@ def _create_s3_client(bucket):
     """
     retries_config = {"max_attempts": bucket.retries, "mode": "standard"}
 
+    if bucket.role_arn:
+        return _create_s3_client_with_assumed_role(bucket, retries_config)
+
     # Check if endpoint_url is present to differentiate between AWS and other platforms
     if hasattr(bucket, "endpoint_url") and bucket.endpoint_url.strip():
         # Non-AWS configuration
@@ -187,3 +191,19 @@ def _create_s3_client(bucket):
     else:
         # AWS S3 configuration
         return boto3.Session().client("s3", config=Config(region_name=bucket.region, retries=retries_config))
+
+
+def _create_s3_client_with_assumed_role(bucket, retries_config: dict):
+    """Create an S3 client using temporary credentials of the role the bucket requires (e.g. Fabio)."""
+    assumed_role = boto3.client("sts").assume_role(
+        RoleArn=bucket.role_arn,
+        RoleSessionName=f"pyflexplot_output_publisher_{uuid.uuid4()}",
+    )
+    credentials = assumed_role["Credentials"]
+    return boto3.client(
+        "s3",
+        aws_access_key_id=credentials["AccessKeyId"],
+        aws_secret_access_key=credentials["SecretAccessKey"],
+        aws_session_token=credentials["SessionToken"],
+        config=Config(region_name=bucket.region, retries=retries_config),
+    )

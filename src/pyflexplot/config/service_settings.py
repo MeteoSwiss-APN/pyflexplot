@@ -10,6 +10,8 @@ class Bucket(BaseModel):
     name: str
     endpoint_url: str
     retries: int
+    # Role to assume before accessing the bucket; empty to use the default credentials
+    role_arn: str = ""
 
 
 class S3(BaseModel):
