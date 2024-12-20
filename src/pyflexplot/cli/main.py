@@ -119,6 +119,9 @@ def main(
         for iter_i in range(iter_max):
             all_out_file_paths_tmp = list(all_out_file_paths)
             try:
+                # merges all pdfs plots and returns the list of the
+                # original parts before the merge which might be kept in disk or not
+                # merged files are kept in the "dest_dir" which is later on used to track which files to upload
                 pdf_page_paths = merge_pdf_plots(
                     all_out_file_paths_tmp,
                     tmp_dir=tmp_dir,
