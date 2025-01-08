@@ -9,7 +9,6 @@ class Globals {
     static final String IMAGE_REPO = 'docker-intern-nexus.meteoswiss.ch'
     static final String IMAGE_NAME = 'docker-intern-nexus.meteoswiss.ch/numericalweatherpredictions/dispersionmodelling/pyflexplot'
 
-    static final String AWS_IMAGE_NAME = 'numericalweatherpredictions/dispersionmodelling/pyflexplot'
     static final String AWS_REGION = 'eu-central-2'
 
     // sets the pipeline to execute all steps related to building the service
@@ -44,6 +43,9 @@ class Globals {
 
     // the AWS ECR repository name
     static String awsEcrRepo = ''
+
+    // the AWS image name
+    static String awsImageName = ''
 
     // the target environment to deploy (e.g., devt, depl, prod)
     static String deployEnv = ''
@@ -97,11 +99,14 @@ pipeline {
 
 
                     if (params.awsAccount == 'aws-dispersionmodelling') {
-                        Globals.vaultCredentialId = "dispersionmodelling-approle"
+                        Globals.vaultCredentialId = 'dispersionmodelling-approle'
                         Globals.vaultPath = "dispersionmodelling/dispersionmodelling-${Globals.deployEnv}-secrets"
+                        Globals.awsImageName = 'mch-meteoswiss-dispersionmodelling-flexpart-cosmo-pyflexplot-repository'
+
                     } else if (params.awsAccount == 'aws-icon-sandbox') {
                         Globals.vaultCredentialId = "iwf2-poc-approle"
                         Globals.vaultPath = "iwf2-poc/dispersionmodelling-${Globals.deployEnv}-secrets"
+                        Globals.awsImageName = 'numericalweatherpredictions/dispersionmodelling/pyflexplot'
                     }
 
                     withVault(
@@ -154,7 +159,7 @@ pipeline {
                                 Globals.imageTag = "${Globals.IMAGE_NAME}:${shortBranchName}"
                             }
                             Globals.awsEcrRepo = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
-                            Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.AWS_IMAGE_NAME}-${Globals.deployEnv}:${shortBranchName}"
+                            Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.awsImageName}-${Globals.deployEnv}:${shortBranchName}"
                             echo "Using container version ${Globals.imageTag}"
                             echo "Using awsEcrRepo ${Globals.awsEcrRepo}"
                         }
