@@ -47,7 +47,13 @@ class FilePathFormatter:
             time_steps=time_steps,
             species_name=species_name,
         )
+
+        # we need to check whether the file path has already been formatted
+        # since the same path might be calculated, then we need to derive a unique path
+        # until is not in any of the previously formatted paths
         while path in self.previous:
+            # template and path are recalculated on each loop
+            # we need to first calculate the new template before re-formatting the file
             template = self.derive_unique_path(
                 self._format_template(
                     template,
