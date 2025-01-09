@@ -7,6 +7,7 @@ from .base_settings import BaseServiceSettings
 class Bucket(BaseModel):
     region: str
     name: str
+    endpoint_url: str
     retries: int
 
 class S3(BaseModel):

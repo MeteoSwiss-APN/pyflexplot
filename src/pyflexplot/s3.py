@@ -58,6 +58,7 @@ def split_s3_uri(infile: str) -> tuple[str, str, str]:
         filename = ''
     return bucket_name, key, filename
 
+
 def download_key_from_bucket(key: str,
                              dest: Path,
                              bucket: Bucket = CONFIG.main.aws.s3.input,
@@ -72,13 +73,8 @@ def download_key_from_bucket(key: str,
         bucket: S3 bucket from where data will be fetched.
     """
 
-    client = boto3.Session().client('s3', config=Config(
-                                            region_name=bucket.region,
-                                            retries={
-                                                'max_attempts': int(bucket.retries),
-                                                'mode': 'standard'
-                                            })
-                                        )
+    client = _create_s3_client(bucket)
+
     # Make directory if not existing
     if not os.path.exists( dest.parent ):
         os.makedirs( dest.parent )
@@ -106,13 +102,7 @@ def upload_outpaths_to_s3(upload_outpaths: list[str],
         raise ValueError("Model object must be provided to upload to S3, \
                          model name and base time are used in the object key.")
     try:
-        client = boto3.Session().client('s3', config=Config(
-                                            region_name=bucket.region,
-                                            retries={
-                                                'max_attempts': int(bucket.retries),
-                                                'mode': 'standard'
-                                            })
-                                        )
+        client = _create_s3_client(bucket)
 
         for outpath in upload_outpaths:
             key = f"{model.name}/{model.base_time}/{Path(outpath).name}"
@@ -154,3 +144,37 @@ def _retry_with_backoff(fn: Callable,
             logging.info("Sleep: %.2f seconds", sleep)
             time.sleep(sleep)
             x += 1
+
+def _create_s3_client(bucket):
+    """
+    Creates and configures the S3 client based on the bucket's endpoint.
+
+    Args:
+        bucket: An object containing bucket configuration attributes.
+                Must include 'name', 'retries' and optionally 'endpoint_url'.
+
+    Returns:
+        A configured boto3 S3 client.
+    """
+    retries_config = {
+        'max_attempts': bucket.retries,
+        'mode': 'standard'
+    }
+
+    # Check if endpoint_url is present to differentiate between AWS and other platforms
+    if hasattr(bucket, 'endpoint_url') and bucket.endpoint_url.strip():
+        # Non-AWS configuration
+        return boto3.Session().client(
+            's3',
+            endpoint_url=bucket.endpoint_url,
+            config=Config(retries=retries_config)
+        )
+    else:
+        # AWS S3 configuration
+        return boto3.Session().client(
+            's3',
+            config=Config(
+                region_name=bucket.region,
+                retries=retries_config
+            )
+        )

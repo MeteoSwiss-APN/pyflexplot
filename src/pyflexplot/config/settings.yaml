@@ -5,10 +5,12 @@ main:
       input:
         region: eu-central-2
         name: meteoswiss-flexpart-flexpart-output-dev
+        endpoint_url: ""
         retries: 10
       output:
         region: eu-central-2
         name: meteoswiss-flexpart-pyflexplot-output-dev
+        endpoint_url: ""
         retries: 10
   local:
     paths:

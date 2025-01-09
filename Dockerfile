@@ -45,10 +45,3 @@ COPY tests /src/app-root/tests
 COPY pyproject.toml test_ci.sh /src/app-root/
 
 CMD ["/bin/bash", "-c", "source /src/app-root/test_ci.sh && run_ci_tools"]
-
-FROM tester AS documenter
-
-COPY doc /src/app-root/doc
-COPY CONTRIBUTING.md HISTORY.md README.md /src/app-root/
-
-CMD ["sphinx-build", "doc", "doc/_build"]
