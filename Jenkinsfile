@@ -7,7 +7,7 @@ class Globals {
     // constants
     static final String PROJECT = 'pyflexplot'
     static final String IMAGE_REPO = 'docker-intern-nexus.meteoswiss.ch'
-    static final String IMAGE_NAME = 'docker-intern-nexus.meteoswiss.ch/numericalweatherpredictions/dispersionmodelling/pyflexplot'
+    static final String IMAGE_NAME = 'docker-intern-nexus.meteoswiss.ch/dispersionmodelling/pyflexplot'
 
     static final String AWS_REGION = 'eu-central-2'
 
@@ -101,12 +101,12 @@ pipeline {
                     if (params.awsAccount == 'aws-dispersionmodelling') {
                         Globals.vaultCredentialId = 'dispersionmodelling-approle'
                         Globals.vaultPath = "dispersionmodelling/dispersionmodelling-${Globals.deployEnv}-secrets"
-                        Globals.awsImageName = 'mch-meteoswiss-dispersionmodelling-flexpart-cosmo-pyflexplot-repository'
+                        Globals.awsImageName = "mch-meteoswiss-dispersionmodelling-flexpart-cosmo-pyflexplot-repository-${Globals.deployEnv}"
 
                     } else if (params.awsAccount == 'aws-icon-sandbox') {
                         Globals.vaultCredentialId = "iwf2-poc-approle"
                         Globals.vaultPath = "iwf2-poc/dispersionmodelling-${Globals.deployEnv}-secrets"
-                        Globals.awsImageName = 'numericalweatherpredictions/dispersionmodelling/pyflexplot'
+                        Globals.awsImageName = "dispersionmodelling/pyflexplot-${Globals.deployEnv}"
                     }
 
                     withVault(
@@ -159,7 +159,7 @@ pipeline {
                                 Globals.imageTag = "${Globals.IMAGE_NAME}:${shortBranchName}"
                             }
                             Globals.awsEcrRepo = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
-                            Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.awsImageName}-${Globals.deployEnv}:${shortBranchName}"
+                            Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.awsImageName}:${shortBranchName}"
                             echo "Using container version ${Globals.imageTag}"
                             echo "Using awsEcrRepo ${Globals.awsEcrRepo}"
                         }
@@ -367,27 +367,27 @@ pipeline {
                     }
                 }
             }
+        }
+    }
 
 
-            post {
-                cleanup {
-                    sh "podman image rm -f ${Globals.imageTag}-tester || true"
-                    sh "podman image rm -f ${Globals.imageTag} || true"
-                    sh "podman image rm -f ${Globals.awsEcrImageTag} || true"
-                }
-                failure {
-                    echo 'Sending email'
-                    sh 'df -h'
-                    emailext(subject: "${currentBuild.fullDisplayName}: ${currentBuild.currentResult}",
-                        attachLog: true,
-                        attachmentsPattern: 'generatedFile.txt',
-                        body: "Job '${env.JOB_NAME} #${env.BUILD_NUMBER}': ${env.BUILD_URL}",
-                        recipientProviders: [requestor(), developers()])
-                }
-                success {
-                    echo 'Build succeeded'
-                }
-            }
+    post {
+        cleanup {
+            sh "podman image rm -f ${Globals.imageTag}-tester || true"
+            sh "podman image rm -f ${Globals.imageTag} || true"
+            sh "podman image rm -f ${Globals.awsEcrImageTag} || true"
+        }
+        failure {
+            echo 'Sending email'
+            sh 'df -h'
+            emailext(subject: "${currentBuild.fullDisplayName}: ${currentBuild.currentResult}",
+                attachLog: true,
+                attachmentsPattern: 'generatedFile.txt',
+                body: "Job '${env.JOB_NAME} #${env.BUILD_NUMBER}': ${env.BUILD_URL}",
+                recipientProviders: [requestor(), developers()])
+        }
+        success {
+            echo 'Build succeeded'
         }
     }
 }
