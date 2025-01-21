@@ -9,8 +9,6 @@ class Globals {
     static final String IMAGE_REPO = 'docker-intern-nexus.meteoswiss.ch'
     static final String IMAGE_NAME = 'docker-intern-nexus.meteoswiss.ch/dispersionmodelling/pyflexplot'
 
-    static final String AWS_REGION = 'eu-central-2'
-
     // sets the pipeline to execute all steps related to building the service
     static boolean build = false
 
@@ -37,15 +35,6 @@ class Globals {
 
     // the service version
     static String version = ''
-
-    // the AWS container registry image tag
-    static String awsEcrImageTag = ''
-
-    // the AWS ECR repository name
-    static String awsEcrRepo = ''
-
-    // the AWS image name
-    static String awsImageName = ''
 
     // the target environment to deploy (e.g., devt, depl, prod)
     static String deployEnv = ''
@@ -101,8 +90,6 @@ pipeline {
                     if (params.awsAccount == 'aws-dispersionmodelling') {
                         Globals.vaultCredentialId = 'dispersionmodelling-approle'
                         Globals.vaultPath = "dispersionmodelling/dispersionmodelling-${Globals.deployEnv}-secrets"
-                        Globals.awsImageName = "mch-meteoswiss-dispersionmodelling-flexpart-cosmo-pyflexplot-repository-${Globals.deployEnv}"
-
                     } else if (params.awsAccount == 'aws-icon-sandbox') {
                         Globals.vaultCredentialId = "iwf2-poc-approle"
                         Globals.vaultPath = "iwf2-poc/dispersionmodelling-${Globals.deployEnv}-secrets"
@@ -146,22 +133,32 @@ pipeline {
                         if (Globals.build || Globals.deploy || Globals.runTrivyScan) {
                             echo 'Starting with calculating version'
                             def shortBranchName = env.BRANCH_NAME.replaceAll("[^a-zA-Z0-9]+", "").take(30).toLowerCase()
-                            try {
-                                Globals.version = sh(script: "git describe --tags --match v[0-9]*", returnStdout: true).trim()
-                            } catch (err) {
-                                def version = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                                Globals.version = "${shortBranchName}-${version}"
+                            def version = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                            Globals.version = "${shortBranchName}-${version}"
+                            
+                            if (env.TAG_NAME) { // building a release tag
+                                echo 'Detected release build triggered from tag ${env.TAG_NAME}'
+                                
+                                def isMajorMinorPatch = sh(
+                                    script: "mchbuild -s version=${env.TAG_NAME} -g isMajorMinorPatch build.checkGivenSemanticVersion",
+                                    returnStdout: true
+                                )
+                                if (isMajorMinorPatch != 'true') {
+                                    currentBuild.result = 'ABORTED'
+                                    error('Build aborted because release builds are only triggered for tags of the form <major>.<minor>.<patch>.')
+                                }
+                                Globals.version = env.TAG_NAME
                             }
+
                             echo "Using version ${Globals.version}"
                             if (env.BRANCH_NAME == 'main') {
                                 Globals.imageTag = "${Globals.IMAGE_NAME}:latest"
-                            } else {
+                            } else if (env.TAG_NAME) { // building a release tag, use the tag itself as image tag
+                                Globals.imageTag = "${Globals.IMAGE_NAME}:${Globals.version}"
+                            } else { // building a branch, use the short branch name a image tag
                                 Globals.imageTag = "${Globals.IMAGE_NAME}:${shortBranchName}"
                             }
-                            Globals.awsEcrRepo = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${Globals.AWS_REGION}.amazonaws.com"
-                            Globals.awsEcrImageTag = "${Globals.awsEcrRepo}/${Globals.awsImageName}:${shortBranchName}"
                             echo "Using container version ${Globals.imageTag}"
-                            echo "Using awsEcrRepo ${Globals.awsEcrRepo}"
                         }
                     }
                 }
@@ -296,78 +293,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Deploy') {
-            when { expression { Globals.deploy } }
-            environment {
-                HTTPS_PROXY="http://proxy.meteoswiss.ch:8080"
-                AWS_DEFAULT_OUTPUT="json"
-                PATH = "/opt/maker/tools/terraform:/opt/maker/tools/aws:$PATH"
-            }
-            steps {
-                script {
-                    // Define Vault Secrets
-                    def baseVaultSecrets = [
-                        [
-                            path: Globals.vaultPath,
-                            engineVersion: 2,
-                            secretValues: [
-                                [envVar: 'AWS_ACCESS_KEY_ID', vaultKey: 'jenkins-aws-access-key'],
-                                [envVar: 'AWS_SECRET_ACCESS_KEY', vaultKey: 'jenkins-aws-secret-key']
-                            ]
-                        ]
-                    ]
-
-                    // Add Terraform secrets only for aws-dispersionmodelling
-                    def terraformSecrets = []
-                    if (params.awsAccount == 'aws-dispersionmodelling') {
-                        terraformSecrets = [
-                            [
-                                path: Globals.vaultPath,
-                                engineVersion: 2,
-                                secretValues: [
-                                    [envVar: 'TF_TOKEN_app_terraform_io', vaultKey: 'terraform-token'],
-                                ]
-                            ]
-                        ]
-                    }
-
-                    withVault(
-                        configuration: [
-                            vaultUrl: 'https://vault.apps.cp.meteoswiss.ch',
-                            vaultCredentialId: Globals.vaultCredentialId,
-                            engineVersion: 2
-                        ],
-                        vaultSecrets: baseVaultSecrets + terraformSecrets
-                    ) {
-                        sh """
-                            if test -f /etc/ssl/certs/ca-certificates.crt; then
-                                export AWS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-                            else
-                                export AWS_CA_BUNDLE=/etc/ssl/certs/ca-bundle.crt
-                            fi
-
-                            if [ "${params.awsAccount}" = "aws-dispersionmodelling" ]; then
-                                terraform -chdir=infrastructure/aws init -no-color
-                                terraform -chdir=infrastructure/aws validate -no-color
-                                terraform -chdir=infrastructure/aws apply -var environment=${Globals.deployEnv} -auto-approve
-                            fi
-
-                            export AWS_ACCESS_KEY_ID=${env.AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${env.AWS_SECRET_ACCESS_KEY}
-
-                            echo "Logging into AWS ECR..."
-                            aws ecr get-login-password --region ${Globals.AWS_REGION} > ecr_password.txt
-                            cat ecr_password.txt | podman login -u AWS --password-stdin ${Globals.awsEcrRepo}
-
-                            echo "Building and pushing Docker image to AWS ECR..."
-                            podman build --pull --target runner --build-arg VERSION=${Globals.version} -t ${Globals.awsEcrImageTag} .
-                            podman push ${Globals.awsEcrImageTag}
-                        """
-                    }
-                }
-            }
-        }
     }
 
 
@@ -375,7 +300,6 @@ pipeline {
         cleanup {
             sh "podman image rm -f ${Globals.imageTag}-tester || true"
             sh "podman image rm -f ${Globals.imageTag} || true"
-            sh "podman image rm -f ${Globals.awsEcrImageTag} || true"
         }
         failure {
             echo 'Sending email'
