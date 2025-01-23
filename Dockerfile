@@ -9,8 +9,8 @@ RUN cd /src/app-root \
     # we need to build the wheel in order to install the binary python  \
     # package that uses click to parse the command arguments
     && poetry build --format wheel \
-    && poetry export --without-hashes -o requirements.txt \
-    && poetry export --without-hashes --dev -o requirements_dev.txt
+    && poetry export -o requirements.txt \
+    && poetry export --dev -o requirements_dev.txt
 
 FROM dockerhub.apps.cp.meteoswiss.ch/mch/python-3.10:latest-slim AS base
 
@@ -26,13 +26,6 @@ WORKDIR /src/app-root
 FROM base AS runner
 
 RUN mkdir /src/app-root/data /src/app-root/output
-
-ENV HTTPS_PROXY=\
-    HTTP_PROXY=\
-    http_proxy=\
-    https_proxy=\
-    NO_PROXY=\
-    no_proxy=
 
 ENTRYPOINT ["pyflexplot"]
 
