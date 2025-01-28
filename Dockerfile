@@ -43,6 +43,3 @@ COPY --from=builder /src/app-root/requirements_dev.txt /src/app-root/requirement
 RUN pip install -r /src/app-root/requirements_dev.txt
 
 COPY tests /src/app-root/tests
-COPY pyproject.toml test_ci.sh /src/app-root/
-
-CMD ["/bin/bash", "-c", "source /src/app-root/test_ci.sh && run_ci_tools"]
