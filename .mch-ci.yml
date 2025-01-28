@@ -1,0 +1,62 @@
+default:
+  - build:
+      - checkGivenSemanticVersion:
+          checkSemanticVersion:
+      - getSemanticVersion:
+          gitCalculateSemanticVersion:
+      - getImageName:
+          containerConstructImageName:
+      - imageTester:
+          containerBuildImage:
+            fullImageName: ${var.image}-tester
+            target: tester
+            extraArgs:
+              - --build-arg
+              - VERSION=${var.version}
+      - imageAwsRunner:
+          containerBuildImage:
+            fullImageName: ${var.image}
+            target: runner
+            extraArgs:
+              - --build-arg
+              - VERSION=${var.version}
+            pullAlways: false
+  - test:
+      - unit:
+          - script: mkdir -p test_reports
+          - pythonTest:
+              fullImageName: ${var.image}-tester
+              testDirectory: tests
+              packageManager: ''
+              pullAlways: false
+          - pythonCoverage:
+              fullImageName: ${var.image}-tester
+              packageManager: ''
+              pullAlways: false
+      - lint:
+          - script: mkdir -p test_reports
+          - pythonLint:
+              fullImageName: ${var.image}-tester
+              packageManager: ''
+              pullAlways: false
+          - pythonTypeChecker:
+              fullImageName: ${var.image}-tester
+              packageManager: ''
+              pullAlways: false
+  - publish:
+      - image:
+          containerPublishImage:
+  - clean:
+      - images:
+          script: |
+            if test -n "${var.version}"; then
+              podman image rm -f $(podman image ls -q \
+                -f "label=ch.meteoswiss.project=${var.project}-${var.version}") || :
+            fi
+
+variables:
+  project: pyflexplot
+  # default full image name, useful when running tasks locally
+  image: ${var.containerImageName}:${var.version}
+  solution: flexpart-cosmo
+  notifyOnNightlyFailure: p_dispersionmodelling@meteoswiss.ch

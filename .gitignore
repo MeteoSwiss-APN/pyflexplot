@@ -116,3 +116,6 @@ poetry.toml
 
 # Conda environment for local CSCS development
 .conda-env
+
+.idea
+test-data
