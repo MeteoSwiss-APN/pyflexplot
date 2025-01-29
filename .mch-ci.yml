@@ -58,5 +58,5 @@ variables:
   project: pyflexplot
   # default full image name, useful when running tasks locally
   image: ${var.containerImageName}:${var.version}
-  solution: flexpart-cosmo
+  solution: dispersionmodelling
   notifyOnNightlyFailure: p_dispersionmodelling@meteoswiss.ch
