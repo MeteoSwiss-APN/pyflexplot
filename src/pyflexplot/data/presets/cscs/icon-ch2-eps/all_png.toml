@@ -1,4 +1,4 @@
-# PyFlexPlot setup file to create ensemble ICON-CH2-EPS shapefiles
+# PyFlexPlot setup file to create ensemble ICON-CH2-EPS plots
 
 [_base]
 # Test data source: /store_new/mch/msopr/pyflexplot_testdata/
@@ -8,6 +8,7 @@ model = "ICON-CH2-EPS"
 lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = true
+outfile = "forecast-iconch2eps-dispersion-cscs~{base_time}~{plot_variable}-{ens_variable}~{domain}~{release_site}~1~{time_step}.png"
 
 [_base._concentration]
 plot_variable = "concentration"
@@ -31,34 +32,44 @@ level = 0
 time = -1
 
 [_base._concentration."_probability+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wahrscheinlichkeit-Konzentration_{time_step}.shp"
 ens_variable = "probability"
 ens_param_thr = 0
 [_base._concentration._integr."_probability+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wahrscheinlichkeit-integrierte-Luftaktivitaet.shp"
 ens_variable = "probability"
 ens_param_thr = 0
 [_base._tot_deposition."_probability+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wahrscheinlichkeit-Deposition.shp"
 ens_variable = "probability"
 ens_param_thr = 0
 [_base._affected_area."_probability+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wahrscheinlichkeit-beaufschl_Gebiet.shp"
 ens_variable = "probability"
 ens_param_thr = 0
 
+# [_base._concentration."_probability+"."_multipanel_time+"]
+# plot_type = "multipanel"
+# multipanel_param = "time"
+# time = [2, 4, 8, -1]
+
 [_base._concentration._integr."_pctl95+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_95-Perzentil.shp"
 ens_variable = "percentile"
 ens_param_pctl = 95
 [_base._tot_deposition."_pctl95+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_95-Perzentil.shp"
 ens_variable = "percentile"
 ens_param_pctl = 95
 [_base._affected_area."_pctl95+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_95-Perzentil.shp"
 ens_variable = "percentile"
 ens_param_pctl = 95
+
+# [_base._tot_deposition."_multipanel_pctl+"]
+# plot_type = "multipanel"
+# multipanel_param = "ens_param_pctl"
+# ens_variable = "percentile"
+# ens_param_pctl = [5, 50, 75, 95]
+
+# [_base._concentration._integr."_multipanel_pctl+"]
+# plot_type = "multipanel"
+# multipanel_param = "ens_param_pctl"
+# ens_variable = "percentile"
+# ens_param_pctl = [5, 50, 75, 95]
 
 [_base._concentration._cloud]
 ens_param_mem_min = 2
@@ -66,47 +77,35 @@ ens_param_thr = 0.0
 time = 0
 [_base._concentration._cloud."_arrival+"]
 ens_variable = "cloud_arrival_time"
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wolkenankunftszeit.shp"
 [_base._concentration._cloud."_departure+"]
 ens_variable = "cloud_departure_time"
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wolkenabzugszeit.shp"
 
 [_base._concentration._integr."_min+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Minimum_integrierte-Luftaktivitaet.shp"
 ens_variable = "minimum"
 [_base._tot_deposition."_min+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Minimum_Deposition.shp"
 ens_variable = "minimum"
 [_base._affected_area."_min+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Minimum_beaufschl_Gebiet.shp"
 ens_variable = "minimum"
 [_base._concentration._integr."_max+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Maximum_integrierte-Luftaktivitaet.shp"
 ens_variable = "maximum"
 [_base._tot_deposition."_max+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Maximum_Deposition.shp"
 ens_variable = "maximum"
 [_base._affected_area."_max+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Maximum_beaufschl_Gebiet.shp"
 ens_variable = "maximum"
 [_base._concentration._integr."_mean+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Mittel_integrierte-Luftaktivitaet.shp"
 ens_variable = "mean"
 [_base._tot_deposition."_mean+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Mittel_Deposition.shp"
 ens_variable = "mean"
 # [_base._affected_area."_mean+"]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Mittel_beaufschl_Gebiet.shp"
 # ens_variable = "mean"
 [_base._concentration._integr."_median+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Median_integrierte-Luftaktivitaet.shp"
 ens_variable = "median"
 [_base._tot_deposition."_median+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Median_Deposition.shp"
 ens_variable = "median"
 [_base._affected_area."_median+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Median_beaufschl_Gebiet.shp"
 ens_variable = "median"
 
 ["**".full]
 domain = "full"
+["**".ch]
+domain = "ch"
