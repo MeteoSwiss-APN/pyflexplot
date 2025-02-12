@@ -7,7 +7,7 @@ model = "IFS-HRES"
 lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
-outfile = "forecast-ifs-dispersion~{base_time}~{plot_variable}~{domain}~{release_site}~1~{time_step}.png"
+outfile = "forecast-ifs-dispersion-cscs~{base_time}~{plot_variable}~{domain}~{release_site}~1~{time_step}.png"
 
 [_base._concentration]
 plot_variable = "concentration"
