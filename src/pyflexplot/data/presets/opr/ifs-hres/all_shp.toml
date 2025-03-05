@@ -28,22 +28,16 @@ time = -1
 combine_species = true
 
 [_base._concentration."_shp+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_{time_step}.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_{species_id}_{time_step}.shp"
+
 [_base._concentration._integr."_shp+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_{species_id}.shp"
+
 [_base._tot_deposition."_shp+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_{time_step}.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_{species_id}_{time_step}.shp"
+
 [_base._affected_area."_shp+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.shp"
 
-# [_base._concentration."_multipanel_time+"]
-# outfile = "concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.shp"
-# plot_type = "multipanel"
-# multipanel_param = "time"
-# time = [2, 4, 8, -1]
-
 ["**".full]
 domain = "cloud"
-
-# ["**".zoom]
-# domain = "release_site"

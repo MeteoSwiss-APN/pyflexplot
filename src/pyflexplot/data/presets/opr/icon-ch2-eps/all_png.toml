@@ -1,4 +1,4 @@
-# PyFlexPlot setup file to create ensemble ICON-CH2-EPS plots
+# PyFlexPlot setup file to create ensemble ICON-CH2-EPS plots in PNG format
 
 [_base]
 # Test data source: /store_new/mch/msopr/pyflexplot_testdata/
@@ -34,78 +34,80 @@ time = -1
 [_base._concentration."_probability+"]
 ens_variable = "probability"
 ens_param_thr = 0
+
 [_base._concentration._integr."_probability+"]
 ens_variable = "probability"
 ens_param_thr = 0
+
 [_base._tot_deposition."_probability+"]
 ens_variable = "probability"
 ens_param_thr = 0
+
 [_base._affected_area."_probability+"]
 ens_variable = "probability"
 ens_param_thr = 0
 
-# [_base._concentration."_probability+"."_multipanel_time+"]
-# plot_type = "multipanel"
-# multipanel_param = "time"
-# time = [2, 4, 8, -1]
-
 [_base._concentration._integr."_pctl95+"]
 ens_variable = "percentile"
 ens_param_pctl = 95
+
 [_base._tot_deposition."_pctl95+"]
 ens_variable = "percentile"
 ens_param_pctl = 95
+
 [_base._affected_area."_pctl95+"]
 ens_variable = "percentile"
 ens_param_pctl = 95
-
-# [_base._tot_deposition."_multipanel_pctl+"]
-# plot_type = "multipanel"
-# multipanel_param = "ens_param_pctl"
-# ens_variable = "percentile"
-# ens_param_pctl = [5, 50, 75, 95]
-
-# [_base._concentration._integr."_multipanel_pctl+"]
-# plot_type = "multipanel"
-# multipanel_param = "ens_param_pctl"
-# ens_variable = "percentile"
-# ens_param_pctl = [5, 50, 75, 95]
 
 [_base._concentration._cloud]
 ens_param_mem_min = 2
 ens_param_thr = 0.0
 time = 0
+
 [_base._concentration._cloud."_arrival+"]
 ens_variable = "cloud_arrival_time"
+
 [_base._concentration._cloud."_departure+"]
 ens_variable = "cloud_departure_time"
 
 [_base._concentration._integr."_min+"]
 ens_variable = "minimum"
+
 [_base._tot_deposition."_min+"]
 ens_variable = "minimum"
+
 [_base._affected_area."_min+"]
 ens_variable = "minimum"
+
 [_base._concentration._integr."_max+"]
 ens_variable = "maximum"
+
 [_base._tot_deposition."_max+"]
 ens_variable = "maximum"
+
 [_base._affected_area."_max+"]
 ens_variable = "maximum"
+
 [_base._concentration._integr."_mean+"]
 ens_variable = "mean"
+
 [_base._tot_deposition."_mean+"]
 ens_variable = "mean"
-# [_base._affected_area."_mean+"]
+
+# [_base._affected_area."_mean+"] # for affected area, mean is same area as max -> skip mean
 # ens_variable = "mean"
+
 [_base._concentration._integr."_median+"]
 ens_variable = "median"
+
 [_base._tot_deposition."_median+"]
 ens_variable = "median"
+
 [_base._affected_area."_median+"]
 ens_variable = "median"
 
 ["**".full]
 domain = "full"
+
 ["**".ch]
 domain = "ch"

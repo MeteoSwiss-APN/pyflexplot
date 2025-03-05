@@ -1,4 +1,4 @@
-# PyFlexPlot setup file to create deterministic IFS-HRES-EU plots
+# PyFlexPlot setup file to create deterministic IFS-HRES-EU plots in PDF format
 
 [_base]
 # Test data source: /store_new/mch/msopr/pyflexplot_testdata/
