@@ -1,13 +1,13 @@
-# PyFlexPlot setup file to create deterministic ICON-CH1-CTRL plots
+# PyFlexPlot setup file to create deterministic IFS plots in PNG format
 
 [_base]
 # Test data source: /store_new/mch/msopr/pyflexplot_testdata/
-infile = "data/icon-ch1-ctrl/grid_conc_20240604210000_BUG.nc"
-model = "ICON-CH1-CTRL"
+infile = "data/ifs-hres/grid_conc_1000_20200818000000_bushehr_2spec.nc"
+model = "IFS-HRES"
 lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
-outfile = "forecast-iconch1eps-dispersion-aws~{base_time}~{plot_variable}~{domain}~{release_site}~1~{time_step}.png"
+outfile = "forecast-ifs-dispersion-test~{base_time}~{plot_variable}~{domain}~{release_site}~1~{time_step}.png"
 
 [_base._concentration]
 plot_variable = "concentration"
@@ -36,14 +36,8 @@ combine_species = true
 
 [_base._affected_area."_png+"]
 
-# [_base._concentration."_multipanel_time+"]
-# outfile = "forecast-iconch1eps-dispersion-aws~{base_time}~concentration~{domain}~{release_site}~1~{time_step}.png"
-# plot_type = "multipanel"
-# multipanel_param = "time"
-# time = [2, 4, 8, -1]
-
 ["**".full]
-domain = "full"
+domain = "cloud"
 
 ["**".zoom]
-domain = "ch"
+domain = "release_site"

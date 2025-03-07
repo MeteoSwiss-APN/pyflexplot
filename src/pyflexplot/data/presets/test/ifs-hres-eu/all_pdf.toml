@@ -1,9 +1,9 @@
-# PyFlexPlot setup file to create deterministic IFS-HRES-EU plots
+# PyFlexPlot setup file to create deterministic IFS-HRES-EU plots in PDF format
 
 [_base]
 # Test data source: /store_new/mch/msopr/pyflexplot_testdata/
-infile = "data/ifs-hres/grid_conc_1000_20200818000000_bushehr_2spec.nc"
-model = "IFS-HRES"
+infile = "data/ifs-hres-eu/grid_conc_0999_20200818000000_fessenheim_5spec.nc"
+model = "IFS-HRES-EU"
 lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
@@ -34,32 +34,32 @@ time = [2, 4, 8, -1]
 
 [_base._concentration.full]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.pdf"
-domain = "cloud"
+domain = "full"
 [_base._concentration._integr.full]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet.pdf"
-domain = "cloud"
+domain = "full"
 [_base._tot_deposition.full]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition.pdf"
-domain = "cloud"
+domain = "full"
 [_base._affected_area.full]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.pdf"
-domain = "cloud"
+domain = "full"
 [_base._concentration._multipanel_time.full]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.pdf"
-domain = "cloud"
+domain = "full"
 
 [_base._concentration.zoom]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_zoom.pdf"
-domain = "release_site"
+domain = "alps"
 [_base._concentration._integr.zoom]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_zoom.pdf"
-domain = "release_site"
+domain = "alps"
 [_base._tot_deposition.zoom]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.pdf"
-domain = "release_site"
+domain = "alps"
 [_base._affected_area.zoom]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.pdf"
-domain = "release_site"
+domain = "alps"
 [_base._concentration._multipanel_time.zoom]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_zoom.pdf"
-domain = "release_site"
+domain = "alps"

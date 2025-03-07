@@ -116,3 +116,10 @@ poetry.toml
 
 # Conda environment for local CSCS development
 .conda-env
+
+# Job submission tool batchPP
+script_*
+stdeo_*
+
+# Output directories
+plot_*

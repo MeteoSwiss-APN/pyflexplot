@@ -1,4 +1,4 @@
-# PyFlexPlot setup file to create ensemble ICON-CH2-EPS plots
+# PyFlexPlot setup file to create ensemble ICON-CH2-EPS plots in PDF format
 
 [_base]
 # Test data source: /store_new/mch/msopr/pyflexplot_testdata/
@@ -34,14 +34,17 @@ time = -1
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_probability_{domain}.pdf"
 ens_variable = "probability"
 ens_param_thr = 0
+
 [_base._concentration._integr."_probability+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_probability_{domain}.pdf"
 ens_variable = "probability"
 ens_param_thr = 0
+
 [_base._tot_deposition."_probability+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_probability_{domain}.pdf"
 ens_variable = "probability"
 ens_param_thr = 0
+
 [_base._affected_area."_probability+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_probability_{domain}.pdf"
 ens_variable = "probability"
@@ -57,10 +60,12 @@ time = [2, 4, 8, -1]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_percentile_{domain}.pdf"
 ens_variable = "percentile"
 ens_param_pctl = 95
+
 [_base._tot_deposition."_pctl95+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_percentile_{domain}.pdf"
 ens_variable = "percentile"
 ens_param_pctl = 95
+
 [_base._affected_area."_pctl95+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_percentile_{domain}.pdf"
 ens_variable = "percentile"
@@ -85,38 +90,49 @@ outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_timing_{domain}
 ens_param_mem_min = 2
 ens_param_thr = 0.0
 time = 0
+
 [_base._concentration._cloud."_arrival+"]
 ens_variable = "cloud_arrival_time"
+
 [_base._concentration._cloud."_departure+"]
 ens_variable = "cloud_departure_time"
 
 [_base._concentration._integr."_min+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_statistics_{domain}.pdf"
 ens_variable = "minimum"
+
 [_base._tot_deposition."_min+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_statistics_{domain}.pdf"
 ens_variable = "minimum"
+
 [_base._affected_area."_min+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_statistics_{domain}.pdf"
 ens_variable = "minimum"
+
 [_base._concentration._integr."_max+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_statistics_{domain}.pdf"
 ens_variable = "maximum"
+
 [_base._tot_deposition."_max+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_statistics_{domain}.pdf"
 ens_variable = "maximum"
+
 [_base._affected_area."_max+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_statistics_{domain}.pdf"
 ens_variable = "maximum"
+
 [_base._concentration._integr."_mean+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_statistics_{domain}.pdf"
 ens_variable = "mean"
+
 [_base._tot_deposition."_mean+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_statistics_{domain}.pdf"
 ens_variable = "mean"
-# [_base._affected_area."_mean+"]
+
+# [_base._affected_area."_mean+"] # for affected area, mean is same area as max -> skip mean
 # outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_statistics_{domain}.pdf"
 # ens_variable = "mean"
+
 [_base._concentration._integr."_median+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_statistics_{domain}.pdf"
 ens_variable = "median"
