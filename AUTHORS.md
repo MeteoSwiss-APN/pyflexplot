@@ -11,7 +11,7 @@
 - Pirmin Kaufmann <Pirmin.Kaufmann@meteoswiss.ch>
 - Marco Ketzel
 - Mathis Kretz
-- Néstor Tarin Burriel <Nestor.TarinBurriel@meteoswiss.ch> 
+- Néstor Tarin Burriel <Nestor.TarinBurriel@meteoswiss.ch>
 - Tobias Wicky
 
 ## Maintainer
