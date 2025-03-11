@@ -123,3 +123,7 @@ stdeo_*
 
 # Output directories
 plot_*
+
+# Other stuff
+.idea
+test-data
