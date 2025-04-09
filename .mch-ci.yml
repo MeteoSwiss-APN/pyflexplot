@@ -43,9 +43,18 @@ default:
               fullImageName: ${var.image}-tester
               packageManager: ''
               pullAlways: false
+  - verify:
+      - publishSbom:
+          - securityPublishSbom:
   - publish:
       - image:
           containerPublishImage:
+  - deploy:
+      - pypi:
+          pythonPublishPackage:
+            setPackageVersion: true
+            pythonImageName: '3.10'
+            pullAlways: false
   - clean:
       - images:
           script: |

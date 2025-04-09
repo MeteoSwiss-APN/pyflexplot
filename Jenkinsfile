@@ -148,6 +148,25 @@ pipeline {
                 }
             }
         }
+
+        stage('Release') {
+            steps {
+                echo "---- PUBLISH PYPI ----"
+                script {
+                    withCredentials([string(credentialsId: 'python-mch-nexus-secret',
+                                     variable: 'PYPIPASS')]) {
+                        sh 'PYPIUSER=python-mch mchbuild deploy.pypi'
+                    }
+
+                    echo("---- PUBLISH DEPENDENCIES TO DEPENDENCY REGISTRY ----")
+                    withCredentials([string(credentialsId: 'dependency-track-token-prod', variable: 'DTRACK_TOKEN')]) {
+                       catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            sh "mchbuild verify.publishSbom -s version=${Globals.version}"
+                       }
+                    }
+                }
+            }
+        }
     }
 
     post {
