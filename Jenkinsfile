@@ -3,6 +3,9 @@ class Globals {
     // sets to abort the pipeline if the Sonarqube QualityGate fails
     static boolean qualityGateAbortPipeline = false
 
+    // the default python version
+    static String pythonVersion = '3.10'
+
     // the reference (image name + tag) of the container image
     static String imageReference = ''
 
@@ -163,20 +166,47 @@ pipeline {
                         credentialsId: 'dependency-track-token-prod',
                         variable: 'DTRACK_TOKEN')
                 ]) {
+                    echo "---- PUBLISH PYPI ----"
+                    sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
                     script {
-
-                        echo "---- PUBLISH PYPI ----"
-                        sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
-                        sh "PYPIUSER=python-mch mchbuild deploy.pypi"
-
-                        echo("---- PUBLISH DEPENDENCIES TO DEPENDENCY REGISTRY ----")
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "mchbuild verify.publishSbom -s version=${Globals.version}"
+                        withCredentials([string(credentialsId: "python-mch-nexus-secret", variable: 'PIP_PWD')]) {
+                            runDevScript("build/poetry-lib-release.sh ${env.PIP_USER} $PIP_PWD ${Globals.pythonVersion}")
+                            Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
                         }
                     }
                 }
             }
         }
+
+
+        // stage('Release') {
+        //     steps {
+        //         withCredentials([
+        //             usernamePassword(
+        //                 credentialsId: 'github app credential for the meteoswiss-apn github organization',
+        //                 passwordVariable: 'GITHUB_ACCESS_TOKEN',
+        //                 usernameVariable: 'GITHUB_APP'),
+        //             string(
+        //                 credentialsId: 'python-mch-nexus-secret',
+        //                 variable: 'PYPIPASS'),
+        //             string(
+        //                 credentialsId: 'dependency-track-token-prod',
+        //                 variable: 'DTRACK_TOKEN')
+        //         ]) {
+        //             script {
+
+        //                 echo "---- PUBLISH PYPI ----"
+        //                 sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
+        //                 sh "PYPIUSER=python-mch mchbuild deploy.pypi"
+
+        //                 echo("---- PUBLISH DEPENDENCIES TO DEPENDENCY REGISTRY ----")
+        //                 catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+        //                         sh "mchbuild verify.publishSbom -s version=${Globals.version}"
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     post {
