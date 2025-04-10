@@ -127,3 +127,8 @@ plot_*
 # Other stuff
 .idea
 test-data
+
+# test data
+debugging/
+output/
+input/
