@@ -34,13 +34,15 @@ pyflexplot  = "pyflexplot.cli.cli:cli"
 crop-netcdf = "srtools.crop_netcdf:main"
 
 [[tool.poetry.source]]
-name = "pypi-meteoswiss"
+name = "pypi-mch"
 url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
 priority = "primary"
 
 [[tool.poetry.source]]
 name = "pypi-mch-publish"
-url = "https://service.meteoswiss.ch/nexus/repository/python-mch/"
+# only hub entrypoint can be used for publishing libraries (accessible from CI/CD server)
+url = "https://hub.meteoswiss.ch/nexus/repository/python-mch/"
+priority = "explicit"
 
 [tool.poetry.dependencies]
 python = "~3.10"  # python version restricted by pillow
