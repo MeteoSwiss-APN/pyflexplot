@@ -16,6 +16,7 @@ class Globals {
 
 String rebuild_cron = env.BRANCH_NAME == "main" ? "@midnight" : ""
 
+@Library('dev_tools@main') _
 pipeline {
     agent { label 'podman' }
 
