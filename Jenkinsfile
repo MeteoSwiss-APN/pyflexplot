@@ -34,6 +34,7 @@ pipeline {
 
     environment {
         PATH = "$workspace/.venv-mchbuild/bin:$PATH"
+        PIP_USER = 'python-mch'
         HTTP_PROXY = 'http://proxy.meteoswiss.ch:8080'
         HTTPS_PROXY = 'http://proxy.meteoswiss.ch:8080'
         SCANNER_HOME = tool name: 'Sonarqube-certs-PROD', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
@@ -161,19 +162,17 @@ pipeline {
                         passwordVariable: 'GITHUB_ACCESS_TOKEN',
                         usernameVariable: 'GITHUB_APP'),
                     string(
-                        credentialsId: 'python-mch-nexus-secret',
-                        variable: 'PYPIPASS'),
-                    string(
                         credentialsId: 'dependency-track-token-prod',
-                        variable: 'DTRACK_TOKEN')
+                        variable: 'DTRACK_TOKEN'),
+                    string(
+                        credentialsId: "python-mch-nexus-secret",
+                        variable: 'PIP_PWD')
                 ]) {
                     echo "---- PUBLISH PYPI ----"
                     sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
                     script {
-                        withCredentials([string(credentialsId: "python-mch-nexus-secret", variable: 'PIP_PWD')]) {
-                            runDevScript("build/poetry-lib-release.sh ${env.PIP_USER} $PIP_PWD ${Globals.pythonVersion}")
-                            Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
-                        }
+                        runDevScript("build/poetry-lib-release.sh ${env.PIP_USER} $PIP_PWD ${Globals.pythonVersion}")
+                        Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
                     }
                 }
             }
