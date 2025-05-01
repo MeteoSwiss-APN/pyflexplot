@@ -159,31 +159,33 @@ pipeline {
         }
 
         stage('Release') {
-            if (env.TAG_NAME) {
-                steps {
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: 'github app credential for the meteoswiss-apn github organization',
-                            passwordVariable: 'GITHUB_ACCESS_TOKEN',
-                            usernameVariable: 'GITHUB_APP'),
-                        string(credentialsId: 'python-mch-nexus-secret',
-                                     variable: 'PYPIPASS')
-                    ]) {
-                        echo "---- PUBLISH PYPI ----"
-                        sh 'PYPIUSER=python-mch mchbuild deploy.pypi'
+            when {
+                // This will only execute the stage if TAG_NAME is present
+                expression { return env.TAG_NAME != null }
+            }
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'github app credential for the meteoswiss-apn github organization',
+                        passwordVariable: 'GITHUB_ACCESS_TOKEN',
+                        usernameVariable: 'GITHUB_APP'),
+                    string(credentialsId: 'python-mch-nexus-secret',
+                                    variable: 'PYPIPASS')
+                ]) {
+                    echo "---- PUBLISH PYPI ----"
+                    sh 'PYPIUSER=python-mch mchbuild deploy.pypi'
 
-                        sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
-                        Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
-                    }
-                    withCredentials([
-                        string(
-                            credentialsId: 'dependency-track-token-prod',
-                            variable: 'DTRACK_TOKEN')
-                    ]) {
-                        echo("---- PUBLISH DEPENDENCIES TO DEPENDENCY REGISTRY ----")
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "mchbuild verify.publishSbom -s version=${Globals.version}"
-                        }
+                    sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
+                    Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
+                }
+                withCredentials([
+                    string(
+                        credentialsId: 'dependency-track-token-prod',
+                        variable: 'DTRACK_TOKEN')
+                ]) {
+                    echo("---- PUBLISH DEPENDENCIES TO DEPENDENCY REGISTRY ----")
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            sh "mchbuild verify.publishSbom -s version=${Globals.version}"
                     }
                 }
             }
