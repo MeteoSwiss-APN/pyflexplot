@@ -34,9 +34,13 @@ pipeline {
 
     environment {
         PATH = "$workspace/.venv-mchbuild/bin:$PATH"
-        PYPI_USERNAME = 'python-mch'
+
+        PIP_USER = 'python-mch'
+
         HTTP_PROXY = 'http://proxy.meteoswiss.ch:8080'
         HTTPS_PROXY = 'http://proxy.meteoswiss.ch:8080'
+        NO_PROXY = '.meteoswiss.ch,localhost'
+
         SCANNER_HOME = tool name: 'Sonarqube-certs-PROD', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
     }
 
@@ -50,7 +54,7 @@ pipeline {
                     sh '''
                     python -m venv .venv-mchbuild
                     PIP_INDEX_URL=https://hub.meteoswiss.ch/nexus/repository/python-all/simple \
-                      .venv-mchbuild/bin/pip install --upgrade mchbuild
+                      .venv-mchbuild/bin/pip install --upgrade pip mchbuild
                     '''
                     echo '---- INITIALIZE PARAMETERS ----'
 
@@ -170,7 +174,7 @@ pipeline {
                                 credentialsId: "python-mch-nexus-secret",
                                 variable: 'PIP_PWD')
                         ]) {
-                            runDevScript("build/poetry-lib-release.sh ${env.PYPI_USERNAME} $PIP_PWD ${Globals.pythonVersion}")
+                            runDevScript("build/poetry-lib-release.sh ${env.PIP_USER} $PIP_PWD ${Globals.pythonVersion}")
                             Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
                         }
                     }
