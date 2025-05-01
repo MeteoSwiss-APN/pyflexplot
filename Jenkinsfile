@@ -34,13 +34,9 @@ pipeline {
 
     environment {
         PATH = "$workspace/.venv-mchbuild/bin:$PATH"
-
-        PYPI_USER = 'python-mch'
-
         HTTP_PROXY = 'http://proxy.meteoswiss.ch:8080'
         HTTPS_PROXY = 'http://proxy.meteoswiss.ch:8080'
         NO_PROXY = '.meteoswiss.ch,localhost'
-
         SCANNER_HOME = tool name: 'Sonarqube-certs-PROD', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
     }
 
