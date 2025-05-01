@@ -35,7 +35,7 @@ pipeline {
     environment {
         PATH = "$workspace/.venv-mchbuild/bin:$PATH"
 
-        PIP_USER = 'python-mch'
+        PYPI_USER = 'python-mch'
 
         HTTP_PROXY = 'http://proxy.meteoswiss.ch:8080'
         HTTPS_PROXY = 'http://proxy.meteoswiss.ch:8080'
@@ -174,7 +174,7 @@ pipeline {
                                 credentialsId: "python-mch-nexus-secret",
                                 variable: 'PIP_PWD')
                         ]) {
-                            runDevScript("build/poetry-lib-release.sh ${env.PIP_USER} $PIP_PWD ${Globals.pythonVersion}")
+                            runDevScript("build/poetry-lib-release.sh ${env.PYPI_USER} $PIP_PWD ${Globals.pythonVersion}")
                             Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
                         }
                     }
