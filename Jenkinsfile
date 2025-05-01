@@ -167,9 +167,11 @@ pipeline {
                             passwordVariable: 'GITHUB_ACCESS_TOKEN',
                             usernameVariable: 'GITHUB_APP')
                     ]) {
-                        echo "---- PUBLISH PYPI ----"
-                        sh 'PYPIUSER=python-mch mchbuild deploy.pypi'
-
+                        withCredentials([string(credentialsId: 'python-mch-nexus-secret',
+                                     variable: 'PYPIPASS')]) {
+                            echo "---- PUBLISH PYPI ----"
+                            sh 'PYPIUSER=python-mch mchbuild deploy.pypi'
+                        }
                         sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
                         Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
                     }

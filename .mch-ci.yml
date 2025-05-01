@@ -52,7 +52,7 @@ default:
   - deploy:
       - pypi:
           pythonPublishPackage:
-            setPackageVersion: true
+            setPackageVersion: False
             pythonImageName: '3.10'
             pullAlways: false
   - clean:
