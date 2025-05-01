@@ -159,58 +159,33 @@ pipeline {
         }
 
         stage('Release') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'github app credential for the meteoswiss-apn github organization',
-                        passwordVariable: 'GITHUB_ACCESS_TOKEN',
-                        usernameVariable: 'GITHUB_APP')
-                ]) {
-                    echo "---- PUBLISH PYPI ----"
-                    sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
-                    script {
-                        withCredentials([
-                            string(
-                                credentialsId: "python-mch-nexus-secret",
-                                variable: 'PIP_PWD')
-                        ]) {
-                            runDevScript("build/poetry-lib-release.sh ${env.PYPI_USER} $PIP_PWD ${Globals.pythonVersion}")
-                            Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
+            if (env.TAG_NAME) {
+                steps {
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'github app credential for the meteoswiss-apn github organization',
+                            passwordVariable: 'GITHUB_ACCESS_TOKEN',
+                            usernameVariable: 'GITHUB_APP')
+                    ]) {
+                        echo "---- PUBLISH PYPI ----"
+                        sh 'PYPIUSER=python-mch mchbuild deploy.pypi'
+
+                        sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
+                        Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
+                    }
+                    withCredentials([
+                        string(
+                            credentialsId: 'dependency-track-token-prod',
+                            variable: 'DTRACK_TOKEN')
+                    ]) {
+                        echo("---- PUBLISH DEPENDENCIES TO DEPENDENCY REGISTRY ----")
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                sh "mchbuild verify.publishSbom -s version=${Globals.version}"
                         }
                     }
                 }
             }
         }
-
-
-        // stage('Release') {
-        //     steps {
-        //         withCredentials([
-        //             usernamePassword(
-        //                 credentialsId: 'github app credential for the meteoswiss-apn github organization',
-        //                 passwordVariable: 'GITHUB_ACCESS_TOKEN',
-        //                 usernameVariable: 'GITHUB_APP'),
-        //             string(
-        //                 credentialsId: 'python-mch-nexus-secret',
-        //                 variable: 'PYPIPASS'),
-        //             string(
-        //                 credentialsId: 'dependency-track-token-prod',
-        //                 variable: 'DTRACK_TOKEN')
-        //         ]) {
-        //             script {
-
-        //                 echo "---- PUBLISH PYPI ----"
-        //                 sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
-        //                 sh "PYPIUSER=python-mch mchbuild deploy.pypi"
-
-        //                 echo("---- PUBLISH DEPENDENCIES TO DEPENDENCY REGISTRY ----")
-        //                 catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        //                         sh "mchbuild verify.publishSbom -s version=${Globals.version}"
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
     }
 
     post {
@@ -218,6 +193,7 @@ pipeline {
             sh """
             mchbuild -s version=${Globals.version} clean
             """
+            cleanWs()
         }
         aborted {
             updateGitlabCommitStatus name: 'Build', state: 'canceled'
