@@ -104,6 +104,10 @@ pipeline {
 
         stage('Scan') {
             steps {
+
+                echo("---- DEPENDENCIES SECURITY SCAN ----")
+                sh "mchbuild verify.securityScan"
+
                 echo '---- LINT & TYPE CHECK ----'
                 sh "mchbuild -s image=${Globals.imageReference} test.lint"
                 script {
@@ -164,8 +168,8 @@ pipeline {
                 expression { return env.TAG_NAME != null }
             }
             steps {
-                echo "---- PUBLISH PYPI ----"
                 script {
+                    echo "---- PUBLISH PYPI ----"
                     withCredentials([
                         usernamePassword(
                             credentialsId: 'github app credential for the meteoswiss-apn github organization',
@@ -180,12 +184,10 @@ pipeline {
                         Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
                     }
 
-                    withCredentials([
-                        string(
+                    echo("---- PUBLISH DEPENDENCIES TO DEPENDENCY REGISTRY ----")
+                    withCredentials([string(
                             credentialsId: 'dependency-track-token-prod',
-                            variable: 'DTRACK_TOKEN')
-                    ]) {
-                        echo("---- PUBLISH DEPENDENCIES TO DEPENDENCY REGISTRY ----")
+                            variable: 'DTRACK_TOKEN')]) {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                                 sh "mchbuild verify.publishSbom -s version=${Globals.version}"
                         }

@@ -2,7 +2,7 @@
 name = "pyflexplot"
 # Keep only Major and Minor version in this configuration,
 # the patch version is calculated when releasing the library
-version = "2.2.1"
+version = "2.2.2"
 description = "PyFlexPlot - Visualize and post-process FLEXPART dispersion simulation results stored in NetCDF format"
 authors = ["Stefan Ruedisuehli <stefan.ruedisuehli@env.ethz.ch>", "Pirmin Kaufmann <pirmin.kaufmann@meteoswiss.ch>"]
 packages = [
