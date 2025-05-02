@@ -1,8 +1,6 @@
 [tool.poetry]
 name = "pyflexplot"
-# Keep only Major and Minor version in this configuration,
-# the patch version is calculated when releasing the library
-version = "2.2.0"
+version = "2.2.2"
 description = "PyFlexPlot - Visualize and post-process FLEXPART dispersion simulation results stored in NetCDF format"
 authors = ["Stefan Ruedisuehli <stefan.ruedisuehli@env.ethz.ch>", "Pirmin Kaufmann <pirmin.kaufmann@meteoswiss.ch>"]
 packages = [
@@ -34,13 +32,15 @@ pyflexplot  = "pyflexplot.cli.cli:cli"
 crop-netcdf = "srtools.crop_netcdf:main"
 
 [[tool.poetry.source]]
-name = "pypi-meteoswiss"
+name = "pypi-mch"
 url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
 priority = "primary"
 
 [[tool.poetry.source]]
 name = "pypi-mch-publish"
-url = "https://service.meteoswiss.ch/nexus/repository/python-mch/"
+# only hub entrypoint can be used for publishing libraries (accessible from CI/CD server)
+url = "https://hub.meteoswiss.ch/nexus/repository/python-mch/"
+priority = "explicit"
 
 [tool.poetry.dependencies]
 python = "~3.10"  # python version restricted by pillow

@@ -3,6 +3,9 @@ class Globals {
     // sets to abort the pipeline if the Sonarqube QualityGate fails
     static boolean qualityGateAbortPipeline = false
 
+    // the default python version
+    static String pythonVersion = '3.10'
+
     // the reference (image name + tag) of the container image
     static String imageReference = ''
 
@@ -13,6 +16,7 @@ class Globals {
 
 String rebuild_cron = env.BRANCH_NAME == "main" ? "@midnight" : ""
 
+@Library('dev_tools@main') _
 pipeline {
     agent { label 'podman' }
 
@@ -32,6 +36,7 @@ pipeline {
         PATH = "$workspace/.venv-mchbuild/bin:$PATH"
         HTTP_PROXY = 'http://proxy.meteoswiss.ch:8080'
         HTTPS_PROXY = 'http://proxy.meteoswiss.ch:8080'
+        NO_PROXY = '.meteoswiss.ch,localhost'
         SCANNER_HOME = tool name: 'Sonarqube-certs-PROD', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
     }
 
@@ -45,7 +50,7 @@ pipeline {
                     sh '''
                     python -m venv .venv-mchbuild
                     PIP_INDEX_URL=https://hub.meteoswiss.ch/nexus/repository/python-all/simple \
-                      .venv-mchbuild/bin/pip install --upgrade mchbuild
+                      .venv-mchbuild/bin/pip install --upgrade pip mchbuild
                     '''
                     echo '---- INITIALIZE PARAMETERS ----'
 
@@ -95,6 +100,10 @@ pipeline {
 
         stage('Scan') {
             steps {
+
+                echo("---- DEPENDENCIES SECURITY SCAN ----")
+                sh "mchbuild verify.securityScan"
+
                 echo '---- LINT & TYPE CHECK ----'
                 sh "mchbuild -s image=${Globals.imageReference} test.lint"
                 script {
@@ -148,6 +157,40 @@ pipeline {
                 }
             }
         }
+
+        stage('Release') {
+            when {
+                // This will only execute the stage if TAG_NAME is present
+                expression { return env.TAG_NAME != null }
+            }
+            steps {
+                script {
+                    echo "---- PUBLISH PYPI ----"
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'github app credential for the meteoswiss-apn github organization',
+                            passwordVariable: 'GITHUB_ACCESS_TOKEN',
+                            usernameVariable: 'GITHUB_APP'),
+                        string(credentialsId: 'python-mch-nexus-secret',
+                            variable: 'PYPIPASS')
+                    ]) {
+                        sh 'PYPIUSER=python-mch mchbuild deploy.pypi'
+
+                        sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
+                        Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
+                    }
+
+                    echo("---- PUBLISH DEPENDENCIES TO DEPENDENCY REGISTRY ----")
+                    withCredentials([string(
+                            credentialsId: 'dependency-track-token-prod',
+                            variable: 'DTRACK_TOKEN')]) {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                sh "mchbuild verify.publishSbom -s version=${Globals.version}"
+                        }
+                    }
+                }
+            }
+        }
     }
 
     post {
@@ -155,6 +198,7 @@ pipeline {
             sh """
             mchbuild -s version=${Globals.version} clean
             """
+            cleanWs()
         }
         aborted {
             updateGitlabCommitStatus name: 'Build', state: 'canceled'

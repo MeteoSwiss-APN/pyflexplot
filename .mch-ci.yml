@@ -43,9 +43,27 @@ default:
               fullImageName: ${var.image}-tester
               packageManager: ''
               pullAlways: false
+  - verify:
+      - securityScan:
+          - securityReport:
+              format: [ 'html', 'sbom', 'table', 'print' ]
+              severity: [ 'CRITICAL', 'HIGH' ]
+              target: file://poetry.lock
+              qualityGate:
+                threshold: 5
+                criticalFactor: 5
+                highFactor: 1
+      - publishSbom:
+          - securityPublishSbom:
   - publish:
       - image:
           containerPublishImage:
+  - deploy:
+      - pypi:
+          pythonPublishPackage:
+            setPackageVersion: False
+            pythonImageName: '3.10'
+            pullAlways: false
   - clean:
       - images:
           script: |
