@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyflexplot"
-version = "2.2.2"
+version = "2.2.3"
 description = "PyFlexPlot - Visualize and post-process FLEXPART dispersion simulation results stored in NetCDF format"
 authors = ["Stefan Ruedisuehli <stefan.ruedisuehli@env.ethz.ch>", "Pirmin Kaufmann <pirmin.kaufmann@meteoswiss.ch>"]
 packages = [
@@ -32,7 +32,7 @@ pyflexplot  = "pyflexplot.cli.cli:cli"
 crop-netcdf = "srtools.crop_netcdf:main"
 
 [[tool.poetry.source]]
-name = "pypi-mch"
+name = "pypi-meteoswiss"
 url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
 priority = "primary"
 
