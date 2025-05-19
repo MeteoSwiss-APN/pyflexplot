@@ -2114,16 +2114,13 @@ reference = "pypi-meteoswiss"
 [[package]]
 name = "py-partiql-parser"
 version = "0.5.5"
-description = "Pure Python PartiQL Parser"
+description = ""
 optional = false
 python-versions = "*"
 files = [
     {file = "py_partiql_parser-0.5.5-py2.py3-none-any.whl", hash = "sha256:90d278818385bd60c602410c953ee78f04ece599d8cd21c656fc5e47399577a1"},
     {file = "py_partiql_parser-0.5.5.tar.gz", hash = "sha256:ed07f8edf4b55e295cab4f5fd3e2ba3196cee48a43fe210d53ddd6ffce1cf1ff"},
 ]
-
-[package.extras]
-dev = ["black (==22.6.0)", "flake8", "mypy", "pytest"]
 
 [package.source]
 type = "legacy"
@@ -3290,4 +3287,4 @@ reference = "pypi-meteoswiss"
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.10"
-content-hash = "f06a103a6be77f930059863b171d9adf2fffe107c87e92ba47cd54a86fd91494"
+content-hash = "9e068f1233d5eb2ce74d144ebf4223c2ef50be69e68339951051042dd19e901c"
