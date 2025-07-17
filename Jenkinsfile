@@ -1,5 +1,8 @@
 class Globals {
 
+    // Pin mchbuild to stable version to avoid breaking changes
+    static String mchbuildVersion = '0.8.0'
+
     // sets to abort the pipeline if the Sonarqube QualityGate fails
     static boolean qualityGateAbortPipeline = false
 
@@ -47,11 +50,11 @@ pipeline {
 
                 script {
                     echo '---- INSTALL MCHBUILD ----'
-                    sh '''
+                    sh """
                     python -m venv .venv-mchbuild
                     PIP_INDEX_URL=https://hub.meteoswiss.ch/nexus/repository/python-all/simple \
-                      .venv-mchbuild/bin/pip install --upgrade pip mchbuild
-                    '''
+                      .venv-mchbuild/bin/pip install mchbuild==${Globals.mchbuildVersion}
+                    """
                     echo '---- INITIALIZE PARAMETERS ----'
 
                     if (env.TAG_NAME) {
