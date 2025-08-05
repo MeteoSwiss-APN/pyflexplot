@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyflexplot"
-version = "2.2.3"
+version = "2.2.4"
 description = "PyFlexPlot - Visualize and post-process FLEXPART dispersion simulation results stored in NetCDF format"
 authors = ["Stefan Ruedisuehli <stefan.ruedisuehli@env.ethz.ch>", "Pirmin Kaufmann <pirmin.kaufmann@meteoswiss.ch>"]
 packages = [
