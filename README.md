@@ -83,7 +83,7 @@ This example assumes you are in the pyflexplot directory.
 
 Default input files are searched for in  `./data`.
 If you want to use the files as defined in the presets for your tests,
-link thm into the root of the repository. At CSCS on Alps, use:
+link them into the root of the repository. At CSCS on Alps, use:
 
 ```bash
 ln -s /store_new/mch/msopr/pyflexplot_testdata data
@@ -96,26 +96,41 @@ corresponding preset from the table below and define the `preset` variable accor
 
 | Model                 | Type         | Define Preset Variable             |
 |-----------------------|--------------|------------------------------------|
+| FLEXPART-ICON-CH1-CTRL| deterministic| `preset=opr/icon-ch1-ctrl/all_pdf` |
+| FLEXPART-ICON-CH2-EPS | ensemble     | `preset=opr/icon-ch2-eps/all_pdf`  |
 | FLEXPART-IFS          | global       | `preset=opr/ifs-hres/all_pdf`      |
 | FLEXPART-IFS          | Europe       | `preset=opr/ifs-hres-eu/all_pdf`   |
+
+Legacy presets for former COSMO model:
+
+| Model                 | Type         | Define Preset Variable             |
+|-----------------------|--------------|------------------------------------|
 | FLEXPART-COSMO-1E-CTRL| deterministic| `preset=opr/cosmo-1e-ctrl/all_pdf` |
 | FLEXPART-COSMO-2E-CTRL| deterministic| `preset=opr/cosmo-2e-ctrl/all_pdf` |
 | FLEXPART-COSMO-1E     | ensemble     | `preset=opr/cosmo-1e/all_pdf`      |
 | FLEXPART-COSMO-2E     | ensemble     | `preset=opr/cosmo-2e/all_pdf`      |
-| FLEXPART-ICON-CH1-CTRL| deterministic| `preset=opr/icon-ch1-ctrl/all_pdf` |
-| FLEXPART-ICON-CH2-EPS | ensemble     | `preset=opr/icon-ch2-eps/all_pdf`  |
 
 You may use the `*` wildcard to operate `pyflexplot` with several presets at once. For example, to run pyflexplot with all presets 
 that produce the graphics in PDF format for a specific
 NWP model, define the `preset` variable as one of:
 
 ```bash
-preset='opr/cosmo*/all_pdf'
 preset='opr/icon*/all_pdf'
 preset='opr/ifs*/all_pdf'
 ```
 
-Note however that the preset in this form requires the respective default input files to be accessible through the `./data` directory link.
+Note that the preset in this form requires the respective default input files to be accessible through the `./data` directory.
+
+Alternatively, to create all graphics formats from one model, use one of:
+
+```bash
+preset='opr/icon-ch1-ctrl/all_*'
+preset='opr/icon-ch2-eps/all_*'
+preset='opr/ifs-hres-eu/all_*'
+preset='opr/ifs-hres/all_*'
+```
+
+Note that this does not work for `opr/icon-ch2-eps/all_*`.
 
 Define an output directory and create it, if it does not exist, e.g.
 
@@ -152,14 +167,19 @@ Instead of `03` (for `%03d`), another C-style field width for the ensemble membe
 Example using operational Flexpart ensemble output based on ICON-CH2-EPS:
 
 ```bash
+# Define preset, model name, base time
 preset=opr/icon-ch2-eps/all_pdf  # Preset for ICON-CH2-EPS
 nwp=$(echo ${preset} | cut -d/ -f2 | sed 's/*//g')  # Extract NWP model name
 basetime=$(date --utc --date="today 00" +%Y%m%d%H)  # Recent base time
-# Get name of first input file
+
+# Get name of first input file, insert placeholders for ensemble members
 infile000=$(echo /store_new/mch/msopr/osm/ICON-CH2-EPS/FCST${basetime:2:2}/${basetime:2:8}_???/flexpart_c/000/grid_conc_*_BEZ.nc)
 infile=${infile000/\/000\//\/\{ens_member:03\}\/}   # Input file definition
+
+# Define and create outut directory
 dest=plot_${basetime:2:8}    # Output directory with base time of NWP model
 mkdir $dest                  # Create output directory
+
 # Submit job with the help of the batchPP utility
 batchPP -t 1 -T 10 -n pfp-$nwp -- \
   $CONDA_PREFIX/bin/pyflexplot --preset $preset \
@@ -223,8 +243,9 @@ pyflexplot --preset "$preset" --merge-pdfs --dest=s3://<s3-bucket-name>
 
 ## Development
 
-__Prerequisites__: Git, [Miniconda](https://docs.anaconda.com/free/miniconda/) 
-(for installation of Conda) or 
+__Prerequisites__: Git, [Miniconda](https://docs.anaconda.com/free/miniconda/) or
+[Miniforge](https://github.com/conda-forge/miniforge)
+(for installation of Conda), or
 [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 
 ### Install dependencies & start the service locally (CSCS)
@@ -235,18 +256,16 @@ Clone the repo and enter the project folder:
 git clone git@github.com:MeteoSwiss-APN/pyflexplot.git && cd pyflexplot
 ```
 
-Create a Conda (or mamba/micromamba) environment with only the desired Python version and activate:
+Create a Conda environment with only the desired Python version and Poetry and activate it:
 
 ```bash
-conda create --yes --prefix ./.conda-env python=3.10
-conda activate ./.conda-env
+conda create --yes --name pyflexplot python=3.10 poetry=1.8
+conda activate pyflexplot
 ```
 
-Install Poetry into this environment and
-configure Poetry to not create a new virtual environment. If it detects an already enabled virtual (eg Conda) environment it will install dependencies into it:
+Configure Poetry to not create a new virtual environment. If it detects an already enabled virtual (eg Conda) environment it will install dependencies into it:
 
 ```bash
-conda install --yes poetry
 poetry config --local virtualenvs.create false
 ```
 
