@@ -55,12 +55,12 @@ ens_variable = "probability"
 ens_param_thr = 0
 
 [_base._concentration._integr."_pctl95+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_95-Perzentil.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_95-Perzentil_{species_id}.shp"
 ens_variable = "percentile"
 ens_param_pctl = 95
 
 [_base._tot_deposition."_pctl95+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_95-Perzentil.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_95-Perzentil_{species_id}.shp"
 ens_variable = "percentile"
 ens_param_pctl = 95
 
@@ -85,11 +85,11 @@ outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wolkenabzugszeit.shp"
 combine_species = true
 
 [_base._concentration._integr."_min+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Minimum_integrierte-Luftaktivitaet.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Minimum_integrierte-Luftaktivitaet_{species_id}.shp"
 ens_variable = "minimum"
 
 [_base._tot_deposition."_min+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Minimum_Deposition.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Minimum_Deposition_{species_id}.shp"
 ens_variable = "minimum"
 
 [_base._affected_area."_min+"]
@@ -97,11 +97,11 @@ outfile = "{release_start}_{release_site}_FLEXPART-{model}_Minimum_beaufschl_Geb
 ens_variable = "minimum"
 
 [_base._concentration._integr."_max+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Maximum_integrierte-Luftaktivitaet.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Maximum_integrierte-Luftaktivitaet_{species_id}.shp"
 ens_variable = "maximum"
 
 [_base._tot_deposition."_max+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Maximum_Deposition.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Maximum_Deposition_{species_id}.shp"
 ens_variable = "maximum"
 
 [_base._affected_area."_max+"]
@@ -109,11 +109,11 @@ outfile = "{release_start}_{release_site}_FLEXPART-{model}_Maximum_beaufschl_Geb
 ens_variable = "maximum"
 
 [_base._concentration._integr."_mean+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Mittel_integrierte-Luftaktivitaet.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Mittel_integrierte-Luftaktivitaet_{species_id}.shp"
 ens_variable = "mean"
 
 [_base._tot_deposition."_mean+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Mittel_Deposition.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Mittel_Deposition_{species_id}.shp"
 ens_variable = "mean"
 
 # [_base._affected_area."_mean+"] # for affected area, mean is same area as max -> skip mean
@@ -121,11 +121,11 @@ ens_variable = "mean"
 # ens_variable = "mean"
 
 [_base._concentration._integr."_median+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Median_integrierte-Luftaktivitaet.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Median_integrierte-Luftaktivitaet_{species_id}.shp"
 ens_variable = "median"
 
 [_base._tot_deposition."_median+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Median_Deposition.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Median_Deposition_{species_id}.shp"
 ens_variable = "median"
 
 [_base._affected_area."_median+"]

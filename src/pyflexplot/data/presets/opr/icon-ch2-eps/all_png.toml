@@ -8,7 +8,7 @@ model = "ICON-CH2-EPS"
 lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
-outfile = "forecast-iconch2eps-dispersion~{base_time}~{plot_variable}-{ens_variable}~{domain}~{release_site}~1~{time_step}.png"
+outfile = "forecast-iconch2eps-dispersion~{base_time}~{plot_variable}-{ens_variable}~{domain}~{release_site}~{species_id}~{time_step}.png"
 
 [_base._concentration]
 plot_variable = "concentration"
@@ -70,9 +70,11 @@ time = 0
 
 [_base._concentration._cloud."_arrival+"]
 ens_variable = "cloud_arrival_time"
+combine_species = true
 
 [_base._concentration._cloud."_departure+"]
 ens_variable = "cloud_departure_time"
+combine_species = true
 
 [_base._concentration._integr."_min+"]
 ens_variable = "minimum"

@@ -143,14 +143,17 @@ ens_variable = "mean"
 [_base._concentration._integr."_median+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_statistics_{domain}.pdf"
 ens_variable = "median"
+
 [_base._tot_deposition."_median+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_statistics_{domain}.pdf"
 ens_variable = "median"
+
 [_base._affected_area."_median+"]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_cloud_statistics_{domain}.pdf"
 ens_variable = "median"
 
 ["**".full]
 domain = "full"
+
 ["**".ch]
 domain = "ch"
