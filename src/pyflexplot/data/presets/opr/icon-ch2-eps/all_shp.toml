@@ -32,40 +32,40 @@ time = -1
 combine_species = true
 
 [_base._concentration."_probability+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wahrscheinlichkeit-Konzentration_{species_id}_{time_step}.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wahrscheinlichkeit_Konzentration_{species_id}_{time_step}.shp"
 ens_variable = "probability"
 ens_param_thr = 0
 combine_species = true
 
 [_base._concentration._integr."_probability+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wahrscheinlichkeit-integrierte-Luftaktivitaet_{species_id}.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wahrscheinlichkeit_integrierte-Luftaktivitaet_{species_id}.shp"
 ens_variable = "probability"
 ens_param_thr = 0
 combine_species = true
 
 [_base._tot_deposition."_probability+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wahrscheinlichkeit-Deposition_{species_id}.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wahrscheinlichkeit_Deposition_{species_id}.shp"
 ens_variable = "probability"
 ens_param_thr = 0
 combine_species = true
 
 [_base._affected_area."_probability+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wahrscheinlichkeit-beaufschl_Gebiet.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Wahrscheinlichkeit_beaufschl_Gebiet.shp"
 ens_variable = "probability"
 ens_param_thr = 0
 
 [_base._concentration._integr."_pctl95+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_95-Perzentil_{species_id}.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_95-Perzentil_integrierte-Luftaktivitaet_{species_id}.shp"
 ens_variable = "percentile"
 ens_param_pctl = 95
 
 [_base._tot_deposition."_pctl95+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_95-Perzentil_{species_id}.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_95-Perzentil_Deposition_{species_id}.shp"
 ens_variable = "percentile"
 ens_param_pctl = 95
 
 [_base._affected_area."_pctl95+"]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_95-Perzentil.shp"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_95-Perzentil_beaufschl_Gebiet.shp"
 ens_variable = "percentile"
 ens_param_pctl = 95
 
