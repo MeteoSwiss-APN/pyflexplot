@@ -18,6 +18,11 @@ FROM dockerhub.apps.cp.meteoswiss.ch/mch/python-3.10:latest-slim AS base
 ARG VERSION
 LABEL ch.meteoswiss.project=pyflexplot-${VERSION}
 
+# Install system fonts used by matplotlib
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends fonts-liberation fontconfig \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /src/app-root/dist/*.whl /src/app-root/
 COPY --from=builder /src/app-root/requirements.txt /src/app-root/
 
