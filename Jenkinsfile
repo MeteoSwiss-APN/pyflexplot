@@ -8,11 +8,11 @@ class Globals {
     // the default python version
     static String pythonVersion = '3.10'
 
-    // the reference (image name + tag) of the container image
-    static String imageReference = ''
+    // Name of the container image
+    static String containerImageName= ''
 
-    // the service version
-    static String version = ''
+    // Semantic version of the artifact
+    static String semanticVersion = ''
 
     static String PIP_INDEX_URL = 'https://hub.meteoswiss.ch/nexus/repository/python-all/simple'
 }
