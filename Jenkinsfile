@@ -68,30 +68,35 @@ pipeline {
                             currentBuild.result = 'ABORTED'
                             error('Build aborted because release builds are only triggered for tags of the form <major>.<minor>.<patch>.')
                         }
-                        Globals.version = env.TAG_NAME
+                        Globals.semanticVersion  = env.TAG_NAME
                     } else {
                         echo "Detected development build triggered from branch."
-                        Globals.version= sh(
+                        Globals.semanticVersion = sh(
                             script: 'mchbuild -g semanticVersion build.getSemanticVersion',
                             returnStdout: true
                         )
                     }
 
-                    def imageName = sh(
+                    Globals.containerImageName = sh(
                         script: 'mchbuild -g containerImageName build.getImageName',
                         returnStdout: true
                     )
-                    Globals.imageReference = imageName + ':' + Globals.version
-                    echo "Using version ${Globals.version} and image reference ${Globals.imageReference}"
+                    echo "Using semantic version: ${Globals.semanticVersion}"
+                    echo "Using container image name: ${Globals.containerImageName}"
                 }
             }
         }
 
         stage('Build') {
             steps {
-                echo '---- BUILD IMAGE ----'
+                echo '---- BUILDING CONTAINER IMAGES ----'
                 sh """
-                mchbuild -s version=${Globals.version} -s image=${Globals.imageReference} build.imageTester test.unit
+                    mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} build.artifacts
+                """
+
+                echo("---- RUNNING UNIT TESTS & COLLECTING COVERAGE ----")
+                sh """
+                    mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} test.unit
                 """
             }
             post {
@@ -103,12 +108,11 @@ pipeline {
 
         stage('Scan') {
             steps {
-
                 echo("---- DEPENDENCIES SECURITY SCAN ----")
                 sh "mchbuild verify.securityScan"
 
                 echo '---- LINT & TYPE CHECK ----'
-                sh "mchbuild -s image=${Globals.imageReference} test.lint"
+                sh "mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} test.lint"
                 script {
                     try {
                         recordIssues(qualityGates: [[threshold: 10, type: 'TOTAL', unstable: false]], tools: [myPy(pattern: 'test_reports/mypy.log')])
@@ -136,27 +140,29 @@ pipeline {
             }
         }
 
-        stage('Create Artifacts') {
-            steps {
-                script {
-                    echo '---- CREATE IMAGE ----'
-                    sh """
-                    mchbuild -s version=${Globals.version} -s image=${Globals.imageReference} build.imageAwsRunner
-                    """
-                }
-            }
-        }
+//         stage('Create Artifacts') {
+//             steps {
+//                 script {
+//                     echo '---- CREATE IMAGE ----'
+//                     sh """
+//                     mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} build.imageAwsRunner
+//                     """
+//                 }
+//             }
+//         }
 
         stage('Publish Artifacts') {
             environment {
                 REGISTRY_AUTH_FILE = "$workspace/.containers/auth.json"
             }
             steps {
-                echo "---- PUBLISH IMAGE ----"
+                echo "---- PUBLISHING CONTAINER IMAGES ----"
                 withCredentials([usernamePassword(credentialsId: 'openshift-nexus',
                                                   passwordVariable: 'NXPASS',
                                                   usernameVariable: 'NXUSER')]) {
-                    sh "mchbuild publish.image -s fullImageName=${Globals.imageReference}"
+                    sh """
+                        mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} publish.artifacts
+                    """
                 }
             }
         }
@@ -199,7 +205,7 @@ pipeline {
     post {
         cleanup {
             sh """
-            mchbuild -s version=${Globals.version} clean
+            mchbuild -s semanticVersion=${Globals.semanticVersion} clean
             """
             cleanWs()
         }

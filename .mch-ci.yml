@@ -6,41 +6,46 @@ default:
           gitCalculateSemanticVersion:
       - getImageName:
           containerConstructImageName:
-      - imageTester:
-          containerBuildImage:
-            fullImageName: ${var.image}-tester
-            target: tester
-            extraArgs:
-              - --build-arg
-              - VERSION=${var.version}
-      - imageAwsRunner:
-          containerBuildImage:
-            fullImageName: ${var.image}
-            target: runner
-            extraArgs:
-              - --build-arg
-              - VERSION=${var.version}
-            pullAlways: false
+      - artifacts:
+          - containerBuildImage:
+              imageName: ${var.containerImageName}-tester
+              imageTag: ${var.semanticVersion}
+              target: tester
+              extraArgs:
+                - --build-arg
+                - VERSION=${var.semanticVersion}
+          - containerBuildImage:
+              imageName: ${var.containerImageName}-aws
+              imageTag: ${var.semanticVersion}
+              target: runner
+              extraArgs:
+                - --build-arg
+                - VERSION=${var.semanticVersion}
+              pullAlways: false
   - test:
       - unit:
           - script: mkdir -p test_reports
           - pythonTest:
-              fullImageName: ${var.image}-tester
+              imageName: ${var.containerImageName}-tester
+              imageTag: ${var.semanticVersion}
               testDirectory: tests
               packageManager: ''
               pullAlways: false
           - pythonCoverage:
-              fullImageName: ${var.image}-tester
+              imageName: ${var.containerImageName}-tester
+              imageTag: ${var.semanticVersion}
               packageManager: ''
               pullAlways: false
       - lint:
           - script: mkdir -p test_reports
           - pythonLint:
-              fullImageName: ${var.image}-tester
+              imageName: ${var.containerImageName}-tester
+              imageTag: ${var.semanticVersion}
               packageManager: ''
               pullAlways: false
           - pythonTypeChecker:
-              fullImageName: ${var.image}-tester
+              imageName: ${var.containerImageName}-tester
+              imageTag: ${var.semanticVersion}
               packageManager: ''
               pullAlways: false
   - verify:
@@ -56,8 +61,11 @@ default:
       - publishSbom:
           - securityPublishSbom:
   - publish:
-      - image:
-          containerPublishImage:
+      - artifacts:
+          - containerPublishImage:
+              imageName: ${var.containerImageName}-aws
+              imageTag: ${var.semanticVersion}
+
   - deploy:
       - pypi:
           pythonPublishPackage:
