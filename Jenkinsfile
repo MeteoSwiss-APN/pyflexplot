@@ -13,6 +13,8 @@ class Globals {
 
     // the service version
     static String version = ''
+
+    static String PIP_INDEX_URL = 'https://hub.meteoswiss.ch/nexus/repository/python-all/simple'
 }
 
 String rebuild_cron = env.BRANCH_NAME == "main" ? "@midnight" : ""
