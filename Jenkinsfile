@@ -1,7 +1,6 @@
 class Globals {
-
     // Pin mchbuild to stable version to avoid breaking changes
-    static String mchbuildVersion = '0.8.0'
+    static String mchbuildPipPackage = 'mchbuild>=0.11.3,<0.12.0'
 
     // sets to abort the pipeline if the Sonarqube QualityGate fails
     static boolean qualityGateAbortPipeline = false
@@ -14,7 +13,6 @@ class Globals {
 
     // the service version
     static String version = ''
-
 }
 
 String rebuild_cron = env.BRANCH_NAME == "main" ? "@midnight" : ""
@@ -52,9 +50,10 @@ pipeline {
                     echo '---- INSTALL MCHBUILD ----'
                     sh """
                     python -m venv .venv-mchbuild
-                    PIP_INDEX_URL=https://hub.meteoswiss.ch/nexus/repository/python-all/simple \
-                      .venv-mchbuild/bin/pip install mchbuild==${Globals.mchbuildVersion}
+                    PIP_INDEX_URL=${Globals.PIP_INDEX_URL} \
+                      .venv-mchbuild/bin/pip install --upgrade "${Globals.mchbuildPipPackage}"
                     """
+
                     echo '---- INITIALIZE PARAMETERS ----'
 
                     if (env.TAG_NAME) {
@@ -68,8 +67,7 @@ pipeline {
                             error('Build aborted because release builds are only triggered for tags of the form <major>.<minor>.<patch>.')
                         }
                         Globals.version = env.TAG_NAME
-                    } else
-                    {
+                    } else {
                         echo "Detected development build triggered from branch."
                         Globals.version= sh(
                             script: 'mchbuild -g semanticVersion build.getSemanticVersion',
