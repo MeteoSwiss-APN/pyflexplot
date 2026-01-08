@@ -31,23 +31,21 @@ default:
               testDirectory: tests
               packageManager: ''
               pullAlways: false
-          - pythonCoverage:
-              imageName: ${var.containerImageName}-tester
-              imageTag: ${var.semanticVersion}
-              packageManager: ''
-              pullAlways: false
+              withCoverage: true
       - lint:
           - script: mkdir -p test_reports
-          - pythonLint:
+          - pythonContainerLint:
               imageName: ${var.containerImageName}-tester
               imageTag: ${var.semanticVersion}
               packageManager: ''
               pullAlways: false
-          - pythonTypeChecker:
+              removeLocalImage: false
+          - pythonContainerTypeCheck:
               imageName: ${var.containerImageName}-tester
               imageTag: ${var.semanticVersion}
               packageManager: ''
               pullAlways: false
+              removeLocalImage: false
   - verify:
       - securityScan:
           - securityReport:
