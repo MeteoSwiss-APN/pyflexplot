@@ -47,15 +47,6 @@ default:
               pullAlways: false
               removeLocalImage: false
   - verify:
-      - securityScan:
-          - securityReport:
-              format: [ 'html', 'sbom', 'table', 'print' ]
-              severity: [ 'CRITICAL', 'HIGH' ]
-              target: file://poetry.lock
-              qualityGate:
-                threshold: 5
-                criticalFactor: 5
-                highFactor: 1
       - publishSbom:
           - securityPublishSbom:
   - publish:

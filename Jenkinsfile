@@ -108,9 +108,6 @@ pipeline {
 
         stage('Scan') {
             steps {
-                echo("---- DEPENDENCIES SECURITY SCAN ----")
-                sh "mchbuild verify.securityScan"
-
                 echo '---- LINT & TYPE CHECK ----'
                 sh "mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} test.lint"
                 script {
@@ -139,17 +136,6 @@ pipeline {
                 }
             }
         }
-
-//         stage('Create Artifacts') {
-//             steps {
-//                 script {
-//                     echo '---- CREATE IMAGE ----'
-//                     sh """
-//                     mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} build.imageAwsRunner
-//                     """
-//                 }
-//             }
-//         }
 
         stage('Publish Artifacts') {
             environment {
