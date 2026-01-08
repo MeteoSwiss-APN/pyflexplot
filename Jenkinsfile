@@ -186,7 +186,7 @@ pipeline {
                         sh 'PYPIUSER=python-mch mchbuild deploy.pypi'
 
                         sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
-                        Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
+                        Globals.semanticVersion = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
                     }
 
                     echo("---- PUBLISH DEPENDENCIES TO DEPENDENCY REGISTRY ----")
@@ -194,7 +194,7 @@ pipeline {
                             credentialsId: 'dependency-track-token-prod',
                             variable: 'DTRACK_TOKEN')]) {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "mchbuild verify.publishSbom -s version=${Globals.version}"
+                                sh "mchbuild verify.publishSbom -s version=${Globals.semanticVersion}"
                         }
                     }
                 }
