@@ -56,13 +56,6 @@ default:
               imageName: ${var.containerImageName}-aws
               imageTag: ${var.semanticVersion}
               removeLocalImage: false
-
-  - deploy:
-      - pypi:
-          pythonPublishPackage:
-            setPackageVersion: False
-            pythonImageName: '3.10'
-            pullAlways: false
   - clean:
       - images:
           script: |

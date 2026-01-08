@@ -160,22 +160,7 @@ pipeline {
             }
             steps {
                 script {
-                    echo "---- PUBLISH PYPI ----"
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: 'github app credential for the meteoswiss-apn github organization',
-                            passwordVariable: 'GITHUB_ACCESS_TOKEN',
-                            usernameVariable: 'GITHUB_APP'),
-                        string(credentialsId: 'python-mch-nexus-secret',
-                            variable: 'PYPIPASS')
-                    ]) {
-                        sh 'PYPIUSER=python-mch mchbuild deploy.pypi'
-
-                        sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
-                        Globals.semanticVersion = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
-                    }
-
-                    echo("---- PUBLISH DEPENDENCIES TO DEPENDENCY REGISTRY ----")
+                    echo("---- PUBLISH SBOM ----")
                     withCredentials([string(
                             credentialsId: 'dependency-track-token-prod',
                             variable: 'DTRACK_TOKEN')]) {
