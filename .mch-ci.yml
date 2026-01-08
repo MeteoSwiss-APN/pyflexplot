@@ -55,6 +55,7 @@ default:
           - containerPublishImage:
               imageName: ${var.containerImageName}-aws
               imageTag: ${var.semanticVersion}
+              removeLocalImage: false
 
   - deploy:
       - pypi:
