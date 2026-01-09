@@ -338,8 +338,8 @@ def _draw_colors_contours(
             return
         raise e
     else:
-        for contour in contours.collections:
-            contour.set_rasterized(True)
+        for child in contours.get_children():
+            child.set_rasterized(True)
 
 
 def _add_markers(ax: MapAxes, field: Field, markers_config: MarkersConfig) -> None:
