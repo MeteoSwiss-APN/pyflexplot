@@ -60,7 +60,8 @@ default:
       - images:
           - cleanupImages:
               targets:
-                  - label://ch.meteoswiss.project=${var.project}-${var.semanticVersion}
+                  - image://${var.containerImageName}-tester:${var.semanticVersion}
+                  - image://${var.containerImageName}-aws:${var.semanticVersion}
 #          script: |
 #            if test -n "${var.semanticVersion}"; then
 #              podman image rm -f $(podman image ls -q \
