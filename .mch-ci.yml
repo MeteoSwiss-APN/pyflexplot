@@ -58,11 +58,14 @@ default:
               removeLocalImage: false
   - clean:
       - images:
-          script: |
-            if test -n "${var.semanticVersion}"; then
-              podman image rm -f $(podman image ls -q \
-                -f "label=ch.meteoswiss.project=${var.project}-${var.semanticVersion}") || :
-            fi
+          - cleanupImages:
+              targets:
+                  - label://ch.meteoswiss.project=${var.project}-${var.semanticVersion}
+#          script: |
+#            if test -n "${var.semanticVersion}"; then
+#              podman image rm -f $(podman image ls -q \
+#                -f "label=ch.meteoswiss.project=${var.project}-${var.semanticVersion}") || :
+#            fi
 
 variables:
   project: pyflexplot

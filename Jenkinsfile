@@ -1,6 +1,7 @@
 class Globals {
     // Pin mchbuild to stable version to avoid breaking changes
-    static String mchbuildPipPackage = 'mchbuild>=0.11.3,<0.13.0'
+//     static String mchbuildPipPackage = 'mchbuild>=0.12.0,<0.13.0'
+    static String mchbuildPipPackage = 'mchbuild==0.1.dev510+g9d58a9272'
 
     // sets to abort the pipeline if the Sonarqube QualityGate fails
     static boolean qualityGateAbortPipeline = false
