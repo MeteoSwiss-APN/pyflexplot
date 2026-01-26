@@ -62,15 +62,8 @@ default:
               targets:
                   - image://${var.containerImageName}-tester:${var.semanticVersion}
                   - image://${var.containerImageName}-aws:${var.semanticVersion}
-#          script: |
-#            if test -n "${var.semanticVersion}"; then
-#              podman image rm -f $(podman image ls -q \
-#                -f "label=ch.meteoswiss.project=${var.project}-${var.semanticVersion}") || :
-#            fi
 
 variables:
   project: pyflexplot
-  # default full image name, useful when running tasks locally
-  image: ${var.containerImageName}:${var.semanticVersion}
   solution: dispersionmodelling
   notifyOnNightlyFailure: p_dispersionmodelling@meteoswiss.ch
