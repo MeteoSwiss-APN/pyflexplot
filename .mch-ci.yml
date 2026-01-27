@@ -6,75 +6,64 @@ default:
           gitCalculateSemanticVersion:
       - getImageName:
           containerConstructImageName:
-      - imageTester:
-          containerBuildImage:
-            fullImageName: ${var.image}-tester
-            target: tester
-            extraArgs:
-              - --build-arg
-              - VERSION=${var.version}
-      - imageAwsRunner:
-          containerBuildImage:
-            fullImageName: ${var.image}
-            target: runner
-            extraArgs:
-              - --build-arg
-              - VERSION=${var.version}
-            pullAlways: false
+      - artifacts:
+          - containerBuildImage:
+              imageName: ${var.containerImageName}-tester
+              imageTag: ${var.semanticVersion}
+              target: tester
+              extraArgs:
+                - --build-arg
+                - VERSION=${var.semanticVersion}
+          - containerBuildImage:
+              imageName: ${var.containerImageName}-aws
+              imageTag: ${var.semanticVersion}
+              target: runner
+              extraArgs:
+                - --build-arg
+                - VERSION=${var.semanticVersion}
+              pullAlways: false
   - test:
       - unit:
           - script: mkdir -p test_reports
-          - pythonTest:
-              fullImageName: ${var.image}-tester
+          - pythonContainerTest:
+              imageName: ${var.containerImageName}-tester
+              imageTag: ${var.semanticVersion}
               testDirectory: tests
               packageManager: ''
               pullAlways: false
-          - pythonCoverage:
-              fullImageName: ${var.image}-tester
-              packageManager: ''
-              pullAlways: false
+              withCoverage: true
+              removeLocalImage: false
       - lint:
           - script: mkdir -p test_reports
-          - pythonLint:
-              fullImageName: ${var.image}-tester
+          - pythonContainerLint:
+              imageName: ${var.containerImageName}-tester
+              imageTag: ${var.semanticVersion}
               packageManager: ''
               pullAlways: false
-          - pythonTypeChecker:
-              fullImageName: ${var.image}-tester
+              removeLocalImage: false
+          - pythonContainerTypeCheck:
+              imageName: ${var.containerImageName}-tester
+              imageTag: ${var.semanticVersion}
               packageManager: ''
               pullAlways: false
+              removeLocalImage: false
   - verify:
-      - securityScan:
-          - securityReport:
-              format: [ 'html', 'sbom', 'table', 'print' ]
-              severity: [ 'CRITICAL', 'HIGH' ]
-              target: file://poetry.lock
-              qualityGate:
-                threshold: 5
-                criticalFactor: 5
-                highFactor: 1
       - publishSbom:
           - securityPublishSbom:
   - publish:
-      - image:
-          containerPublishImage:
-  - deploy:
-      - pypi:
-          pythonPublishPackage:
-            setPackageVersion: False
-            pythonImageName: '3.10'
-            pullAlways: false
+      - artifacts:
+          - containerPublishImage:
+              imageName: ${var.containerImageName}-aws
+              imageTag: ${var.semanticVersion}
+              removeLocalImage: false
   - clean:
       - images:
-          script: |
-            if test -n "${var.version}"; then
-              podman image rm -f $(podman image ls -q \
-                -f "label=ch.meteoswiss.project=${var.project}-${var.version}") || :
-            fi
+          - cleanupImages:
+              targets:
+                  - image://${var.containerImageName}-tester:${var.semanticVersion}
+                  - image://${var.containerImageName}-aws:${var.semanticVersion}
 
 variables:
   project: pyflexplot
-  # default full image name, useful when running tasks locally
-  image: ${var.containerImageName}:${var.version}
   solution: dispersionmodelling
   notifyOnNightlyFailure: p_dispersionmodelling@meteoswiss.ch

@@ -1,7 +1,7 @@
 class Globals {
-
     // Pin mchbuild to stable version to avoid breaking changes
-    static String mchbuildVersion = '0.8.0'
+    static String mchbuildPipPackage = 'mchbuild>=0.12.2,<0.13.0'
+//    static String mchbuildPipPackage = 'mchbuild==0.1.dev510+g9d58a9272'
 
     // sets to abort the pipeline if the Sonarqube QualityGate fails
     static boolean qualityGateAbortPipeline = false
@@ -9,12 +9,13 @@ class Globals {
     // the default python version
     static String pythonVersion = '3.10'
 
-    // the reference (image name + tag) of the container image
-    static String imageReference = ''
+    // Name of the container image
+    static String containerImageName= ''
 
-    // the service version
-    static String version = ''
+    // Semantic version of the artifact
+    static String semanticVersion = ''
 
+    static String PIP_INDEX_URL = 'https://hub.meteoswiss.ch/nexus/repository/python-all/simple'
 }
 
 String rebuild_cron = env.BRANCH_NAME == "main" ? "@midnight" : ""
@@ -52,9 +53,10 @@ pipeline {
                     echo '---- INSTALL MCHBUILD ----'
                     sh """
                     python -m venv .venv-mchbuild
-                    PIP_INDEX_URL=https://hub.meteoswiss.ch/nexus/repository/python-all/simple \
-                      .venv-mchbuild/bin/pip install mchbuild==${Globals.mchbuildVersion}
+                    PIP_INDEX_URL=${Globals.PIP_INDEX_URL} \
+                      .venv-mchbuild/bin/pip install --upgrade "${Globals.mchbuildPipPackage}"
                     """
+
                     echo '---- INITIALIZE PARAMETERS ----'
 
                     if (env.TAG_NAME) {
@@ -67,31 +69,35 @@ pipeline {
                             currentBuild.result = 'ABORTED'
                             error('Build aborted because release builds are only triggered for tags of the form <major>.<minor>.<patch>.')
                         }
-                        Globals.version = env.TAG_NAME
-                    } else
-                    {
+                        Globals.semanticVersion  = env.TAG_NAME
+                    } else {
                         echo "Detected development build triggered from branch."
-                        Globals.version= sh(
+                        Globals.semanticVersion = sh(
                             script: 'mchbuild -g semanticVersion build.getSemanticVersion',
                             returnStdout: true
                         )
                     }
 
-                    def imageName = sh(
+                    Globals.containerImageName = sh(
                         script: 'mchbuild -g containerImageName build.getImageName',
                         returnStdout: true
                     )
-                    Globals.imageReference = imageName + ':' + Globals.version
-                    echo "Using version ${Globals.version} and image reference ${Globals.imageReference}"
+                    echo "Using semantic version: ${Globals.semanticVersion}"
+                    echo "Using container image name: ${Globals.containerImageName}"
                 }
             }
         }
 
         stage('Build') {
             steps {
-                echo '---- BUILD IMAGE ----'
+                echo '---- BUILDING CONTAINER IMAGES ----'
                 sh """
-                mchbuild -s version=${Globals.version} -s image=${Globals.imageReference} build.imageTester test.unit
+                    mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} build.artifacts
+                """
+
+                echo("---- RUNNING UNIT TESTS & COLLECTING COVERAGE ----")
+                sh """
+                    mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} test.unit
                 """
             }
             post {
@@ -103,12 +109,8 @@ pipeline {
 
         stage('Scan') {
             steps {
-
-                echo("---- DEPENDENCIES SECURITY SCAN ----")
-                sh "mchbuild verify.securityScan"
-
                 echo '---- LINT & TYPE CHECK ----'
-                sh "mchbuild -s image=${Globals.imageReference} test.lint"
+                sh "mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} test.lint"
                 script {
                     try {
                         recordIssues(qualityGates: [[threshold: 10, type: 'TOTAL', unstable: false]], tools: [myPy(pattern: 'test_reports/mypy.log')])
@@ -136,27 +138,18 @@ pipeline {
             }
         }
 
-        stage('Create Artifacts') {
-            steps {
-                script {
-                    echo '---- CREATE IMAGE ----'
-                    sh """
-                    mchbuild -s version=${Globals.version} -s image=${Globals.imageReference} build.imageAwsRunner
-                    """
-                }
-            }
-        }
-
         stage('Publish Artifacts') {
             environment {
                 REGISTRY_AUTH_FILE = "$workspace/.containers/auth.json"
             }
             steps {
-                echo "---- PUBLISH IMAGE ----"
+                echo "---- PUBLISHING CONTAINER IMAGES ----"
                 withCredentials([usernamePassword(credentialsId: 'openshift-nexus',
                                                   passwordVariable: 'NXPASS',
                                                   usernameVariable: 'NXUSER')]) {
-                    sh "mchbuild publish.image -s fullImageName=${Globals.imageReference}"
+                    sh """
+                        mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} publish.artifacts
+                    """
                 }
             }
         }
@@ -168,27 +161,12 @@ pipeline {
             }
             steps {
                 script {
-                    echo "---- PUBLISH PYPI ----"
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: 'github app credential for the meteoswiss-apn github organization',
-                            passwordVariable: 'GITHUB_ACCESS_TOKEN',
-                            usernameVariable: 'GITHUB_APP'),
-                        string(credentialsId: 'python-mch-nexus-secret',
-                            variable: 'PYPIPASS')
-                    ]) {
-                        sh 'PYPIUSER=python-mch mchbuild deploy.pypi'
-
-                        sh "git remote set-url origin https://${GITHUB_APP}:${GITHUB_ACCESS_TOKEN}@github.com/MeteoSwiss-APN/pyflexplot"
-                        Globals.version = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
-                    }
-
-                    echo("---- PUBLISH DEPENDENCIES TO DEPENDENCY REGISTRY ----")
+                    echo("---- PUBLISH SBOM ----")
                     withCredentials([string(
                             credentialsId: 'dependency-track-token-prod',
                             variable: 'DTRACK_TOKEN')]) {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "mchbuild verify.publishSbom -s version=${Globals.version}"
+                                sh "mchbuild verify.publishSbom -s version=${Globals.semanticVersion}"
                         }
                     }
                 }
@@ -199,7 +177,7 @@ pipeline {
     post {
         cleanup {
             sh """
-            mchbuild -s version=${Globals.version} clean
+            mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} clean
             """
             cleanWs()
         }
