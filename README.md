@@ -35,10 +35,64 @@ Another feature is to manipulate the field values by scaling with an arbitrary f
 
 ## Installation
 
-You can install pyflexplot from MCH pypi repository using pip:
+__Prerequisites__: Git, [Miniforge](https://conda-forge.org/download) 
+(or another Conda installation), 
+[Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
+
+### Get source code
 
 ```bash
-pip install pyflexplot -i https://service.meteoswiss.ch/nexus/repository/python-all/simple
+git clone git@github.com:MeteoSwiss-APN/pyflexplot.git
+cd pyflexplot
+```
+
+### Create Conda environment
+
+Create a Conda environment with only the desired Python version and Poetry and activate it
+
+```bash
+conda create -n pyflexplot python=3.10 poetry=1.8
+conda activate pyflexplot
+```
+
+Configure Poetry to not create a new virtual environment. If it detects an already enabled
+virtual environment (eg a Conda environment) it will install dependencies into it:
+
+```bash
+poetry config --local virtualenvs.create false
+```
+
+### Build the project (Poetry)
+Alternative build with mchbuild see further below.
+
+```bash
+poetry install
+```
+
+### Build the project (mchbuild)
+
+_Documentation to be added._
+
+### Run tests and quality tools
+
+```bash
+poetry run pytest
+```
+
+If no errors occur, the tests save plots in their respective folders in the
+
+#### Run quality assurance tools
+
+Run pylint to check code style of Python files (if any):
+
+```bash
+poetry run pylint src
+```
+
+Run mypy to check typing:
+
+```bash
+poetry run mypy
 ```
 
 ## Run pyflexplot
@@ -222,59 +276,6 @@ pyflexplot --preset "$preset" --merge-pdfs --dest=s3://<s3-bucket-name>
 ```
 
 ## Development
-
-__Prerequisites__: Git, [Miniconda](https://docs.anaconda.com/free/miniconda/) 
-(for installation of Conda) or 
-[Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
-
-### Install dependencies & start the service locally (CSCS)
-
-Clone the repo and enter the project folder:
-
-```bash
-git clone git@github.com:MeteoSwiss-APN/pyflexplot.git && cd pyflexplot
-```
-
-Create a Conda (or mamba/micromamba) environment with only the desired Python version and activate:
-
-```bash
-conda create --yes --prefix ./.conda-env python=3.10
-conda activate ./.conda-env
-```
-
-Install Poetry into this environment and
-configure Poetry to not create a new virtual environment. If it detects an already enabled virtual (eg Conda) environment it will install dependencies into it:
-
-```bash
-conda install --yes poetry
-poetry config --local virtualenvs.create false
-```
-
-Install packages:
-
-```bash
-poetry install
-```
-
-### Run the tests and quality tools
-
-Run tests:
-
-```bash
-poetry run pytest
-```
-
-Run pylint to check code style of Python files (if any):
-
-```bash
-poetry run pylint src
-```
-
-Run mypy to check typing:
-
-```bash
-poetry run mypy
-```
 
 ### Updating the Test References
 
