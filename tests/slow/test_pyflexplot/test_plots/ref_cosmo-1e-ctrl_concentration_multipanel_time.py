@@ -1469,7 +1469,7 @@ plot_summary = {
         ],
         "font": {
             "type": "FontConfig",
-            "name": "Liberation Sans",
+            "name": "DejaVu Sans",
             "sizes": {
                 "type": "FontSizes",
                 "title_large": 14.0,
@@ -5331,7 +5331,7 @@ plot_summary = {
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 12.0,
                         "ha": "left",
                         "va": "top",
@@ -5359,7 +5359,7 @@ plot_summary = {
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 12.0,
                         "ha": "left",
                         "va": "baseline",
@@ -5387,7 +5387,7 @@ plot_summary = {
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 12.0,
                         "ha": "right",
                         "va": "baseline",
@@ -6394,7 +6394,7 @@ plot_summary = {
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 12.0,
                         "ha": "center",
                         "va": "top",
@@ -6422,7 +6422,7 @@ plot_summary = {
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 12.0,
                         "ha": "center",
                         "va": "baseline",
@@ -7429,7 +7429,7 @@ plot_summary = {
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 12.0,
                         "ha": "center",
                         "va": "top",
@@ -7459,7 +7459,7 @@ plot_summary = {
                     "kwargs": {
                         "color": None,
                         "ha": "left",
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 10.0,
                         "family": "monospace",
                         "va": "top",
@@ -7489,7 +7489,7 @@ plot_summary = {
                     "kwargs": {
                         "color": None,
                         "ha": "left",
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 10.0,
                         "family": "monospace",
                         "va": "top",
@@ -7519,7 +7519,7 @@ plot_summary = {
                     "kwargs": {
                         "color": None,
                         "ha": "left",
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 10.0,
                         "family": "monospace",
                         "va": "top",
@@ -7549,7 +7549,7 @@ plot_summary = {
                     "kwargs": {
                         "color": None,
                         "ha": "left",
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 10.0,
                         "family": "monospace",
                         "va": "top",
@@ -7579,7 +7579,7 @@ plot_summary = {
                     "kwargs": {
                         "color": None,
                         "ha": "left",
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 10.0,
                         "family": "monospace",
                         "va": "top",
@@ -7609,7 +7609,7 @@ plot_summary = {
                     "kwargs": {
                         "color": None,
                         "ha": "left",
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 10.0,
                         "family": "monospace",
                         "va": "top",
@@ -7639,7 +7639,7 @@ plot_summary = {
                     "kwargs": {
                         "color": None,
                         "ha": "left",
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 10.0,
                         "family": "monospace",
                         "va": "top",
@@ -7669,7 +7669,7 @@ plot_summary = {
                     "kwargs": {
                         "color": None,
                         "ha": "left",
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 10.0,
                         "family": "monospace",
                         "va": "top",
@@ -7923,7 +7923,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "ha": "left",
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 10.0,
                         "va": "top",
                     },
@@ -7977,7 +7977,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "ha": "left",
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 10.0,
                         "va": "top",
                     },
@@ -8983,7 +8983,7 @@ plot_summary = {
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 12.0,
                         "ha": "center",
                         "va": "top",
@@ -9012,7 +9012,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9041,7 +9041,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9070,7 +9070,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9099,7 +9099,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9128,7 +9128,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9157,7 +9157,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9186,7 +9186,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9215,7 +9215,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9244,7 +9244,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9273,7 +9273,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9302,7 +9302,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9331,7 +9331,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9360,7 +9360,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9389,7 +9389,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -9418,7 +9418,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -9447,7 +9447,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -9476,7 +9476,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -9505,7 +9505,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -9534,7 +9534,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -9563,7 +9563,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -9592,7 +9592,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -9621,7 +9621,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -9650,7 +9650,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -9679,7 +9679,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -9708,7 +9708,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -9737,7 +9737,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -9766,7 +9766,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -9795,7 +9795,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "color": None,
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",
@@ -10802,7 +10802,7 @@ plot_summary = {
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "left",
                         "va": "top",
@@ -11809,7 +11809,7 @@ plot_summary = {
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
-                        "fontname": "Liberation Sans",
+                        "fontname": "DejaVu Sans",
                         "size": 9.0,
                         "ha": "right",
                         "va": "top",

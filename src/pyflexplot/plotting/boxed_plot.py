@@ -56,7 +56,7 @@ class FontSizes:
 @summarizable
 @dc.dataclass
 class FontConfig:
-    name: str = "Liberation Sans"
+    name: str = "DejaVu Sans"
     sizes: FontSizes = dc.field(default_factory=FontSizes)
 
 
