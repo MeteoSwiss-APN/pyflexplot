@@ -331,6 +331,7 @@ class Test_Multiple:
         )
 
 
+# TODO DT-308 how to better test the mapping of the product_type field?
 class Test_RealCase:
     def test_semi_real(self, tmp_path):
         """Test setup file based on a real case, with some groups indented."""
@@ -341,6 +342,7 @@ class Test_RealCase:
             infile = "foo.nc"
             outfile = "bar.png"
             model = "COSMO-baz"
+            product_type = "forecast-ifs-dispersion-test"
 
             [_base._concentration]
 

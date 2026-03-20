@@ -25,6 +25,8 @@ class ModelSetup(BaseSetup):
     base_time: Optional[int] = None
     ens_member_id: Optional[Tuple[int, ...]] = None
     simulation_type: str = "N/A"
+    # TODO DT-308 which should be the default value?
+    product_type: str = "N/A"
 
     @classmethod
     def _create_mod_params_post_cast(cls, params: Mapping[str, Any]) -> Dict[str, Any]:

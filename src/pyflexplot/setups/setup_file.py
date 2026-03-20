@@ -87,7 +87,7 @@ class SetupFile:
         paths: Sequence[Union[Path, str]],
         override: Mapping[str, Any],
     ) -> List[PlotSetupGroup]:
-        
+
         key_t: TypeAlias = Tuple[str, Tuple[int, ...]]
         setups_by_infiles: Dict[key_t, List[PlotSetup]] = {}
 
@@ -167,6 +167,7 @@ class SetupFile:
             "infile": "files.input",
             "layout_type": "layout.type",
             "model": "model.name",
+            "product_type": "model.product_type",
             "outfile": "files.output",
             "outfile_time_format": "files.output_time_format",
         }.get(raw_name, raw_name)
