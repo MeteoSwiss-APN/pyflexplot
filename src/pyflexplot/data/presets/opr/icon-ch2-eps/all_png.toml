@@ -8,6 +8,7 @@ model = "ICON-CH2-EPS"
 lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
+product_type = "forecast-iconch2eps-dispersion"
 outfile = "forecast-iconch2eps-dispersion~{base_time}~{plot_variable}-{ens_variable}~{domain}~{release_site}~{species_name}~{time_step}.png"
 
 [_base._concentration]

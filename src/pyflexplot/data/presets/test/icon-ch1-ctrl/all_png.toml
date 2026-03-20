@@ -7,10 +7,8 @@ model = "ICON-CH1-CTRL"
 lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
-outfile = "forecast-iconch1eps-dispersion-test~{base_time}~{plot_variable}~{domain}~{release_site}~{species_id}~{time_step}.png"
-
-# TODO DT-308 use this field to send it as metadata to the S3 object
 product_type = "forecast-iconch1eps-dispersion-test"
+outfile = "forecast-iconch1eps-dispersion-test~{base_time}~{plot_variable}~{domain}~{release_site}~{species_id}~{time_step}.png"
 
 [_base._concentration]
 plot_variable = "concentration"

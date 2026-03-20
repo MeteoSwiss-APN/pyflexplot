@@ -8,6 +8,7 @@ model = "ICON-CH2-EPS"
 lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
+product_type = "forecast-iconch2eps-dispersion"
 
 [_base._concentration]
 plot_variable = "concentration"

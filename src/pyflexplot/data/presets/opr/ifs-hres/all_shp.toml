@@ -7,6 +7,7 @@ model = "IFS-HRES"
 lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
+product_type = "forecast-ifs-dispersion"
 
 [_base._concentration]
 plot_variable = "concentration"
