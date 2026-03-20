@@ -203,7 +203,7 @@ field_summary = {
                 "base_time": 202010210500,
                 "ens_member_id": None,
                 "simulation_type": "deterministic",
-                "product_type": "N/A",
+                "product_type": None,
             },
             "proj": {
                 "type": "RotatedPole",
@@ -409,7 +409,7 @@ field_summary = {
                 "base_time": 202010210500,
                 "ens_member_id": None,
                 "simulation_type": "deterministic",
-                "product_type": "N/A",
+                "product_type": None,
             },
             "proj": {
                 "type": "RotatedPole",
@@ -615,7 +615,7 @@ field_summary = {
                 "base_time": 202010210500,
                 "ens_member_id": None,
                 "simulation_type": "deterministic",
-                "product_type": "N/A",
+                "product_type": None,
             },
             "proj": {
                 "type": "RotatedPole",
@@ -821,7 +821,7 @@ field_summary = {
                 "base_time": 202010210500,
                 "ens_member_id": None,
                 "simulation_type": "deterministic",
-                "product_type": "N/A",
+                "product_type": None,
             },
             "proj": {
                 "type": "RotatedPole",
@@ -858,7 +858,7 @@ field_summary = {
             "base_time": 202010210500,
             "ens_member_id": None,
             "simulation_type": "deterministic",
-            "product_type": "N/A",
+            "product_type": None,
         },
         "panels": [
             {
@@ -1000,7 +1000,7 @@ plot_summary = {
                 "base_time": 202010210500,
                 "ens_member_id": None,
                 "simulation_type": "deterministic",
-                "product_type": "N/A",
+                "product_type": None,
             },
             "panels": [
                 {
@@ -1853,7 +1853,7 @@ plot_summary = {
                     "base_time": 202010210500,
                     "ens_member_id": None,
                     "simulation_type": "deterministic",
-                    "product_type": "N/A",
+                    "product_type": None,
                 },
                 "proj": {
                     "type": "RotatedPole",
@@ -2658,7 +2658,7 @@ plot_summary = {
                     "base_time": 202010210500,
                     "ens_member_id": None,
                     "simulation_type": "deterministic",
-                    "product_type": "N/A",
+                    "product_type": None,
                 },
                 "proj": {
                     "type": "RotatedPole",
@@ -3463,7 +3463,7 @@ plot_summary = {
                     "base_time": 202010210500,
                     "ens_member_id": None,
                     "simulation_type": "deterministic",
-                    "product_type": "N/A",
+                    "product_type": None,
                 },
                 "proj": {
                     "type": "RotatedPole",
@@ -4268,7 +4268,7 @@ plot_summary = {
                     "base_time": 202010210500,
                     "ens_member_id": None,
                     "simulation_type": "deterministic",
-                    "product_type": "N/A",
+                    "product_type": None,
                 },
                 "proj": {
                     "type": "RotatedPole",

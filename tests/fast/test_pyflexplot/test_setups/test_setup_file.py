@@ -331,7 +331,6 @@ class Test_Multiple:
         )
 
 
-# TODO DT-308 how to better test the mapping of the product_type field?
 class Test_RealCase:
     def test_semi_real(self, tmp_path):
         """Test setup file based on a real case, with some groups indented."""
@@ -400,6 +399,7 @@ class Test_RealCase:
             infile = "data/cosmo1_2019052800.nc"
             outfile = "concentration_{species_id}_{domain}_{lang}_{time:02d}.png"
             model = "COSMO-1"
+            product_type = "forecast-cosmo1-dispersion-test"
             species_id = "*"
             plot_variable = "concentration"
             combine_species = false
@@ -415,6 +415,7 @@ class Test_RealCase:
             infile = "data/cosmo1_2019052800.nc"
             outfile = "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"
             model = "COSMO-1"
+            product_type = "forecast-cosmo1-dispersion-test"
             species_id = "*"
             plot_variable = "concentration"
             combine_species = false
@@ -429,6 +430,7 @@ class Test_RealCase:
             [tot_deposition]
             infile = "data/cosmo1_2019052800.nc"
             model = "COSMO-1"
+            product_type = "forecast-cosmo1-dispersion-test"
             species_id = "*"
             outfile = "tot_deposition_{domain}_{lang}_{time:02d}.png"
             plot_variable = "tot_deposition"
@@ -439,6 +441,7 @@ class Test_RealCase:
             [affected_area]
             outfile = "affected_area_{domain}_{lang}_{time:02d}.png"
             model = "COSMO-1"
+            product_type = "forecast-cosmo1-dispersion-test"
             infile = "data/cosmo1_2019052800.nc"
             level = 0
             species_id = "*"
@@ -473,7 +476,8 @@ class Test_RealCase:
                 "model": {
                     "name": "COSMO-1",
                     "simulation_type": "deterministic",
-                },
+                    "product_type": "forecast-cosmo1-dispersion-test",
+                }
             },
             {
                 "files": {
@@ -500,6 +504,7 @@ class Test_RealCase:
                 "model": {
                     "name": "COSMO-1",
                     "simulation_type": "deterministic",
+                    "product_type": "forecast-cosmo1-dispersion-test",
                 },
             },
             {
@@ -525,6 +530,7 @@ class Test_RealCase:
                 "model": {
                     "name": "COSMO-1",
                     "simulation_type": "deterministic",
+                    "product_type": "forecast-cosmo1-dispersion-test",
                 },
             },
             {
@@ -555,6 +561,7 @@ class Test_RealCase:
                 "model": {
                     "name": "COSMO-1",
                     "simulation_type": "deterministic",
+                    "product_type": "forecast-cosmo1-dispersion-test",
                 },
             },
         ]

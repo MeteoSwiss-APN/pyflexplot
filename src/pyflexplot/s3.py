@@ -95,8 +95,7 @@ def upload_outpaths_to_s3(upload_outpaths: list[str],
                     model: ModelSetup,
                     bucket: Bucket = CONFIG.main.aws.s3.output,
                     ) -> None:
-    """Upload a list of local file paths to an S3 bucket \
-    using the model for key formatting and product_type for metadata.
+    """Upload a list of local file paths to an S3 bucket adding the product_type from ModelSetup to the metadata.
     """
 
     if not model:
@@ -112,10 +111,15 @@ def upload_outpaths_to_s3(upload_outpaths: list[str],
                              to bucket: %s \
                              with key: %s", outpath, bucket.name, key)
 
-                # Get product type from model setup
                 _retry_with_backoff(
                     client.upload_file,
-                    args=[outpath, bucket.name, key, dict(Metadata=dict(product_type=model.product_type))],
+                    args=[
+                        outpath,
+                        bucket.name,
+                        key,
+                        # Add the product type as metadata if set in model
+                        dict(Metadata=dict(product_type=model.product_type) if model.product_type else None)
+                    ],
                     retries=int(bucket.retries)
                     )
             except ClientError as e:

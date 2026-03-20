@@ -201,7 +201,7 @@ field_summary = {
                 "base_time": 201907271200,
                 "ens_member_id": [0, 1, 5, 10, 15, 20],
                 "simulation_type": "ensemble",
-                "product_type": "N/A",
+                "product_type": None,
             },
             "proj": {
                 "type": "RotatedPole",
@@ -238,7 +238,7 @@ field_summary = {
             "base_time": 201907271200,
             "ens_member_id": [0, 1, 5, 10, 15, 20],
             "simulation_type": "ensemble",
-            "product_type": "N/A",
+            "product_type": None,
         },
         "panels": [
             {
@@ -306,7 +306,7 @@ plot_summary = {
                 "base_time": 201907271200,
                 "ens_member_id": [0, 1, 5, 10, 15, 20],
                 "simulation_type": "ensemble",
-                "product_type": "N/A",
+                "product_type": None,
             },
             "panels": [
                 {
@@ -779,7 +779,7 @@ plot_summary = {
                     "base_time": 201907271200,
                     "ens_member_id": [0, 1, 5, 10, 15, 20],
                     "simulation_type": "ensemble",
-                    "product_type": "N/A",
+                    "product_type": None,
                 },
                 "proj": {
                     "type": "RotatedPole",
