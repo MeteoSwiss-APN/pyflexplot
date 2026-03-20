@@ -40,6 +40,7 @@ OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
     "model": {
         "base_time": None,
         "ens_member_id": None,
+        "product_type": 'N/A',
         "simulation_type": "deterministic",
     },
     "panels": [
