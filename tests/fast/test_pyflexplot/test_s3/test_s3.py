@@ -7,9 +7,9 @@ from moto import mock_aws
 import pytest
 
 from pyflexplot.s3 import (
-    download_key_from_bucket, 
-    upload_outpaths_to_s3, 
-    expand_key, 
+    download_key_from_bucket,
+    upload_outpaths_to_s3,
+    expand_key,
     split_s3_uri)
 from pyflexplot import CONFIG
 from pyflexplot.config.service_settings import Bucket
@@ -90,19 +90,19 @@ def test_split_s3_uri_invalid():
 
 
 def test_download_key_from_bucket(s3):
-    
+
     bucket = CONFIG.main.aws.s3.input
-    
+
     test_files: list[Path] = []
 
     try:
         for i in range(5):
             temp_file = tempfile.NamedTemporaryFile(delete=False, prefix=f"test_file_{i}_", suffix=".txt")
             test_files.append(Path(str(temp_file.name)))
-            
+
             with open(Path(str(temp_file.name)), 'w') as f:
                 f.write(f"Dummy data for test file {i}\n")
-        
+
         _add_files_to_bucket(bucket, test_files, s3)
 
         expected_objs = {file.name for file in test_files}
@@ -132,7 +132,7 @@ def test_upload_outpaths_to_s3(s3):
     # given
     bucket = CONFIG.main.aws.s3.output
 
-    model = ModelSetup(name = 'COSMO-1E', base_time='1234')
+    model = ModelSetup(name = 'COSMO-1E', base_time='1234', product_type='my-product-type')
 
     test_files = []
 
@@ -140,10 +140,10 @@ def test_upload_outpaths_to_s3(s3):
         for i in range(5):
             temp_file = tempfile.NamedTemporaryFile(delete=False, prefix=f"test_file_{i}", suffix=".txt")
             test_files.append(Path(str(temp_file.name)))
-            
+
             with open(Path(str(temp_file.name)), 'w') as f:
                 f.write(f"Dummy data for test file {i}\n")
-        
+
         # when
         upload_outpaths_to_s3(test_files, model, bucket=bucket)
 
@@ -153,10 +153,14 @@ def test_upload_outpaths_to_s3(s3):
         for path in test_files :
 
             # check the files were uploaded as expected
-            actual = s3.get_object(Bucket = bucket.name, Key = f"{model.name}/{model.base_time}/{path.name}")["Body"].read()
+            s3_object = s3.get_object(Bucket=bucket.name, Key=f"{model.name}/{model.base_time}/{path.name}")
+            actual = s3_object["Body"].read()
             with open(path, mode='rb') as f:
-                assert actual == f.read() 
-            
+                assert actual == f.read()
+
+            # check that the product type metadata is set
+            assert s3_object["Metadata"] == {"product_type": "my-product-type"}
+
     finally:
         # Cleanup: Delete the created files
         for file in test_files:

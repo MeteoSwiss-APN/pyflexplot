@@ -25,6 +25,7 @@ class ModelSetup(BaseSetup):
     base_time: Optional[int] = None
     ens_member_id: Optional[Tuple[int, ...]] = None
     simulation_type: str = "N/A"
+    product_type: Optional[str] = None
 
     @classmethod
     def _create_mod_params_post_cast(cls, params: Mapping[str, Any]) -> Dict[str, Any]:

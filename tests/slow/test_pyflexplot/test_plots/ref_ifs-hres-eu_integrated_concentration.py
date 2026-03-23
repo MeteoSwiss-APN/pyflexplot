@@ -206,6 +206,7 @@ field_summary = {
                 "base_time": 202011131200,
                 "ens_member_id": None,
                 "simulation_type": "deterministic",
+                "product_type": None,
             },
             "proj": {
                 "type": "PlateCarree",
@@ -240,6 +241,7 @@ field_summary = {
             "base_time": 202011131200,
             "ens_member_id": None,
             "simulation_type": "deterministic",
+            "product_type": None,
         },
         "panels": [
             {
@@ -300,6 +302,7 @@ plot_summary = {
                 "base_time": 202011131200,
                 "ens_member_id": None,
                 "simulation_type": "deterministic",
+                "product_type": None,
             },
             "panels": [
                 {
@@ -785,6 +788,7 @@ plot_summary = {
                     "base_time": 202011131200,
                     "ens_member_id": None,
                     "simulation_type": "deterministic",
+                    "product_type": None,
                 },
                 "proj": {
                     "type": "PlateCarree",

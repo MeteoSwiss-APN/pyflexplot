@@ -2,7 +2,7 @@
 Module for interacting with AWS S3 for downloading and uploading files.
 
 This module provides utility functions to handle S3 URIs,
-download files from an S3 bucket, and upload files to an S3 bucket. 
+download files from an S3 bucket, and upload files to an S3 bucket.
 It also includes functions for expanding S3 keys with
 ensemble member identifiers and retrying operations with exponential backoff.
 """
@@ -63,7 +63,7 @@ def download_key_from_bucket(key: str,
                              dest: Path,
                              bucket: Bucket = CONFIG.main.aws.s3.input,
                              ) -> Path:
-    """ 
+    """
     Download object from S3 bucket.
     Filename of resulting local file is formatted value of the key.
 
@@ -95,8 +95,8 @@ def upload_outpaths_to_s3(upload_outpaths: list[str],
                     model: ModelSetup,
                     bucket: Bucket = CONFIG.main.aws.s3.output,
                     ) -> None:
-    """Upload a list of local file paths to an S3 bucket \
-    using the model for key formatting."""
+    """Upload a list of local file paths to an S3 bucket adding the product_type from ModelSetup to the metadata.
+    """
 
     if not model:
         raise ValueError("Model object must be provided to upload to S3, \
@@ -110,9 +110,16 @@ def upload_outpaths_to_s3(upload_outpaths: list[str],
                 _LOGGER.info("Uploading file: %s \
                              to bucket: %s \
                              with key: %s", outpath, bucket.name, key)
+
                 _retry_with_backoff(
                     client.upload_file,
-                    args=[outpath, bucket.name, key],
+                    args=[
+                        outpath,
+                        bucket.name,
+                        key,
+                        # Add the product type as metadata if set in model
+                        dict(Metadata=dict(product_type=model.product_type) if model.product_type else None)
+                    ],
                     retries=int(bucket.retries)
                     )
             except ClientError as e:
