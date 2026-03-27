@@ -153,6 +153,7 @@ pipeline {
                 }
             }
         }
+    }
 
     post {
         cleanup {
