@@ -153,25 +153,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Release') {
-            when {
-                // This will only execute the stage if TAG_NAME is present
-                expression { return env.TAG_NAME != null }
-            }
-            steps {
-                script {
-                    echo("---- PUBLISH SBOM ----")
-                    withCredentials([string(
-                            credentialsId: 'dependency-track-token-prod',
-                            variable: 'DTRACK_TOKEN')]) {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                                sh "mchbuild verify.publishSbom -s version=${Globals.semanticVersion}"
-                        }
-                    }
-                }
-            }
-        }
     }
 
     post {
