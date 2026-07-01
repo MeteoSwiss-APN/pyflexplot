@@ -1,10 +1,10 @@
 """Shared functions and classes for tests of elements of complete plots."""
 # Standard library
-import distutils.dir_util
 import importlib
 import logging
 import os
 import re
+import shutil
 from pathlib import Path
 from textwrap import dedent
 from typing import Any
@@ -41,7 +41,7 @@ def datadir(tmpdir, request):
     # data_dir = data_root / "pyflexplot/flexpart/original"
     data_dir = data_root / "pyflexplot/flexpart/reduced"
     if os.path.isdir(data_dir):
-        distutils.dir_util.copy_tree(data_dir, str(tmpdir))
+        shutil.copytree(data_dir, str(tmpdir), dirs_exist_ok=True)
     return tmpdir
 
 
