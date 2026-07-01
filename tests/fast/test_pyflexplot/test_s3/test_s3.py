@@ -158,8 +158,12 @@ def test_upload_outpaths_to_s3(s3):
             with open(path, mode='rb') as f:
                 assert actual == f.read()
 
-            # check that the product type metadata is set
-            assert s3_object["Metadata"] == {"product_type": "my-product-type"}
+            # check that the metadata is set
+            assert s3_object["Metadata"] == {
+                "product_type": "my-product-type",
+                "run_type": "regular",
+                "run_id": ""
+            }
 
     finally:
         # Cleanup: Delete the created files
@@ -169,6 +173,38 @@ def test_upload_outpaths_to_s3(s3):
             except OSError as e:
                 print(f"Error deleting file {file}: {e}")
 
+
+
+def test_upload_outpaths_to_s3_ondemand(s3, monkeypatch):
+
+    monkeypatch.setenv("RUN_TYPE", "ondemand")
+    monkeypatch.setenv("RUN_ID", "d382bc3a-21f3-11f1-b283-00155d385524")
+
+    bucket = CONFIG.main.aws.s3.output
+    model = ModelSetup(name='COSMO-1E', base_time='1234', product_type='my-product-type')
+
+    test_files = []
+    try:
+        temp_file = tempfile.NamedTemporaryFile(delete=False, prefix="test_file_ondemand_", suffix=".txt")
+        test_files.append(Path(str(temp_file.name)))
+        with open(Path(str(temp_file.name)), 'w') as f:
+            f.write("Dummy data for on-demand test\n")
+
+        upload_outpaths_to_s3(test_files, model, bucket=bucket)
+
+        path = test_files[0]
+        s3_object = s3.get_object(Bucket=bucket.name, Key=f"{model.name}/{model.base_time}/{path.name}")
+        assert s3_object["Metadata"] == {
+            "product_type": "my-product-type",
+            "run_type": "ondemand",
+            "run_id": "d382bc3a-21f3-11f1-b283-00155d385524",
+        }
+    finally:
+        for file in test_files:
+            try:
+                os.remove(file)
+            except OSError as e:
+                print(f"Error deleting file {file}: {e}")
 
 
 def _add_files_to_bucket(bucket: Bucket, files: list[Path], s3) -> None:

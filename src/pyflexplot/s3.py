@@ -111,14 +111,21 @@ def upload_outpaths_to_s3(upload_outpaths: list[str],
                              to bucket: %s \
                              with key: %s", outpath, bucket.name, key)
 
+                run_type = os.environ.get('RUN_TYPE', 'regular')
+                run_id = os.environ.get('RUN_ID', '')
+                metadata = {
+                        'product_type': model.product_type or '',
+                        'run_type': run_type,
+                        'run_id': run_id,
+                    }
+
                 _retry_with_backoff(
                     client.upload_file,
                     args=[
                         outpath,
                         bucket.name,
                         key,
-                        # Add the product type as metadata if set in model
-                        dict(Metadata=dict(product_type=model.product_type) if model.product_type else None)
+                        dict(Metadata=metadata)
                     ],
                     retries=int(bucket.retries)
                     )
