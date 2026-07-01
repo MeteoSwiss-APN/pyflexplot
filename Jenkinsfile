@@ -7,7 +7,7 @@ class Globals {
     static boolean qualityGateAbortPipeline = false
 
     // the default python version
-    static String pythonVersion = '3.10'
+    static String pythonVersion = '3.12'
 
     // Name of the container image
     static String containerImageName= ''
