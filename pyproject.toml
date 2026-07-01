@@ -91,6 +91,13 @@ addopts = [
     # "--mypy",
 ]
 
+[tool.coverage.run]
+# To prevent the following error we exclude netCDF4 sources from the coverage report
+# No source for code: '/src/app-root/src/netCDF4/_netCDF4.pyx'; see https://coverage.readthedocs.io/en/7.14.3/messages.html#error-no-source
+omit = [
+    "*/netCDF4/*",
+]
+
 [tool.black]
 
 [tool.isort]
