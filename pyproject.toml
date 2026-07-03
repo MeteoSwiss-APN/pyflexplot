@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyflexplot"
-version = "2.3.1"
+version = "2.4.0"
 description = "PyFlexPlot - Visualize and post-process FLEXPART dispersion simulation results stored in NetCDF format"
 authors = ["Stefan Ruedisuehli <stefan.ruedisuehli@env.ethz.ch>", "Pirmin Kaufmann <pirmin.kaufmann@meteoswiss.ch>"]
 packages = [
@@ -24,7 +24,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 
 [tool.poetry.scripts]
@@ -43,16 +43,16 @@ url = "https://hub.meteoswiss.ch/nexus/repository/python-mch/"
 priority = "explicit"
 
 [tool.poetry.dependencies]
-python = "~3.10"  # python version restricted by pillow
+python = "~3.12"  # python version restricted by pillow
 boto3 = "^1.34.108"
 botocore = "^1.34.109"
-cartopy = "^0.22"
+cartopy = "^0.23"
 click = "^8.0"
 geopy = "^2.4.0"
 matplotlib = "^3.8.1"
 netcdf4 = "^1.6.5"
 numpy = "^1.21.6"
-pillow = "^8.4.0"
+pillow = "^11"
 pydantic = "~2.6.2"
 pydantic-settings = "^2.2.1"
 pypdf = "^3.10.0"
@@ -89,6 +89,13 @@ addopts = [
 	"--tb=short",
     # "--cov=pyflexplot",
     # "--mypy",
+]
+
+[tool.coverage.run]
+# To prevent the following error we exclude netCDF4 sources from the coverage report
+# No source for code: '/src/app-root/src/netCDF4/_netCDF4.pyx'; see https://coverage.readthedocs.io/en/7.14.3/messages.html#error-no-source
+omit = [
+    "*/netCDF4/*",
 ]
 
 [tool.black]

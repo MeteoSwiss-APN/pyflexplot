@@ -1,6 +1,6 @@
 """Utilities for tests for module ``pyflexplot.input``."""
 # Standard library
-import distutils.dir_util
+import shutil
 from pathlib import Path
 
 # Third-party
@@ -24,5 +24,5 @@ def datadir_flexpart_reduced(tmpdir, request):
 def prepare_datadir(subdir, tmpdir, request):
     data_dir = DATA_ROOT / subdir
     if data_dir.is_dir():
-        distutils.dir_util.copy_tree(data_dir, str(tmpdir))
+        shutil.copytree(data_dir, str(tmpdir), dirs_exist_ok=True)
     return tmpdir
