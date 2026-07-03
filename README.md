@@ -35,8 +35,8 @@ Another feature is to manipulate the field values by scaling with an arbitrary f
 
 ## Installation
 
-__Prerequisites__: Git, [Miniforge](https://conda-forge.org/download) 
-(or another Conda installation), 
+__Prerequisites__: Git, [Miniforge](https://conda-forge.org/download)
+(or another Conda installation),
 [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 
 ### Get source code
@@ -51,7 +51,7 @@ cd pyflexplot
 Create a Conda environment with only the desired Python version and Poetry and activate it
 
 ```bash
-conda create -n pyflexplot python=3.10 poetry=1.8
+conda create -n pyflexplot python=3.12
 conda activate pyflexplot
 ```
 
@@ -164,7 +164,7 @@ Legacy presets for former COSMO model:
 | FLEXPART-COSMO-1E     | ensemble     | `preset=opr/cosmo-1e/all_pdf`      |
 | FLEXPART-COSMO-2E     | ensemble     | `preset=opr/cosmo-2e/all_pdf`      |
 
-You may use the `*` wildcard to operate `pyflexplot` with several presets at once. For example, to run pyflexplot with all presets 
+You may use the `*` wildcard to operate `pyflexplot` with several presets at once. For example, to run pyflexplot with all presets
 that produce the graphics in PDF format for a specific
 NWP model, define the `preset` variable as one of:
 
