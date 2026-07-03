@@ -50,22 +50,23 @@ cartopy = "^0.23"
 click = "^8.0"
 geopy = "^2.4.0"
 matplotlib = "^3.8.1"
-netcdf4 = "^1.6.5"
-numpy = "^1.21.6"
-pillow = "^11"
+netCDF4 = "^1.6.5"
 pydantic = "^2.6.2"
 pydantic-settings = "^2.2.1"
 pypdf = "^3.10.0"
-pyyaml = "^6.0.1"
-scipy = "^1.11.3"
 toml = "^0.10.2"
 typing-extensions = "^4.8.0"
+shapely = "^2.1.2"
+PyYAML = "^6.0.3"
+
+# Define constraints for transitive dependencies
+numpy = "^1" # numpy 2.x has considerable changes, which break the code
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.3.0"
 boto3-stubs = "^1.34.113"
 botocore-stubs = "^1.34.94"
-codespell = " ^2.2.6"
+codespell = "^2.2.6"
 flake8 = "^7.0.0"
 moto = {extras = ["s3"], version = "^5.0.7"}
 mypy = "^1.6.1"
@@ -86,7 +87,7 @@ addopts = [
     "-s",
     "-ra",
     "--pdbcls=IPython.terminal.debugger:TerminalPdb",
-	"--tb=short",
+    "--tb=short",
     # "--cov=pyflexplot",
     # "--mypy",
 ]
@@ -242,5 +243,5 @@ ignore_directives = [
 ]
 
 [tool.codespell]
-ignore-words-list = "ende,ue,fo,activ,nd,feld,nd"
+ignore-words-list = "ende,ue,fo,activ,nd,feld"
 skip = "requirements/*,*.pdf,environment.yml"
