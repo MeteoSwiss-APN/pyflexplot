@@ -103,7 +103,7 @@ class DerivChoice(click.ParamType):
         }
         self._check_derived_choices()
 
-    def get_metavar(self, param: click.Parameter) -> str:
+    def get_metavar(self, param: click.Parameter, ctx: click.Context) -> str:
         choices = list(self.base_choices) + list(self.derived_choices)
         return f"[{'|'.join(choices)}]"
 

@@ -5,7 +5,7 @@ import zipfile
 
 # Third-party
 import numpy as np
-import shapefile
+import shapefile  # type: ignore[import-untyped]
 
 # First-party
 from pyflexplot.data_transformation.rotated_pole import latrot2lat

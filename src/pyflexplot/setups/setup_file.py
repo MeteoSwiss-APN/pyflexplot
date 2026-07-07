@@ -94,7 +94,7 @@ class SetupFile:
         for path in paths:
             setups = cls(path).read(override=override)
             for setup in setups:
-                key: key_t = (setup.files.input, setup.model.ens_member_id)
+                key: key_t = (setup.files.input, setup.model.ens_member_id)  # type: ignore[assignment]
                 if key not in setups_by_infiles:
                     setups_by_infiles[key] = []
                 if setup not in setups_by_infiles[key]:

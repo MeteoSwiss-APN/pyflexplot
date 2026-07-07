@@ -530,8 +530,8 @@ class MapAxes:
         lats = np_get_lat(cities).astype(np.float32)
         # pylint: disable=E0633  # unpacking-non-sequence (false negative?!?)
         xs, ys = self.trans.geo_to_axes(lons, lats)
-        in_domain = np_is_in_domain(xs, ys).astype(np.bool_)
-        behind_ref_dist_box = np_is_behind_ref_dist_box(xs, ys).astype(np.bool_)
+        in_domain = np_is_in_domain(xs, ys).astype(np.bool_)  # type: ignore[attr-defined]
+        behind_ref_dist_box = np_is_behind_ref_dist_box(xs, ys).astype(np.bool_)  # type: ignore[attr-defined]
         visible = in_domain & ~behind_ref_dist_box
         cities = cities[visible]
 

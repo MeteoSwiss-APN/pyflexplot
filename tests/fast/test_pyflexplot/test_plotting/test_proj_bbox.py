@@ -32,7 +32,7 @@ class TestRegLatLon:
     def bbox(self, cfg: Cfg) -> ProjectedBoundingBox:
         return ProjectedBoundingBox(
             ax=self.ax,
-            projs=Projections.create_regular(clon=cfg.clon),
+            projs=Projections.create_regular(clon=cfg.clon),  # type: ignore[call-arg]
             curr_proj=cfg.curr_proj,
             lon0=cfg.lon0,
             lon1=cfg.lon1,
@@ -56,4 +56,4 @@ def test_global() -> None:
     ax = plt.figure().add_axes((0.0, 0.05, 0.7872, 0.85), projection=ccrs.PlateCarree())
     bb = ProjectedBoundingBox(ax=ax, projs=Projections.create_regular()).to_axes()
     bb.to_map()  # Here, the bug triggered an exception
-    assert np.allclose(bb, (-180, 180, -90, 90))
+    assert np.allclose(bb, (-180, 180, -90, 90))  # type: ignore[arg-type]

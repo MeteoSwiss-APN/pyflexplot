@@ -387,7 +387,7 @@ class Dimensions:
             loc_params = dict(params)
         del params
         if plot_variable is not None:
-            loc_params["variable"] = cls.derive_variable(plot_variable)
+            loc_params["variable"] = cls.derive_variable(plot_variable)  # type: ignore[assignment]
         elif "variable" not in loc_params:
             raise ValueError(
                 "add 'variable' to params, or pass plot_variable:"

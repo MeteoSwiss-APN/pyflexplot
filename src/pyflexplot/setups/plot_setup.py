@@ -882,7 +882,7 @@ class PlotSetupGroup:
         destination = Path(CONFIG.main.local.paths.input) / key.replace('/', '-')
 
         if '{ens_member:' in key:
-            for member_id in self.ens_member_ids:
+            for member_id in self.ens_member_ids:  # type: ignore[union-attr]
                 expanded_key = expand_key(key, member_id)
                 expanded_dest = Path(expand_key(str(destination), member_id))
                 download_key_from_bucket(expanded_key, expanded_dest, bucket)
