@@ -441,8 +441,8 @@ class Test_GeoMaskBoundingBox:
     class Test_Extent:
         """Extent of a cloud in lat/lon space."""
 
-        lat: npt.NDArray[np.float_] = np.arange(-90.0, 90.1, 20.0)
-        lon: npt.NDArray[np.float_] = np.arange(-170.0, 170.1, 20.0)
+        lat: npt.NDArray[np.float64] = np.arange(-90.0, 90.1, 20.0)
+        lon: npt.NDArray[np.float64] = np.arange(-170.0, 170.1, 20.0)
 
         def get_empty_mask(self, v: bool = False) -> npt.NDArray[np.bool_]:
             """Create an empty mask filled with an initial value."""

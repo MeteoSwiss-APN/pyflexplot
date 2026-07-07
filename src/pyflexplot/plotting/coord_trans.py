@@ -19,7 +19,7 @@ from cartopy.crs import Projection
 from srutils.iter import isiterable
 
 # Custom types
-FloatArray1DLike_T = Union[Sequence[float], npt.NDArray[np.float_]]
+FloatArray1DLike_T = Union[Sequence[float], npt.NDArray[np.float64]]
 
 
 @dc.dataclass
@@ -70,7 +70,7 @@ class CoordinateTransformer:
     @overload
     def axes_to_data(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ...
 
     def axes_to_data(self, x, y):
@@ -87,7 +87,7 @@ class CoordinateTransformer:
     @overload
     def axes_to_geo(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ...
 
     def axes_to_geo(self, x, y):
@@ -127,7 +127,7 @@ class CoordinateTransformer:
     @overload
     def axes_to_map(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ...
 
     def axes_to_map(self, x, y):
@@ -160,7 +160,7 @@ class CoordinateTransformer:
     @overload
     def data_to_axes(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ...
 
     def data_to_axes(self, x, y):
@@ -177,7 +177,7 @@ class CoordinateTransformer:
     @overload
     def data_to_geo(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ...
 
     def data_to_geo(self, x, y):
@@ -201,7 +201,7 @@ class CoordinateTransformer:
     @overload
     def data_to_map(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ...
 
     def data_to_map(self, x, y):
@@ -218,7 +218,7 @@ class CoordinateTransformer:
     @overload
     def geo_to_axes(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ...
 
     def geo_to_axes(self, x, y):
@@ -265,7 +265,7 @@ class CoordinateTransformer:
     @overload
     def geo_to_data(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ...
 
     def geo_to_data(self, x, y):
@@ -289,7 +289,7 @@ class CoordinateTransformer:
     @overload
     def geo_to_map(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ...
 
     def geo_to_map(self, x, y):
@@ -313,7 +313,7 @@ class CoordinateTransformer:
     @overload
     def map_to_axes(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ...
 
     def map_to_axes(self, x, y):
@@ -330,7 +330,7 @@ class CoordinateTransformer:
     @overload
     def map_to_data(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ...
 
     def map_to_data(self, x, y):
@@ -347,7 +347,7 @@ class CoordinateTransformer:
     @overload
     def map_to_geo(
         self, x: FloatArray1DLike_T, y: FloatArray1DLike_T
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ...
 
     def map_to_geo(self, x, y):
