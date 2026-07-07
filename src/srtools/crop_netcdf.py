@@ -190,7 +190,7 @@ def transfer_variable(fo: nc4.Dataset, var: nc4.Variable, setup: Setup) -> None:
         ):
             new_var[:] = setup.set_const
         else:
-            new_var[:] = var[inds]  # type: ignore[index]
+            new_var[:] = var[inds]
 
     # Transfer variable attributes
     transfer_ncattrs(var, new_var)

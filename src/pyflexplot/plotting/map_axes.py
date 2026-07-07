@@ -17,7 +17,7 @@ from typing import Union
 import cartopy
 import matplotlib as mpl
 import numpy as np
-from cartopy.io.shapereader import Record  # type: ignore
+from cartopy.io.shapereader import Record
 from cartopy.mpl.geoaxes import GeoAxes
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D

@@ -1,7 +1,7 @@
 """Test function ``srutils.testing.assert_nested_equal``."""
 # Third-party
 import numpy as np
-import pytest  # type: ignore
+import pytest
 
 # First-party
 from srutils.testing import assert_nested_equal

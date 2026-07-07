@@ -53,5 +53,5 @@ def linear_cmap(
         or isinstance(colors, tuple)
         and isinstance(next(iter(colors)), float)
     ):
-        colors = ["white", colors]  # type: ignore
+        colors = ["white", colors]
     return mpl.colors.LinearSegmentedColormap.from_list(name, colors, N=n)

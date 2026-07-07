@@ -5,7 +5,7 @@ import functools
 from typing import Any
 
 # Third-party
-import pytest  # type: ignore
+import pytest
 
 # First-party
 from srutils.testing import property_obj

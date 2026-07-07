@@ -1,6 +1,6 @@
 """Test function ``srutils.dict.decompress_nested_dict``."""
 # Third-party
-import pytest  # type: ignore
+import pytest
 
 # First-party
 from srutils.dict import decompress_nested_dict

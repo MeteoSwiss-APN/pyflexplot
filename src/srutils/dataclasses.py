@@ -88,7 +88,7 @@ def dataclass_merge(
                 kwargs[param] = values[0]
             else:
                 kwargs[param] = values
-    return cls(**kwargs)  # type: ignore
+    return cls(**kwargs)
 
 
 def dataclass_repr(
@@ -338,7 +338,7 @@ def cast_value(
 
     elif type_name in ["datetime", "datetime.datetime"]:
         if isinstance(datetime_fmt, str):
-            datetime_fmt = (datetime_fmt,)  # type: ignore
+            datetime_fmt = (datetime_fmt,)
         assert isinstance(datetime_fmt, Sequence)  # mypy
         assert not isinstance(datetime_fmt, str)  # mypy
         for fmt in datetime_fmt:
@@ -389,7 +389,7 @@ def cast_value(
             return prepare_wrapped_value(value, type_name)
         inner_type = inner_types[0]
         cls: Callable[[Iterable], Sequence] = (
-            list if isinstance(value, str) else type(value)  # type: ignore
+            list if isinstance(value, str) else type(value)
         )
         return cls(
             [cast_value(inner_type, inner_value, **kwargs) for inner_value in value]

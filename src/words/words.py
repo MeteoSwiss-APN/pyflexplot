@@ -194,9 +194,9 @@ class TranslatedWords:
         if len(key) == 1:
             name, ctx, lang = key[0], None, None
         elif len(key) == 2:
-            name, ctx, lang = key[0], key[1], None  # type: ignore
+            name, ctx, lang = key[0], key[1], None
         elif len(key) == 3:
-            name, ctx, lang = key[0], key[1], key[2]  # type: ignore
+            name, ctx, lang = key[0], key[1], key[2]
         else:
             raise KeyError(f"wrong number of key elements: {len(key)} not in [1, 2, 3]")
         return self.get(name, ctx=ctx, lang=lang, chain=False)
