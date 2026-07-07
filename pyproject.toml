@@ -59,6 +59,7 @@ typing-extensions = "^4.8.0"
 shapely = "^2.1.2"
 PyYAML = "^6.0.3"
 numpy = "^2.5.1"
+scipy = "^1.18.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^26.5.1"
