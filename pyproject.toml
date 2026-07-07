@@ -46,7 +46,7 @@ priority = "explicit"
 python = "~3.13"
 boto3 = "^1.34.108"
 botocore = "^1.34.109"
-cartopy = "^0.23"
+cartopy = "^0.25"
 click = "^8.0"
 geopy = "^2.4.0"
 matplotlib = "^3.8.1"
@@ -58,9 +58,7 @@ toml = "^0.10.2"
 typing-extensions = "^4.8.0"
 shapely = "^2.1.2"
 PyYAML = "^6.0.3"
-
-# Define constraints for transitive dependencies
-numpy = "^1" # numpy 2.x has considerable changes, which break the code
+numpy = "^2.5.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^26.5.1"
