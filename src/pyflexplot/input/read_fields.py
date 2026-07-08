@@ -672,7 +672,7 @@ class InputFileEnsemble:
                 "lat": "rlat",
                 "lon": "rlon",
             }
-        elif self.model_setup.name in ["IFS-HRES", "IFS-HRES-EU"]:
+        elif self.model_setup.name in ["IFS-Global", "IFS-Europe"]:
             return {
                 "lat": "latitude",
                 "lon": "longitude",
