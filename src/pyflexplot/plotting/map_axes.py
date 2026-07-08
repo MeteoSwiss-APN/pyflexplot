@@ -542,7 +542,7 @@ class MapAxes:
         cities = cities[sorted_inds]
 
         # Exclude certain cities by name
-        excluded = np.in1d(names, excluded_names)
+        excluded = np.isin(names, excluded_names)
         cities = cities[~excluded]
 
         plot_domain = mpl.patches.Rectangle(

@@ -1,4 +1,4 @@
-FROM dockerhub.apps.cp.meteoswiss.ch/mch/python-3.12 AS builder
+FROM dockerhub.apps.cp.meteoswiss.ch/mch/python-3.13 AS builder
 ARG VERSION
 LABEL ch.meteoswiss.project=pyflexplot-${VERSION}
 
@@ -14,7 +14,7 @@ RUN cd /src/app-root \
     && poetry export -o requirements.txt \
     && poetry export --dev -o requirements_dev.txt
 
-FROM dockerhub.apps.cp.meteoswiss.ch/mch/python-3.12:latest-slim AS base
+FROM dockerhub.apps.cp.meteoswiss.ch/mch/python-3.13:latest-slim AS base
 ARG VERSION
 LABEL ch.meteoswiss.project=pyflexplot-${VERSION}
 

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyflexplot"
-version = "2.4.0"
+version = "2.5.0"
 description = "PyFlexPlot - Visualize and post-process FLEXPART dispersion simulation results stored in NetCDF format"
 authors = ["Stefan Ruedisuehli <stefan.ruedisuehli@env.ethz.ch>", "Pirmin Kaufmann <pirmin.kaufmann@meteoswiss.ch>"]
 packages = [
@@ -24,7 +24,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 [tool.poetry.scripts]
@@ -43,41 +43,41 @@ url = "https://hub.meteoswiss.ch/nexus/repository/python-mch/"
 priority = "explicit"
 
 [tool.poetry.dependencies]
-python = "~3.12"  # python version restricted by pillow
-boto3 = "^1.34.108"
-botocore = "^1.34.109"
-cartopy = "^0.23"
-click = "^8.0"
-geopy = "^2.4.0"
-matplotlib = "^3.8.1"
-netcdf4 = "^1.6.5"
-numpy = "^1.21.6"
-pillow = "^11"
-pydantic = "~2.6.2"
-pydantic-settings = "^2.2.1"
-pypdf = "^3.10.0"
-pyyaml = "^6.0.1"
-scipy = "^1.11.3"
+python = "~3.13"
+boto3 = "^1.43.41"
+botocore = "^1.43.41"
+cartopy = "^0.25.0"
+click = "^8.4.2"
+geopy = "^2.4.1"
+matplotlib = "^3.11.0"
+netCDF4 = "^1.7.4"
+pydantic = "^2.13.4"
+pydantic-settings = "^2.14.2"
+pypdf = "^6.14.2"
 toml = "^0.10.2"
-typing-extensions = "^4.8.0"
+typing-extensions = "^4.16.0"
+shapely = "^2.1.2"
+PyYAML = "^6.0.3"
+numpy = "^2.5.1"
+scipy = "^1.18.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^24.3.0"
-boto3-stubs = "^1.34.113"
-botocore-stubs = "^1.34.94"
-codespell = " ^2.2.6"
-flake8 = "^7.0.0"
-moto = {extras = ["s3"], version = "^5.0.7"}
-mypy = "^1.6.1"
-pydata-sphinx-theme = "^0.14.1"
+black = "^26.5.1"
+boto3-stubs = "^1.43.41"
+botocore-stubs = "^1.43.14"
+codespell = "^2.4.2"
+flake8 = "^7.3.0"
+moto = {extras = ["s3"], version = "^5.2.2"}
+mypy = "^2.1.0"
+pydata-sphinx-theme = "^0.19.0"
 pydocstyle = "^6.3.0"
-pytest = "^7.4.3"
-pytest-cov = "^4.1.0"
-pylint = "^3.0.2"
-Sphinx = "^7.2.6"
-sphinx-autoapi = "^3.0.0"
-types-setuptools = "^68.2.0.0"
-types-pyyaml = "^6.0.12.20240311"
+pytest = "^9.1.1"
+pytest-cov = "^7.1.0"
+pylint = "^4.0.6"
+Sphinx = "^9.1.0"
+sphinx-autoapi = "^3.8.0"
+types-setuptools = "^83.0.0.20260706"
+types-pyyaml = "^6.0.12.20260518"
 
 [tool.pytest.ini_options]
 pythonpath = "src"
@@ -86,7 +86,7 @@ addopts = [
     "-s",
     "-ra",
     "--pdbcls=IPython.terminal.debugger:TerminalPdb",
-	"--tb=short",
+    "--tb=short",
     # "--cov=pyflexplot",
     # "--mypy",
 ]
@@ -242,5 +242,5 @@ ignore_directives = [
 ]
 
 [tool.codespell]
-ignore-words-list = "ende,ue,fo,activ,nd,feld,nd"
+ignore-words-list = "ende,ue,fo,activ,nd,feld"
 skip = "requirements/*,*.pdf,environment.yml"
