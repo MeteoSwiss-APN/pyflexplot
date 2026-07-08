@@ -68,3 +68,4 @@ variables:
   notifyOnNightlyFailure: p_dispersionmodelling@meteoswiss.ch
   semanticVersion: 0.0.0  # is overwritten in Jenkins
   buildId: n/a # is overwritten in Jenkins
+  containerImageName: docker-intern-nexus.meteoswiss.ch/${var.solution}/${var.project}
