@@ -53,11 +53,12 @@ lint = [
   "flake8 (>=7.3.0,<8.0.0)",
   "mypy (>=2.1.0,<3.0.0)",
   "pylint (>=4.0.6,<5.0.0)",
+  "ruff (>=0.15.20,<0.16.0)",
+  "scipy-stubs (>=1.18.0.0,<2.0.0.0)",
   "types-pyyaml (>=6.0.12.20260518,<7.0.0)",
   "types-setuptools (>=83.0.0.20260706,<84.0.0)",
-  "types-toml (>=0.10.8.20260518,<0.11.0.0)",
-  "scipy-stubs (>=1.18.0.0,<2.0.0.0)",
   "types-shapely (>=2.1.0.20260630,<3.0.0.0)",
+  "types-toml (>=0.10.8.20260518,<0.11.0.0)",
 ]
 test = [
   "moto[s3] (>=5.2.2,<6.0.0)",
@@ -89,38 +90,6 @@ ignore = [
 ]
 per-file-ignores = [
   "__init__.py: F401",  # Allow unused imports
-]
-
-[tool.isort]
-default_section = "THIRDPARTY"
-profile = "black"
-force_single_line = true
-order_by_type = false
-# Set `multi_line_output = 7` to mark too long lines with `# NOQA` (uppercase!)
-# instead of spreading them over multiple lines. This leaves lines with long
-# trailing comments intact, which may occur if multiple directives are necessary
-# (e.g., `# type: ignore [import]  # pylint: disable=no-name-in-module`).
-# (Note that thanks to `force_single_line = true`, this should be the main
-# reason for too long lines because multi-import lines are already broken up.)
-multi_line_output = 7  # 7=noqa
-# Headings
-import_heading_stdlib = "Standard library"
-import_heading_thirdparty = "Third-party"
-import_heading_firstparty = "First-party"
-import_heading_localfolder = "Local"
-# Known modules to avoid misclassification
-known_standard_library = [
-  # Add standard library modules that may be misclassified by isort
-]
-known_third_party = [
-  # Add third-party modules that may be misclassified by isort
-]
-known_first_party = [
-  # Add first-party modules that may be misclassified by isort
-  "pyflexplot",
-  "srtools",
-  "srutils",
-  "words",
 ]
 
 [tool.mypy]
@@ -189,6 +158,11 @@ max-line-length = 120
 [tool.pylint.design]
 # Minimum number of public methods for a class (see R0903).
 min-public-methods = 0
+
+[tool.ruff]
+line-length = 120
+# Exclude the reference files from formatting and checking
+extend-exclude = ["tests/**/ref_*.py"]
 
 [tool.pytest.ini_options]
 addopts = [
