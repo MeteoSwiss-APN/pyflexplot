@@ -65,8 +65,6 @@ test = [
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.black]
-
 [tool.codespell]
 ignore-words-list = "ende,ue,fo,activ,nd,feld"
 skip = "requirements/*,*.pdf,environment.yml"
@@ -135,7 +133,6 @@ exclude = [
 # See https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
 module = [
   # Add external modules w/o type hints here
-  # Todo: replace by "type: ignore [import]" directives in code
   "cartopy.*",
   "click.*",
   "geopy.*",
@@ -152,7 +149,7 @@ ignore_missing_imports = true
 
 [tool.poetry]
 requires-poetry = ">=2.0,<3.0"
-version = "0.0.0"  # DO NOT SET. The version of the package is always set by the CI/CD pipeline using mchbuild tasks.
+version = "0.0.0" # DO NOT SET. The version of the package is always set by the CI/CD pipeline using mchbuild tasks.
 packages = [
   { include = "pyflexplot", from = "src" },
   { include = "srtools", from = "src" },
@@ -220,11 +217,6 @@ addopts = [
   "-ra",
   "--pdbcls=IPython.terminal.debugger:TerminalPdb",
   "--tb=short",
-  # "--cov=pyflexplot",
-  # "--mypy",
 ]
 pythonpath = "src"
 testpaths = ["tests"]
-
-[tool.rstcheck]
-ignore_directives = ["automodule", "mdinclude"]
