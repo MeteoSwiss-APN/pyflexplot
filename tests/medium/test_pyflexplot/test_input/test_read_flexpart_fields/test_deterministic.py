@@ -256,7 +256,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                     "output": "dummy.png",
                 },
                 "model": {
-                    "name": "IFS-HRES",
+                    "name": "IFS-Global",
                 },
                 "panels": [
                     {
@@ -746,7 +746,7 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
             "output": "dummy.png",
         },
         "model": {
-            "name": "IFS-HRES-EU",
+            "name": "IFS-Europe",
         },
         "panels": [
             {

@@ -27,7 +27,7 @@ class FlexPartDataFixer:
         "ICON-CH1-EPS",
         "ICON-CH2-EPS",
     ]
-    ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
+    ifs_models = ["IFS-Global", "IFS-Europe"]
 
     def __init__(self, file_reader):
         """Create an instance of ``FlexPartDataFixer``."""

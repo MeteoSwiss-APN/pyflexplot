@@ -882,7 +882,7 @@ def derive_variable_name(model: str, variable: str, species_id: int) -> str:
         "ICON-CH1-EPS",
         "ICON-CH2-EPS",
     ]
-    ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
+    ifs_models = ["IFS-Global", "IFS-Europe"]
     if variable == "concentration":
         if model in cosmo_models:
             return f"spec{species_id:03d}"

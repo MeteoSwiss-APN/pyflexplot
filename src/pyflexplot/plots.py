@@ -257,7 +257,7 @@ def get_domain(field: Field, aspect: float) -> Domain:
             },
         )
     elif domain_type == "alps":
-        if model_name == "IFS-HRES-EU":
+        if model_name == "IFS-Europe":
             domain = Domain(
                 lat, lon, config={"zoom_fact": 3.4, "rel_offset": (-0.165, -0.11)}
             )
@@ -271,7 +271,7 @@ def get_domain(field: Field, aspect: float) -> Domain:
                 "aspect": aspect,
                 "min_size_lat": domain_size_lat,
                 "min_size_lon": domain_size_lon,
-                "periodic_lon": (model_name == "IFS-HRES"),
+                "periodic_lon": (model_name == "IFS-Global"),
                 "release_lat": release_lat,
                 "release_lon": release_lon,
             },
@@ -293,7 +293,7 @@ def get_domain(field: Field, aspect: float) -> Domain:
             domain = Domain(
                 lat, lon, config={"zoom_fact": 3.23, "rel_offset": (0.037, 0.1065)}
             )
-        elif model_name == "IFS-HRES-EU":
+        elif model_name == "IFS-Europe":
             domain = Domain(
                 lat, lon, config={"zoom_fact": 11.0, "rel_offset": (-0.18, -0.11)}
             )
@@ -705,16 +705,16 @@ def create_map_config(
     if domain_type == "full":
         if model_name.startswith("COSMO") or model_name.startswith("ICON"):
             config_dct.update(conf_regional_scale)
-        elif model_name == "IFS-HRES-EU":
+        elif model_name == "IFS-Europe":
             config_dct.update(conf_continental_scale)
-        elif model_name == "IFS-HRES":
+        elif model_name == "IFS-Global":
             config_dct.update(conf_global_scale)
     elif domain_type == "ch":
         config_dct.update(conf_country_scale)
     elif domain_type in ["release_site", "alps"]:
         config_dct.update(conf_regional_scale)
     elif domain_type == "cloud":
-        if model_name == "IFS-HRES":
+        if model_name == "IFS-Global":
             if domain_width < 20:
                 config_dct.update(conf_country_scale)
             elif domain_width < 60:
@@ -1576,8 +1576,8 @@ def format_model_info(model_setup: ModelSetup, words: TranslatedWords) -> str:
             "ICON-CH2-CTRL",
             "ICON-CH1-EPS",
             "ICON-CH2-EPS",
-            "IFS-HRES",
-            "IFS-HRES-EU",
+            "IFS-Global",
+            "IFS-Europe",
         ]:
             model_info = model_name
         elif model_name in ["COSMO-E", "COSMO-1E", "COSMO-2E"]:

@@ -1,10 +1,10 @@
-# PyFlexPlot setup file to create deterministic IFS-HRES-EU plots
+# PyFlexPlot setup file to create deterministic IFS-Europe plots
 # Derived from opr/cosmo-1e-ctrl/all_png.toml
 
 [_base]
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
 infile = "data/ifs-hres/grid_conc_1000_20200818000000_bushehr_2spec.nc"
-model = "IFS-HRES"
+model = "IFS-Global"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
 
