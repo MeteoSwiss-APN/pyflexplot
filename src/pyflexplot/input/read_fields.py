@@ -443,8 +443,8 @@ class InputFileEnsemble:
             # By default, sum up over all dimensions
             fld_time = merge_fields(read_fld_time_of_dimensions(timeless_panel_setup))
             fld_time = fld_time[..., np.newaxis]
-        if self.fixer and self.model_setup.name == "IFS-HRES":
-            # Note: IFS-HRES-EU is not global, so doesn't need this fix
+        if self.fixer and self.model_setup.name == "IFS-Global":
+            # Note: IFS-Europe is not global, so doesn't need this fix
             self.fixer.fix_global_grid(self.lon, fld_time, lon_axis=2)
         if self.config.add_ts0:
             fld_time = self._add_ts0_to_fld_time(fld_time)
