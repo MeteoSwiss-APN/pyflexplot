@@ -1,26 +1,26 @@
 default:
   - build:
       - checkGivenSemanticVersion:
-          checkSemanticVersion:
+          - checkSemanticVersion:
       - getSemanticVersion:
-          gitCalculateSemanticVersion:
+          - gitCalculateSemanticVersion:
       - getImageName:
-          containerConstructImageName:
+          - containerConstructImageName:
       - artifacts:
           - containerBuildImage:
               imageName: ${var.containerImageName}-tester
               imageTag: ${var.semanticVersion}
               target: tester
-              extraArgs:
+              extraArgs: &buildArtifactExtraArgs
                 - --build-arg
                 - VERSION=${var.semanticVersion}
+                - --build-arg
+                - BUILD_ID=${var.buildId}
           - containerBuildImage:
               imageName: ${var.containerImageName}-aws
               imageTag: ${var.semanticVersion}
               target: runner
-              extraArgs:
-                - --build-arg
-                - VERSION=${var.semanticVersion}
+              extraArgs: *buildArtifactExtraArgs
               pullAlways: false
   - test:
       - unit:
@@ -28,24 +28,23 @@ default:
           - pythonContainerTest:
               imageName: ${var.containerImageName}-tester
               imageTag: ${var.semanticVersion}
-              testDirectory: tests
-              packageManager: ''
               pullAlways: false
-              withCoverage: true
+              packageManager: ''
               removeLocalImage: false
+              testDirectory: tests
       - lint:
           - script: mkdir -p test_reports
           - pythonContainerLint:
               imageName: ${var.containerImageName}-tester
               imageTag: ${var.semanticVersion}
-              packageManager: ''
               pullAlways: false
+              packageManager: ''
               removeLocalImage: false
           - pythonContainerTypeCheck:
               imageName: ${var.containerImageName}-tester
               imageTag: ${var.semanticVersion}
-              packageManager: ''
               pullAlways: false
+              packageManager: ''
               removeLocalImage: false
   - verify:
       - publishSbom:
@@ -58,12 +57,14 @@ default:
               removeLocalImage: false
   - clean:
       - images:
-          - cleanupImages:
+          cleanupImages:
               targets:
                   - image://${var.containerImageName}-tester:${var.semanticVersion}
                   - image://${var.containerImageName}-aws:${var.semanticVersion}
 
 variables:
-  project: pyflexplot
   solution: dispersionmodelling
+  project: pyflexplot
   notifyOnNightlyFailure: p_dispersionmodelling@meteoswiss.ch
+  semanticVersion: 0.0.0  # is overwritten in Jenkins
+  buildId: n/a # is overwritten in Jenkins

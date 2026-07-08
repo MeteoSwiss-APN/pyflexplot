@@ -67,6 +67,10 @@ test = [
   "pytest (>=9.1.1,<10.0.0)",
 ]
 
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.black]
 
 [tool.codespell]
@@ -154,7 +158,7 @@ ignore_missing_imports = true
 
 [tool.poetry]
 requires-poetry = ">=2.0,<3.0"
-version = "2.5.0"
+version = "0.0.0"  # DO NOT SET. The version of the package is always set by the CI/CD pipeline using mchbuild tasks.
 packages = [
   { include = "pyflexplot", from = "src" },
   { include = "srtools", from = "src" },
