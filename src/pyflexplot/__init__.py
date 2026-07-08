@@ -102,4 +102,4 @@ def _custom_showwarnings(message, category, filename, lineno, file=None, line=No
 _warnings.showwarning = _custom_showwarnings
 
 
-CONFIG = ServiceSettings('settings.yaml', os.path.join(os.path.dirname(__file__), 'config'))  # type: ignore[call-arg, misc, arg-type]
+CONFIG = ServiceSettings('settings.yaml', os.path.join(os.path.dirname(__file__), 'config'))  # type: ignore[call-arg, arg-type]
