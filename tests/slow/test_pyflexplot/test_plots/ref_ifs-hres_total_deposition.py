@@ -204,7 +204,7 @@ field_summary = {
                 },
             },
             "model_setup": {
-                "name": "IFS-HRES",
+                "name": "IFS-Global",
                 "base_time": 202009210000,
                 "ens_member_id": None,
                 "simulation_type": "deterministic",
@@ -239,7 +239,7 @@ field_summary = {
             "type": "post_vintage",
         },
         "model": {
-            "name": "IFS-HRES",
+            "name": "IFS-Global",
             "base_time": 202009210000,
             "ens_member_id": None,
             "simulation_type": "deterministic",
@@ -300,7 +300,7 @@ plot_summary = {
                 "type": "post_vintage",
             },
             "model": {
-                "name": "IFS-HRES",
+                "name": "IFS-Global",
                 "base_time": 202009210000,
                 "ens_member_id": None,
                 "simulation_type": "deterministic",
@@ -487,7 +487,7 @@ plot_summary = {
                 "unit": "Bq m$^{-2}$",
             },
             "bottom": {
-                "model_info": "FLEXPART basierend auf IFS-HRES, 2020-09-21 00:00 UTC",
+                "model_info": "FLEXPART basierend auf IFS-Global, 2020-09-21 00:00 UTC",
                 "copyright": "©MeteoSchweiz",
             },
             "release_info": {
@@ -793,7 +793,7 @@ plot_summary = {
                     },
                 },
                 "model_setup": {
-                    "name": "IFS-HRES",
+                    "name": "IFS-Global",
                     "base_time": 202009210000,
                     "ens_member_id": None,
                     "simulation_type": "deterministic",
@@ -6144,7 +6144,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "FLEXPART basierend auf IFS-HRES, 2020-09-21 00:00 UTC",
+                    "s": "FLEXPART basierend auf IFS-Global, 2020-09-21 00:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

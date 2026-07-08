@@ -33,7 +33,7 @@ class Test_Copy:
                 "input": "foo.nc",
                 "output": ("foo.png", "bar.pdf"),
             },
-            "model": {"name": "IFS-HRES"},
+            "model": {"name": "IFS-Global"},
         }
         setup = PlotSetup.create(params)
         setups = PlotSetupGroup([setup])

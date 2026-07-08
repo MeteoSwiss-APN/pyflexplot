@@ -1,4 +1,4 @@
-"""Test the elements of complete plots based on deterministic IFS-HRES data."""
+"""Test the elements of complete plots based on deterministic IFS-Global data."""
 # Local
 from .shared import _TestBase
 from .shared import _TestCreatePlot  # noqa:F401
@@ -27,7 +27,7 @@ class Test_IntegratedConcentration(_TestBase):
             "plot_type": "auto",
         },
         "model": {
-            "name": "IFS-HRES-EU",
+            "name": "IFS-Europe",
         },
         "panels": [
             {
@@ -56,7 +56,7 @@ class Test_TotalDeposition(_TestBase):
             "plot_type": "auto",
         },
         "model": {
-            "name": "IFS-HRES-EU",
+            "name": "IFS-Europe",
         },
         "panels": [
             {
@@ -81,7 +81,7 @@ class Test_AffectedArea(_TestBase):
             "output": f"{reference}.png",
         },
         "model": {
-            "name": "IFS-HRES-EU",
+            "name": "IFS-Europe",
         },
         "panels": [
             {
