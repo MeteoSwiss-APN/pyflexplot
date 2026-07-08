@@ -178,72 +178,41 @@ name = "pypi-mch-publish"
 url = "https://hub.meteoswiss.ch/nexus/repository/python-mch/"
 priority = "explicit"
 
+[tool.pylint.master]
+disable = [
+    'C0114', # missing-module-docstring
+    'C0115', # missing-class-docstring
+    'C0116', # missing-function-docstring
+    'R0801', # duplications are already covered by SonarQube
+    'W0511', # fix me or to-do comments are already covered by SonarQube
+]
+
+[tool.pylint.basic]
+argument-naming-style = 'any'
+attr-naming-style = 'any'
+max-args = 8
+max-positional-arguments = 8
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint.design]
+# Minimum number of public methods for a class (see R0903).
+min-public-methods = 0
+
 [tool.pydocstyle]
 # All codes: http://www.pydocstyle.org/en/stable/error_codes.html
 ignore = [
-  # "D100", # Missing docstring in public module
   "D101",  # Missing docstring in public class
   "D102",  # Missing docstring in public method
   "D103",  # Missing docstring in public function
-  # "D104", # Missing docstring in public package
   "D105",  # Missing docstring in magic method
-  # "D105", # Missing docstring in public nested class
-  # "D107", # Missing docstring in __init__
   "D203",  # Blank line required before class docstring
   "D213",  # Multi-line docstring summary should start at the second line
   "D405",  # Section name should be properly capitalized
   "D406",  # Section name should end with a newline
   "D407",  # Missing dashed underline after section
 ]
-
-[tool.pylint]
-recursive = true
-ignore-imports = true
-max-line-length = 88
-# Tweak valid name formats
-# Defaults (http://pylint-messages.wikidot.com/messages:c0103):
-#  argument-rgx  = "^[a-z_][a-z0-9_]{2,30}$"
-#  attr-rgx      = "^[a-z_][a-z0-9_]{2,30}$"
-#  function-rgx  = "^[a-z_][a-z0-9_]{2,30}$"
-#  method-rgx    = "^[a-z_][a-z0-9_]{2,30}$"
-#  variable-rgx  = "^[a-z_][a-z0-9_]{2,30}$"
-#  class-rgx     = "^[A-Z_][a-zA-Z0-9]+$"
-#  const-rgx     = "^(([A-Z_][A-Z0-9_]*)|(__.*__))$"
-#  module-rgx    = "^(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$"
-argument-rgx = "^[a-z_][a-z0-9_]{,40}$"
-attr-rgx = "^[a-z_][a-z0-9_]{,40}$"
-function-rgx = "^[a-z_][a-z0-9_]{,40}$"
-method-rgx = "^[a-z_][a-z0-9_]{,40}$"
-variable-rgx = "^[a-z_][a-z0-9_]{,40}$"
-class-rgx = "^[A-Z_][a-zA-Z0-9]+$"
-const-rgx = "^(([a-z_][a-z0-9_]*)|([A-Z_][A-Z0-9_]*)|(__[a-zA-Z0-9]+__))$"
-module-rgx = "^(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$"
-inlinevar-rgx = "^[A-Za-z_][A-Za-z0-9_]*$"
-# Disable selected warnings, errors etc. that conflict with style guide etc.
-# Note: To locally ignore certain errors, use "pylint: disable=XXXX" comments instead!
-disable = [
-  "C0115",  # Missing class docstring
-  "C0116",  # Missing function or method docstring
-  "R0903",  # Too few public methods (*/2) (too-few-public-methods)
-  # "R0801", # Similar lines in 2 files (duplicate-code)
-  # -> see https://github.com/PyCQA/pylint/issues/214
-  "R1705",  # Unnecessary "elif" after "return" (no-else-return)
-  "R1720",  # Unnecessary "elif" after "raise" (no-else-raise)
-  "R1724",  # Unnecessary "elif" after "continue" (no-else-continue)
-  "W1116",  # Second argument of isinstance is not a type (isinstance-second-argument-not-valid-type)
-  # Migrated from old blueprint, check if still needed
-  "W0602",  # Using global for '...' but no assignment is done (global-variable-not-assigned)
-  "E0401",  # Unable to import '...' (import-error)
-  # -> Wrongly triggered for relative imports (pylint v2.11.1, 2022-03-09)
-  # -> TODO Re-enable once fixed (see https://github.com/PyCQA/pylint/issues/3651)
-  "R0801",  # Similar lines in 2 files (duplicate-code)
-]
-# Ignore (sub-)modules that trigger errors like E1101 (no-member) or E0611 (no-name-in-module)
-# ignored-modules = [
-#    # Migrated from old blueprint, todo: replace by pylint disable directives in code
-#    "cartopy",  # E1101 (no-member) (PlateCarree)
-#    "netCDF4",  # E1101 (no-member)
-# ]
 
 [tool.pytest.ini_options]
 addopts = [
