@@ -2731,29 +2731,6 @@ url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
 reference = "pypi-meteoswiss"
 
 [[package]]
-name = "pydocstyle"
-version = "6.3.0"
-description = "Python docstring style checker"
-optional = false
-python-versions = ">=3.6"
-groups = ["dev", "lint"]
-files = [
-    {file = "pydocstyle-6.3.0-py3-none-any.whl", hash = "sha256:118762d452a49d6b05e194ef344a55822987a462831ade91ec5c06fd2169d019"},
-    {file = "pydocstyle-6.3.0.tar.gz", hash = "sha256:7ce43f0c0ac87b07494eb9c0b462c0b73e6ff276807f204d6b53edc72b7e44e1"},
-]
-
-[package.dependencies]
-snowballstemmer = ">=2.2.0"
-
-[package.extras]
-toml = ["tomli (>=1.2.3) ; python_version < \"3.11\""]
-
-[package.source]
-type = "legacy"
-url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
-reference = "pypi-meteoswiss"
-
-[[package]]
 name = "pyflakes"
 version = "3.4.0"
 description = "passive checker of Python programs"
@@ -3435,23 +3412,6 @@ url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
 reference = "pypi-meteoswiss"
 
 [[package]]
-name = "snowballstemmer"
-version = "3.1.1"
-description = "This package provides 36 stemmers for 34 languages generated from Snowball algorithms."
-optional = false
-python-versions = ">=3.3"
-groups = ["dev", "lint"]
-files = [
-    {file = "snowballstemmer-3.1.1-py3-none-any.whl", hash = "sha256:7e207fa178741da09cdee59d3ecec3827ad5f92b1fc5c9ff3755b639f71f5752"},
-    {file = "snowballstemmer-3.1.1.tar.gz", hash = "sha256:e07bbc54a0d798fe6010a12398422e62a8bfbba95c394fd0956ef58cb4d3e260"},
-]
-
-[package.source]
-type = "legacy"
-url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
-reference = "pypi-meteoswiss"
-
-[[package]]
 name = "toml"
 version = "0.10.2"
 description = "Python Library for Tom's Obvious, Minimal Language"
@@ -3659,4 +3619,4 @@ reference = "pypi-meteoswiss"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "665b45f15861e1f015c9a9824212c375e1e10bd53d346755d1b5b807e4c2cc25"
+content-hash = "f4cd0e17932eb08178219f35eca4097d8bb416dac88f2e4a6dc0e4c85be33568"
