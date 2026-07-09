@@ -123,11 +123,10 @@ known_first_party = [
 [tool.mypy]
 disable_error_code = ["annotation-unchecked"]
 warn_unused_ignores = true
-files = ["src/**/*.py", "tests/**/*.py", "various/**/*.py"]
+files = ["src", "tests", "various"]
 exclude = [
-    "^ref_.*\\.py$" # exclude generated python reference files
-    ]
-
+  "ref_.*\\.py$"  # exclude generated python reference files
+]
 
 [[tool.mypy.overrides]]
 # Note: Only globally ignore missing imports as a matter of last resort!
@@ -150,7 +149,7 @@ ignore_missing_imports = true
 
 [tool.poetry]
 requires-poetry = ">=2.0,<3.0"
-version = "0.0.0" # DO NOT SET. The version of the package is always set by the CI/CD pipeline using mchbuild tasks.
+version = "0.0.0"  # DO NOT SET. The version of the package is always set by the CI/CD pipeline using mchbuild tasks.
 packages = [
   { include = "pyflexplot", from = "src" },
   { include = "srtools", from = "src" },
@@ -178,16 +177,16 @@ priority = "explicit"
 
 [tool.pylint.master]
 disable = [
-    'C0114', # missing-module-docstring
-    'C0115', # missing-class-docstring
-    'C0116', # missing-function-docstring
-    'R0801', # duplications are already covered by SonarQube
-    'W0511', # fix me or to-do comments are already covered by SonarQube
+  "C0114",  # missing-module-docstring
+  "C0115",  # missing-class-docstring
+  "C0116",  # missing-function-docstring
+  "R0801",  # duplications are already covered by SonarQube
+  "W0511",  # fix me or to-do comments are already covered by SonarQube
 ]
 
 [tool.pylint.basic]
-argument-naming-style = 'any'
-attr-naming-style = 'any'
+argument-naming-style = "any"
+attr-naming-style = "any"
 max-args = 8
 max-positional-arguments = 8
 
