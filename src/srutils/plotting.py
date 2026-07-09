@@ -34,9 +34,9 @@ def concatenate_cmaps(
 ) -> Colormap:
     """Concatenate two color maps."""
     if isinstance(cmap1, str):
-        cmap1 = mpl.cm.get_cmap(cmap1)
+        cmap1 = mpl.colormaps[cmap1]
     if isinstance(cmap2, str):
-        cmap2 = mpl.cm.get_cmap(cmap2)
+        cmap2 = mpl.colormaps[cmap2]
     colors1 = cmap1(np.linspace(0.0, 1.0, n)).tolist()
     colors2 = cmap2(np.linspace(0.0, 1.0, n)).tolist()
     return mpl.colors.LinearSegmentedColormap.from_list(
@@ -53,5 +53,5 @@ def linear_cmap(
         or isinstance(colors, tuple)
         and isinstance(next(iter(colors)), float)
     ):
-        colors = ["white", colors]  # type: ignore
+        colors = ["white", colors]
     return mpl.colors.LinearSegmentedColormap.from_list(name, colors, N=n)

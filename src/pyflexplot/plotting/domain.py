@@ -11,7 +11,7 @@ from typing import Union
 
 # Third-party
 import numpy as np
-from cartopy.crs import PlateCarree  # type: ignore
+from cartopy.crs import PlateCarree
 from cartopy.crs import Projection
 from cartopy.crs import RotatedPole
 from matplotlib.axes import Axes

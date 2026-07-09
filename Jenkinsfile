@@ -113,8 +113,7 @@ pipeline {
                 sh "mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} test.lint"
                 script {
                     try {
-                        // TODO: Try to fix the mypy findings, increasing the threshold is not a good solution
-                        recordIssues(qualityGates: [[threshold: 25, type: 'TOTAL', unstable: false]], tools: [myPy(pattern: 'test_reports/mypy.log')])
+                        recordIssues(qualityGates: [[threshold: 10, type: 'TOTAL', unstable: false]], tools: [myPy(pattern: 'test_reports/mypy.log')])
                     }
                     catch (err) {
                         error "Too many mypy issues, exiting now..."

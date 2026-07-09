@@ -91,10 +91,10 @@ class CoreDimensions:
     # SR_TMP Identical to CoreSetup.get_params and ModelSetup.get_params
     @classmethod
     def get_params(cls) -> List[str]:
-        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
+        return list(cls.__dataclass_fields__)  # pylint: disable=E1101
 
 
-@summarizable(summarize=lambda self: self.dict())  # type: ignore
+@summarizable(summarize=lambda self: self.dict())
 # pylint: disable=R0902  # too-many-instance-attributes
 class Dimensions:
     """A collection of Dimensions objects."""
@@ -255,7 +255,7 @@ class Dimensions:
             try:
                 # If index is negative, make it positive (subtract from end)
                 obj.time = resolve_indices(
-                    idcs=obj.get("time", unpack_single=False),  # type: ignore
+                    idcs=obj.get("time", unpack_single=False),
                     n=raw_dimensions["time"]["size"],
                     force_in_range=True,
                 )
@@ -387,7 +387,7 @@ class Dimensions:
             loc_params = dict(params)
         del params
         if plot_variable is not None:
-            loc_params["variable"] = cls.derive_variable(plot_variable)
+            loc_params["variable"] = cls.derive_variable(plot_variable)  # type: ignore[assignment]
         elif "variable" not in loc_params:
             raise ValueError(
                 "add 'variable' to params, or pass plot_variable:"

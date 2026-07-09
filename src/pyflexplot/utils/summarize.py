@@ -99,7 +99,7 @@ def summarizable(
             attrs = [attr.name for attr in cls.__attrs_attrs__]  # type: ignore
         elif auto_collect and dc.is_dataclass(cls):
             # Collect dataclass fields
-            attrs = list(cls.__dataclass_fields__)  # type: ignore
+            attrs = list(cls.__dataclass_fields__)
         else:
             attrs = []
     attrs += list(attrs_add or [])

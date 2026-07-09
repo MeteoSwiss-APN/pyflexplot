@@ -1,6 +1,6 @@
 """Test casting methods of class ``pyflexplot.setup.Setup``."""
 # Third-party
-import pytest  # type: ignore
+import pytest
 
 # First-party
 from pyflexplot.setups.plot_setup import PlotSetup

@@ -12,7 +12,7 @@ from typing import Optional
 
 # Third-party
 import numpy as np
-import pytest  # type: ignore
+import pytest
 
 # First-party
 from pyflexplot.input.read_fields import read_fields

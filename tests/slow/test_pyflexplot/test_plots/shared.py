@@ -11,7 +11,7 @@ from typing import Any
 from typing import Dict
 
 # Third-party
-import pytest  # type: ignore
+import pytest
 
 # First-party
 from pyflexplot.input.read_fields import read_fields

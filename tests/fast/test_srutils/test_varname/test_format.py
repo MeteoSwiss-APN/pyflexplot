@@ -1,6 +1,6 @@
 """Test method ``srutils.str.VariableName.format``."""
 # Third-party
-import pytest  # type: ignore
+import pytest
 
 # First-party
 from srutils.varname import VariableName

@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 
 # Third-party
-import pytest  # type: ignore
+import pytest
 
 DATA_ROOT = Path(__file__).parents[3] / "data/pyflexplot"
 

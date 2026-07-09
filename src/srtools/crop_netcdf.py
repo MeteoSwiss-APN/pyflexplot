@@ -100,7 +100,7 @@ def main(in_file_path: str, out_file_path: str, **kwargs_setup: Any) -> None:
         transfer_variables(fi, fo, setup)
 
 
-def transfer_ncattrs(fi: nc4.Dataset, fo: nc4.Dataset) -> None:
+def transfer_ncattrs(fi: Union[nc4.Dataset, nc4.Variable], fo: Union[nc4.Dataset, nc4.Variable]) -> None:
     """Transfer global attributes from in- to outfile."""
     ncattrs = {ncattr: fi.getncattr(ncattr) for ncattr in fi.ncattrs()}
     fo.setncatts(ncattrs)
@@ -165,7 +165,7 @@ def transfer_variables(fi: nc4.Dataset, fo: nc4.Dataset, setup: Setup) -> None:
             transfer_variable(fo, var, setup)
 
 
-def transfer_variable(fo: nc4.Dataset, var: nc4.Dataset, setup: Setup) -> None:
+def transfer_variable(fo: nc4.Dataset, var: nc4.Variable, setup: Setup) -> None:
     """Transfer single variable from in- to outfile."""
     # Create variable
     new_var = fo.createVariable(

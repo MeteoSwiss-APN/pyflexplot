@@ -17,7 +17,7 @@ from typing import Union
 import cartopy
 import matplotlib as mpl
 import numpy as np
-from cartopy.io.shapereader import Record  # type: ignore
+from cartopy.io.shapereader import Record
 from cartopy.mpl.geoaxes import GeoAxes
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
@@ -530,8 +530,8 @@ class MapAxes:
         lats = np_get_lat(cities).astype(np.float32)
         # pylint: disable=E0633  # unpacking-non-sequence (false negative?!?)
         xs, ys = self.trans.geo_to_axes(lons, lats)
-        in_domain = np_is_in_domain(xs, ys).astype(np.bool_)
-        behind_ref_dist_box = np_is_behind_ref_dist_box(xs, ys).astype(np.bool_)
+        in_domain = np_is_in_domain(xs, ys).astype(np.bool_)  # type: ignore[attr-defined]
+        behind_ref_dist_box = np_is_behind_ref_dist_box(xs, ys).astype(np.bool_)  # type: ignore[attr-defined]
         visible = in_domain & ~behind_ref_dist_box
         cities = cities[visible]
 

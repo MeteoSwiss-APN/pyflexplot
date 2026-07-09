@@ -4071,4 +4071,4 @@ reference = "pypi-meteoswiss"
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.13"
-content-hash = "2d20212e38ea4dbe2aef0feef81b533b8bf0517402e555f8282a8be243e0d7a8"
+content-hash = "92c04af6b733b0f0a758c131831d8a4a2bb52d7306b9f1c4fa08b8d60ad9eda9"

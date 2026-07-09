@@ -1,6 +1,6 @@
 """Test function ``srutils.dict.flatten_nested_dict``."""
 # Third-party
-import pytest  # type: ignore
+import pytest
 
 # First-party
 from srutils.dict import flatten_nested_dict

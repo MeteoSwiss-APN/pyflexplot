@@ -41,7 +41,7 @@ def format_dictlike(
         obj = dict(obj)
     try:
         # pylint: disable=E1123  # unexpected-keyword-arg (sort_dicts)
-        s = pformat(obj, indent=indent, sort_dicts=False)[1:-1]  # type: ignore
+        s = pformat(obj, indent=indent, sort_dicts=False)[1:-1]
     except TypeError:
         # Option 'sort_dicts' only available in Python3.8+
         s = pformat(dict(obj), indent=indent)[1:-1]

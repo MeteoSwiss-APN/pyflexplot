@@ -56,7 +56,7 @@ class BaseSetup:
             other_dict = other.dict()
         except AttributeError:
             try:
-                other_dict = dict(other)  # type: ignore
+                other_dict = dict(other)
             except TypeError:
                 try:
                     other_dict = dc.asdict(other)
@@ -67,7 +67,7 @@ class BaseSetup:
     def __len__(self: SetupT) -> int:
         return len(self.dict())
 
-    def __repr__(self: SetupT) -> str:  # type: ignore
+    def __repr__(self: SetupT) -> str:
         return nested_repr(self)
 
     @classmethod
@@ -103,7 +103,7 @@ class BaseSetup:
 
     @classmethod
     def get_params(cls: Type[SetupT]) -> List[str]:
-        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
+        return list(cls.__dataclass_fields__)  # pylint: disable=E1101
 
     @classmethod
     def _create_mod_params_pre_cast(
