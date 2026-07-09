@@ -4,8 +4,10 @@ description = "PyFlexPlot - Visualize and post-process FLEXPART dispersion simul
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 authors = [
-  { name = "Pirmin Kaufmann", email = "pirmin.kaufmann@meteoswiss.ch" },
   { name = "Stefan Ruedisuehli", email = "stefan.ruedisuehli@env.ethz.ch" },
+]
+maintainers = [
+  { name = "Pirmin Kaufmann", email = "pirmin.kaufmann@meteoswiss.ch" },
 ]
 keywords = ["COSMO", "Dispersion", "Flexpart", "mapping", "visualization"]
 dynamic = ["classifiers", "version"]
