@@ -136,7 +136,11 @@ known_first_party = [
 [tool.mypy]
 disable_error_code = ["annotation-unchecked"]
 warn_unused_ignores = true
-files=["src/**/*.py", "tests/**/*.py"]
+files = ["src/**/*.py", "tests/**/*.py", "various/**/*.py"]
+exclude = [
+    "^ref_.*\\.py$" # exclude generated python reference files
+    ]
+
 
 [[tool.mypy.overrides]]
 # Note: Only globally ignore missing imports as a matter of last resort!
