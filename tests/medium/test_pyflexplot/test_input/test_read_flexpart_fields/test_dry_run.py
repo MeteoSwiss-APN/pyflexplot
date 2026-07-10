@@ -3,6 +3,7 @@
 These test the dry-run mode.
 
 """
+
 # Standard library
 import dataclasses as dc
 from typing import Any
@@ -38,24 +39,17 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
 
 
 @overload
-def field_groups_to_setup_dcts(
-    obj: Field, params: Optional[List[str]] = ...
-) -> Dict[str, Any]:
-    ...
+def field_groups_to_setup_dcts(obj: Field, params: Optional[List[str]] = ...) -> Dict[str, Any]: ...
 
 
 @overload
-def field_groups_to_setup_dcts(
-    obj: FieldGroup, params: Optional[List[str]] = ...
-) -> Sequence[Dict[str, Any]]:
-    ...
+def field_groups_to_setup_dcts(obj: FieldGroup, params: Optional[List[str]] = ...) -> Sequence[Dict[str, Any]]: ...
 
 
 @overload
 def field_groups_to_setup_dcts(
     obj: Sequence[FieldGroup], params: Optional[List[str]] = ...
-) -> Sequence[Sequence[Dict[str, Any]]]:
-    ...
+) -> Sequence[Sequence[Dict[str, Any]]]: ...
 
 
 def field_groups_to_setup_dcts(obj, params=None):
@@ -77,9 +71,7 @@ def field_groups_to_setup_dcts(obj, params=None):
                 param = param.replace("dimensions.", "")
                 if "dimensions" not in panel_dct:
                     panel_dct["dimensions"] = {}
-                panel_dct["dimensions"][param] = getattr(
-                    field.panel_setup.dimensions, param
-                )
+                panel_dct["dimensions"][param] = getattr(field.panel_setup.dimensions, param)
         return panel_dct
     elif isinstance(obj, FieldGroup):
         field_group = obj
@@ -116,14 +108,10 @@ def field_groups_to_setup_dcts(obj, params=None):
         return [field_groups_to_setup_dcts(sub_obj, params) for sub_obj in obj]
 
 
-def _test_setups_core(
-    setups: PlotSetupGroup, params: List[str], sol: List[List[Dict[str, Any]]]
-):
+def _test_setups_core(setups: PlotSetupGroup, params: List[str], sol: List[List[Dict[str, Any]]]):
     field_groups = read_fields(setups, {"dry_run": True})
     res = field_groups_to_setup_dcts(field_groups, params)
-    assert_is_sub_element(
-        obj_super=res, name_super="result", obj_sub=sol, name_sub="solution"
-    )
+    assert_is_sub_element(obj_super=res, name_super="result", obj_sub=sol, name_sub="solution")
 
 
 @dc.dataclass

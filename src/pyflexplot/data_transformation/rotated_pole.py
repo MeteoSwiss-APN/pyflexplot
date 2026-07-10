@@ -1,4 +1,5 @@
 """Functions to convert from rotated to unrotated coordinates."""
+
 # Third-party
 import numpy as np
 
@@ -47,22 +48,14 @@ def lonrot2lon(
 
     zgam = deg_to_rad * polgam
     zarg1 = np.sin(zlampol) * (
-        -zsinpol
-        * np.cos(zphis)
-        * (np.cos(zrlas) * np.cos(zgam) - np.sin(zrlas) * np.sin(zgam))
+        -zsinpol * np.cos(zphis) * (np.cos(zrlas) * np.cos(zgam) - np.sin(zrlas) * np.sin(zgam))
         + zcospol * np.sin(zphis)
-    ) - np.cos(zlampol) * np.cos(zphis) * (
-        np.sin(zrlas) * np.cos(zgam) + np.cos(zrlas) * np.sin(zgam)
-    )
+    ) - np.cos(zlampol) * np.cos(zphis) * (np.sin(zrlas) * np.cos(zgam) + np.cos(zrlas) * np.sin(zgam))
 
     zarg2 = np.cos(zlampol) * (
-        -zsinpol
-        * np.cos(zphis)
-        * (np.cos(zrlas) * np.cos(zgam) - np.sin(zrlas) * np.sin(zgam))
+        -zsinpol * np.cos(zphis) * (np.cos(zrlas) * np.cos(zgam) - np.sin(zrlas) * np.sin(zgam))
         + zcospol * np.sin(zphis)
-    ) + np.sin(zlampol) * np.cos(zphis) * (
-        np.sin(zrlas) * np.cos(zgam) + np.cos(zrlas) * np.sin(zgam)
-    )
+    ) + np.sin(zlampol) * np.cos(zphis) * (np.sin(zrlas) * np.cos(zgam) + np.cos(zrlas) * np.sin(zgam))
     zarg2 = np.where(zarg2 == 0.0, 1.0e-20, zarg2)
 
     return rad_to_deg * np.arctan2(zarg1, zarg2)

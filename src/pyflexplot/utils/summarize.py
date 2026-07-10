@@ -1,4 +1,5 @@
 """Summarize objects as a dict for testing etc."""
+
 # Standard library
 import dataclasses as dc
 from functools import partial

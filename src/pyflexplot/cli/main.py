@@ -1,4 +1,5 @@
 """Main module of PyFlexPlot."""
+
 # Standard library
 import multiprocessing as mp
 import os
@@ -40,11 +41,7 @@ from pyflexplot.plots import format_out_file_paths
 from pyflexplot.setups.plot_setup import PlotSetupGroup
 from pyflexplot.setups.setup_file import SetupFile
 from pyflexplot.utils.logging import log
-from pyflexplot.s3 import (
-    download_key_from_bucket,
-    split_s3_uri,
-    expand_key,
-    upload_outpaths_to_s3)
+from pyflexplot.s3 import download_key_from_bucket, split_s3_uri, expand_key, upload_outpaths_to_s3
 from pyflexplot.config.service_settings import Bucket
 from pyflexplot import CONFIG
 
@@ -74,7 +71,7 @@ def main(
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
     if dest_dir is None:
         dest_dir = "."
-    if dest_dir.startswith('s3://'):
+    if dest_dir.startswith("s3://"):
         s3_dest = dest_dir
         dest_dir = CONFIG.main.local.paths.output
     else:
@@ -90,12 +87,7 @@ def main(
         log(dbg="using existing temporary directory '{tmp_dir}'")
 
     preset_setup_file_paths = ctx.obj.get("preset_setup_file_paths", [])
-    setup_groups = prepare_setups(
-        setup_file_paths,
-        preset_setup_file_paths,
-        dict(input_setup_params or {}),
-        suffixes
-    )
+    setup_groups = prepare_setups(setup_file_paths, preset_setup_file_paths, dict(input_setup_params or {}), suffixes)
 
     fct = partial(
         create_all_plots,
@@ -171,10 +163,7 @@ def main(
         # but override the name from CLI input --dest.
         bucket = CONFIG.main.aws.s3.output
         bucket.name = bucket_name
-        upload_outpaths_to_s3(
-            items_in_dest,
-            setup_groups[0]._setups[0].model,
-            bucket=bucket)
+        upload_outpaths_to_s3(items_in_dest, setup_groups[0]._setups[0].model, bucket=bucket)
 
     # Remove temporary directory (if given) unless it already existed before
     remove_tmpdir = tmp_dir and not dry_run and not os.listdir(tmp_dir)
@@ -205,15 +194,8 @@ def create_all_plots(
     log(vbs="read fields and create plots")
     all_out_file_paths: List[str] = []
     iter_state = SharedIterationState(n_input_files=len(setup_groups))
-    for iter_state.i_input_file, setup_group in enumerate(
-        setup_groups, start=1
-    ):  # noqa: E501
-        log(
-            vbs=(
-                f"[{iter_state.i_input_file}/{iter_state.n_input_files}]"
-                f" read {setup_group.infile}"
-            )
-        )
+    for iter_state.i_input_file, setup_group in enumerate(setup_groups, start=1):  # noqa: E501
+        log(vbs=(f"[{iter_state.i_input_file}/{iter_state.n_input_files}] read {setup_group.infile}"))
         # Group fields into one group per plot (with possibly multiple outfiles)
         field_groups = read_fields(
             setup_group,
@@ -222,7 +204,7 @@ def create_all_plots(
                 "missing_ok": True,
                 "dry_run": dry_run,
                 "cache_on": cache,
-            }
+            },
         )
         iter_state.n_field_groups_curr += len(field_groups)
         iter_state.n_field_groups_i = len(field_groups)
@@ -266,14 +248,11 @@ def prepare_setups(
     setup_file_paths = list(setup_file_paths)
 
     # Read setups from infile(s) and/or preset(s)
-    setup_groups = read_setup_groups(
-        setup_file_paths, preset_setup_file_paths, input_setup_params
-    )
+    setup_groups = read_setup_groups(setup_file_paths, preset_setup_file_paths, input_setup_params)
 
     for setup_group in setup_groups:
         if setup_group.infile.startswith("s3://"):
-            setup_group.fetch_remote_data(
-                Path(CONFIG.main.local.paths.input))
+            setup_group.fetch_remote_data(Path(CONFIG.main.local.paths.input))
 
     if suffixes:
         # Replace outfile suffixes by one or more; may increase oufile number
@@ -281,9 +260,7 @@ def prepare_setups(
             setup_group.override_output_suffixes(suffixes)
 
     # Combine setups that only differ in outfile
-    setup_groups = [
-        setup_group.compress_partially("files.output") for setup_group in setup_groups
-    ]
+    setup_groups = [setup_group.compress_partially("files.output") for setup_group in setup_groups]
     return setup_groups
 
 
@@ -292,21 +269,14 @@ def read_setup_groups(
     preset_setup_file_paths: Sequence[Union[Path, str]],
     input_setup_params: Mapping[str, Any],
 ) -> List[PlotSetupGroup]:
-    log(
-        vbs=(
-            f"reading setups from {len(preset_setup_file_paths)} preset and"
-            f" {len(setup_file_paths)} input files"
-        )
-    )
+    log(vbs=(f"reading setups from {len(preset_setup_file_paths)} preset and {len(setup_file_paths)} input files"))
     setup_file_paths = list(setup_file_paths)
     for path in preset_setup_file_paths:
         if path not in setup_file_paths:
             setup_file_paths.append(path)
     if not setup_file_paths:
         return [
-            PlotSetupGroup.create(
-                SetupFile.prepare_raw_params(input_setup_params)
-            )  # noqa: E501
+            PlotSetupGroup.create(SetupFile.prepare_raw_params(input_setup_params))  # noqa: E501
         ]
     return SetupFile.read_many(setup_file_paths, override=input_setup_params)
 
@@ -318,9 +288,7 @@ def get_pid() -> int:
     elif name.startswith("ForkPoolWorker-"):
         return int(name.split("-")[1])
     else:
-        raise NotImplementedError(
-            f"cannot derive pid from process name: {name}"
-        )  # noqa: E501
+        raise NotImplementedError(f"cannot derive pid from process name: {name}")  # noqa: E501
 
 
 class SharedIterationState:
@@ -386,9 +354,7 @@ class SharedIterationState:
     def __repr__(self) -> str:
         return (
             f"{type(self).__name__}("
-            + ", ".join(
-                [f"{key}={sfmt(value)}" for key, value in self._dict.items()]
-            )  # noqa: E501
+            + ", ".join([f"{key}={sfmt(value)}" for key, value in self._dict.items()])  # noqa: E501
             + ")"
         )
 
@@ -449,8 +415,7 @@ def merge_pdf_plots(
             raise Exception(
                 """input and output files are the same file,
                 which is not allowed for"""
-                f" remove_merged=T: '{merged}'"
-                + ("" if merged == group[0] else f" == '{merged[0]}'")
+                f" remove_merged=T: '{merged}'" + ("" if merged == group[0] else f" == '{merged[0]}'")
             )
         log(inf=f"{paths_organizer.format_compact(group)} -> {merged}")
         if not dry_run:
@@ -471,17 +436,13 @@ def merge_shape_files(
     dry_run: bool = False,
 ) -> List[str]:
     # Collect PDFs
-    shape_paths: List[str] = [
-        f"{path}.zip" for path in paths if path.endswith(".shp")
-    ]  # noqa: E501
+    shape_paths: List[str] = [f"{path}.zip" for path in paths if path.endswith(".shp")]  # noqa: E501
     paths_organizer = PathsOrganizer(suffix="shp.zip", dup_sep=".")
     grouped_file_paths = paths_organizer.group_related(shape_paths)
     merged_files: List[str] = []
     n = 0
     for i, group in enumerate(grouped_file_paths):
-        merged = (
-            f"""{dest_dir}/{relpath(paths_organizer.merge(group), start=tmp_dir)}"""
-        )
+        merged = f"""{dest_dir}/{relpath(paths_organizer.merge(group), start=tmp_dir)}"""
         tmp_zip_name = f"{dest_dir}/temp_shape{i}.zip"
         if not dry_run:
             with zipfile.ZipFile(tmp_zip_name, "w") as main_zip:
@@ -489,9 +450,7 @@ def merge_shape_files(
                     with zipfile.ZipFile(file, "r") as zip_to_merge:
                         n += len(zip_to_merge.namelist())
                         for sub_file in zip_to_merge.namelist():
-                            main_zip.writestr(
-                                sub_file, zip_to_merge.open(sub_file).read()
-                            )
+                            main_zip.writestr(sub_file, zip_to_merge.open(sub_file).read())
             shutil.copy(tmp_zip_name, merged)
             os.remove(tmp_zip_name)
         for path in group:

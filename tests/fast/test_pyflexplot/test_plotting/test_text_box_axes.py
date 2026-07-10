@@ -1,4 +1,5 @@
 """Test module ``pyflexplot.map_axes``."""
+
 # Third-party
 from matplotlib import pyplot as plt
 
@@ -57,9 +58,7 @@ class Test_TextBoxAxes_Summarize:
                 }
             ],
         }
-        check_is_sub_element(
-            name_super="results", obj_super=res, name_sub="solution", obj_sub=sol
-        )
+        check_is_sub_element(name_super="results", obj_super=res, name_sub="solution", obj_sub=sol)
 
     def test_text_block(self):
         box = self.create_text_box("text_block")
@@ -72,9 +71,7 @@ class Test_TextBoxAxes_Summarize:
                 {"type": "TextBoxElementText", "s": ("hello", "world")},
             ],
         }
-        check_is_sub_element(
-            name_super="results", obj_super=res, name_sub="solution", obj_sub=sol
-        )
+        check_is_sub_element(name_super="results", obj_super=res, name_sub="solution", obj_sub=sol)
 
     def test_color_rect(self):
         box = self.create_text_box("color_rect")
@@ -83,10 +80,6 @@ class Test_TextBoxAxes_Summarize:
         sol = {
             "name": "color_rect",
             **self.sol_base,
-            "elements": [
-                {"type": "TextBoxElementColorRect", "fc": "red", "ec": "black"}
-            ],
+            "elements": [{"type": "TextBoxElementColorRect", "fc": "red", "ec": "black"}],
         }
-        check_is_sub_element(
-            name_super="results", obj_super=res, name_sub="solution", obj_sub=sol
-        )
+        check_is_sub_element(name_super="results", obj_super=res, name_sub="solution", obj_sub=sol)

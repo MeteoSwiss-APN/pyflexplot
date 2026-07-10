@@ -3,6 +3,7 @@
 These tests use deterministic data.
 
 """
+
 # Standard library
 import dataclasses as dc
 from typing import Any
@@ -315,9 +316,7 @@ def test_single(datadir, config):  # noqa:F811
     fld = next(iter(field_groups[0])).fld
 
     # Initialize individual setup objects
-    var_setups_lst = decompress_twice(
-        setups, "dimensions.time", skip=["model.ens_member_id"]
-    )
+    var_setups_lst = decompress_twice(setups, "dimensions.time", skip=["model.ens_member_id"])
     assert len(var_setups_lst) == 1
     var_setups = next(iter(var_setups_lst))
 
@@ -575,20 +574,14 @@ def test_multiple(datadir, config):  # noqa:F811
 
     # Process field specifications one after another
     var_setups: PlotSetupGroup
-    for var_setups in decompress_twice(
-        setups, "dimensions.time", skip=["model.ens_member_id"]
-    ):
+    for var_setups in decompress_twice(setups, "dimensions.time", skip=["model.ens_member_id"]):
         # Read input fields
         var_setups_dicts_pre = var_setups.dicts()
-        field_groups = read_fields(
-            var_setups, {"add_ts0": False}, _override_infile=datafile
-        )
+        field_groups = read_fields(var_setups, {"add_ts0": False}, _override_infile=datafile)
         assert var_setups.dicts() == var_setups_dicts_pre
         assert len(field_groups) == 1
         assert len(field_groups[0]) == config.n_panels
-        fld = np.array(
-            [field.fld for field_group in field_groups for field in field_group]
-        )
+        fld = np.array([field.fld for field_group in field_groups for field in field_group])
         assert fld.shape[0] == config.n_panels
 
         # Read reference fields
@@ -686,9 +679,7 @@ def test_single_add_ts0(datadir, config):
 
     # Read fields with and without added time step 0
     # Note: Check relies on ordered time steps, which is incidental
-    field_groups_raw = read_fields(
-        setups, {"add_ts0": False}, _override_infile=datafile
-    )
+    field_groups_raw = read_fields(setups, {"add_ts0": False}, _override_infile=datafile)
     field_groups_ts0 = read_fields(setups, {"add_ts0": True}, _override_infile=datafile)
     assert len(field_groups_ts0) == len(field_groups_raw) + 1
     assert all(len(field_group) == 1 for field_group in field_groups_ts0)

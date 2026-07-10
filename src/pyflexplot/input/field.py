@@ -1,4 +1,5 @@
 """Data structures."""
+
 # Standard library
 import dataclasses as dc
 import warnings
@@ -44,12 +45,8 @@ from .meta_data import MetaData
                 "nanmedian": np.nanmedian(self.fld),
                 "nanmax": np.nanmax(self.fld),
                 "nanmin_nonzero": np.nanmin(np.where(self.fld == 0, np.nan, self.fld)),
-                "nanmean_nonzero": np.nanmean(
-                    np.where(self.fld == 0, np.nan, self.fld)
-                ),
-                "nanmedian_nonzero": np.nanmedian(
-                    np.where(self.fld == 0, np.nan, self.fld)
-                ),
+                "nanmean_nonzero": np.nanmean(np.where(self.fld == 0, np.nan, self.fld)),
+                "nanmedian_nonzero": np.nanmedian(np.where(self.fld == 0, np.nan, self.fld)),
                 "nanmax_nonzero": np.nanmax(np.where(self.fld == 0, np.nan, self.fld)),
                 "n_nan": np.count_nonzero(np.isnan(self.fld)),
                 "n_zero": np.count_nonzero(self.fld == 0),
@@ -158,9 +155,7 @@ class Field:
         assert len(self.fld.shape) == 2  # pylint
         # pylint: disable=W0632  # unbalanced-tuple-unpacking
         jmax, imax = np.unravel_index(np.nanargmax(self.fld), self.fld.shape)
-        p_lon, p_lat = self._proj_geo.transform_point(
-            self.lon[imax], self.lat[jmax], self.proj
-        )
+        p_lon, p_lat = self._proj_geo.transform_point(self.lon[imax], self.lat[jmax], self.proj)
         return (p_lat, p_lon)
 
     def __repr__(self):
@@ -192,12 +187,8 @@ class FieldStats:
         if arr.size == 0:
             return cls()
         with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", category=RuntimeWarning, message="All-NaN slice encountered"
-            )
-            warnings.filterwarnings(
-                "ignore", category=RuntimeWarning, message="Mean of empty slice"
-            )
+            warnings.filterwarnings("ignore", category=RuntimeWarning, message="All-NaN slice encountered")
+            warnings.filterwarnings("ignore", category=RuntimeWarning, message="Mean of empty slice")
             return cls(
                 min=np.nanmin(arr),
                 max=np.nanmax(arr),

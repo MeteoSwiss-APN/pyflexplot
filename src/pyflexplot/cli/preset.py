@@ -1,4 +1,5 @@
 """Preset setup files."""
+
 # Standard library
 import re
 from pathlib import Path
@@ -45,9 +46,7 @@ def compile_patterns(patterns: Collection[str]) -> List[Pattern]:
     rx_patterns = []
     for pattern in patterns:
         ch = "[a-zA-Z0-9_./-]"
-        rx_pattern = re.compile(
-            r"\A" + pattern.replace("*", f"{ch}*").replace("?", ch) + r"\Z"
-        )
+        rx_pattern = re.compile(r"\A" + pattern.replace("*", f"{ch}*").replace("?", ch) + r"\Z")
         rx_patterns.append(rx_pattern)
     return rx_patterns
 
@@ -80,9 +79,7 @@ def collect_preset_files(
 
 def collect_preset_files_flat(pattern: str) -> Dict[str, Path]:
     files_by_dir = collect_preset_files([pattern])
-    named_paths = {
-        name: path for files in files_by_dir.values() for name, path in files.items()
-    }
+    named_paths = {name: path for files in files_by_dir.values() for name, path in files.items()}
     if not named_paths:
         raise NoPresetFileFoundError(pattern, files_by_dir)
     return named_paths

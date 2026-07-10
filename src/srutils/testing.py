@@ -1,4 +1,5 @@
 """Some testing utils."""
+
 # Standard library
 import dataclasses as dc
 from pprint import pformat
@@ -81,9 +82,7 @@ def ignored(obj):
     return isinstance(obj, IgnoredElement)
 
 
-def assert_is_sub_element(
-    obj_sub: Any, obj_super: Any, name_sub: str = "sub", name_super: str = "super"
-) -> None:
+def assert_is_sub_element(obj_sub: Any, obj_super: Any, name_sub: str = "sub", name_super: str = "super") -> None:
     """Check recursively that ``obj_sub`` is a sub-element of ``obj_super``.
 
     See docstring of ``check_is_sub_element`` for more details on arguments.
@@ -183,17 +182,14 @@ def check_is_sub_element(
             pass
         else:
             raise exception(
-                f"incompatible types {t_super.__name__} and {t_sub.__name__} "
-                f"(neither is an instance of the other)",
+                f"incompatible types {t_super.__name__} and {t_sub.__name__} (neither is an instance of the other)",
                 {**err_objs, "t_super": t_super, "t_sub": t_sub},
             )
 
     if isinstance(obj_sub, dict):
         for idx_dict_i, (key, val_sub) in enumerate(obj_sub.items()):
             val_super = get_dict_element(obj_super, key, "superdict", CheckFailedError)
-            check_is_sub_element(
-                val_sub, val_super, name_sub, name_super, idx_list, idx_dict_i
-            )
+            check_is_sub_element(val_sub, val_super, name_sub, name_super, idx_list, idx_dict_i)
 
     elif isiterable(obj_sub, str_ok=False):
         # Compare other (non-str) iterables
@@ -268,9 +264,7 @@ def return_or_raise(msg, kwargs, raise_):
     raise Exception(msg, kwargs)
 
 
-def is_list_like(
-    obj, *, len_=None, not_=None, t_children=None, f_children=None, raise_=False
-):
+def is_list_like(obj, *, len_=None, not_=None, t_children=None, f_children=None, raise_=False):
     """Assert that an object is list-like, with optional additional checks.
 
     Args:
@@ -300,21 +294,15 @@ def is_list_like(
     }
 
     if not isiterable(obj, str_ok=False):
-        return_or_raise(
-            f"{type(obj).__name__} instance `obj` is not iterable", kwargs, raise_
-        )
+        return_or_raise(f"{type(obj).__name__} instance `obj` is not iterable", kwargs, raise_)
 
     if len_ is not None:
         if len(obj) != len_:
-            return_or_raise(
-                f"obj has wrong length: {len(obj)} != {len_}", kwargs, raise_
-            )
+            return_or_raise(f"obj has wrong length: {len(obj)} != {len_}", kwargs, raise_)
 
     if not_ is not None:
         if isinstance(obj, not_):
-            return_or_raise(
-                f"obj has unexpected type {type(obj).__name__}", kwargs, raise_
-            )
+            return_or_raise(f"obj has unexpected type {type(obj).__name__}", kwargs, raise_)
 
     _check_children(obj, t_children, f_children, kwargs, raise_)
 
@@ -467,26 +455,21 @@ def assert_nested_equal(
                 obj1 = sorted(obj1)
                 obj2 = sorted(obj2)
             except Exception as e:
-                raise error(
-                    "unequal collections are unsortable", path, obj1, obj2
-                ) from e
+                raise error("unequal collections are unsortable", path, obj1, obj2) from e
             for idx, (ele1, ele2) in enumerate(zip(obj1, obj2)):
                 recurse(ele1, ele2, path + [f"idx: {idx}"])
 
         elif np.isreal(obj1):
             if not np.isreal(obj2):
                 raise error(
-                    f"inequal types (expected real numbers): "
-                    f"{type_name(type(obj1))} vs. {type_name(type(obj2))}, ",
+                    f"inequal types (expected real numbers): {type_name(type(obj1))} vs. {type_name(type(obj2))}, ",
                     path,
                     obj1,
                     obj2,
                 )
             if np.isnan(obj1) and np.isnan(obj2):
                 return
-            elif (
-                isinstance(obj1, float) or isinstance(obj2, float)
-            ) and float_close_ok:
+            elif (isinstance(obj1, float) or isinstance(obj2, float)) and float_close_ok:
                 if np.isclose(obj1, obj2, **(kwargs_close or {})):
                     return
                 msg = f"unequal floats not even close: {obj1} vs. {obj2}"

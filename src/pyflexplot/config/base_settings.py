@@ -4,6 +4,7 @@ This module (taken from MeteoSwiss Python Commons library) introduces a custom c
 This custom classes inherit Pydantic's core functionalities. This includes data validation, parsing,
 serialization, error handling, and behavior customization.
 """
+
 import logging
 import os
 from typing import Union, Any, Type
@@ -17,13 +18,13 @@ from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, Settings
 logger = logging.getLogger(__name__)
 
 
-
 class BaseServiceSettings(BaseSettings):
     """
     The Custom BaseSettings class is a derivative of Pydantic's BaseSettings class. It introduces the ability to read
     settings values from a series of YAML files, providing an additional source for configuration data.
     """
-    model_config = SettingsConfigDict(env_nested_delimiter='__', extra='allow')
+
+    model_config = SettingsConfigDict(env_nested_delimiter="__", extra="allow")
 
     def __init__(self, settings_file_names: Union[str, list[str]], settings_dirname: str, **values: Any):
         """
@@ -48,24 +49,27 @@ class BaseServiceSettings(BaseSettings):
                 logger.warning('Given YAML settings file "%s" does not exist.', fname)
 
         if not existing_settings_file_names:
-            raise FileNotFoundError('Could not find the specified YAML settings file(s).')
+            raise FileNotFoundError("Could not find the specified YAML settings file(s).")
 
         super().__init__(_settings_filenames=existing_settings_file_names, _settings_dirname=settings_dirname, **values)
 
     # pylint: disable=too-many-arguments
     @classmethod
     def settings_customise_sources(
-            cls,
-            settings_cls: Type[BaseSettings],
-            init_settings: InitSettingsSource,  # type: ignore # the init_settings is always a InitSettingsSource
-            env_settings: PydanticBaseSettingsSource,
-            dotenv_settings: PydanticBaseSettingsSource,
-            file_secret_settings: PydanticBaseSettingsSource,
-    ) -> tuple[PydanticBaseSettingsSource, PydanticBaseSettingsSource, PydanticBaseSettingsSource,
-    PydanticBaseSettingsSource]:
-        load_yaml_config = _YamlConfigSource(settings_cls=settings_cls,
-                                             filenames=init_settings.init_kwargs.pop('_settings_filenames'),
-                                             dirname=init_settings.init_kwargs.pop('_settings_dirname'))
+        cls,
+        settings_cls: Type[BaseSettings],
+        init_settings: InitSettingsSource,  # type: ignore # the init_settings is always a InitSettingsSource
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[
+        PydanticBaseSettingsSource, PydanticBaseSettingsSource, PydanticBaseSettingsSource, PydanticBaseSettingsSource
+    ]:
+        load_yaml_config = _YamlConfigSource(
+            settings_cls=settings_cls,
+            filenames=init_settings.init_kwargs.pop("_settings_filenames"),
+            dirname=init_settings.init_kwargs.pop("_settings_dirname"),
+        )
 
         # environment variables have highest precedence, then yaml values etc.
         return env_settings, load_yaml_config, init_settings, file_secret_settings
@@ -83,7 +87,7 @@ class _YamlConfigSource(PydanticBaseSettingsSource):
         self._yaml_content_dict = {}
 
         for filename in filenames:
-            with open(os.path.join(dirname, filename), encoding='utf-8') as file:
+            with open(os.path.join(dirname, filename), encoding="utf-8") as file:
                 self._yaml_content_dict = deep_update(self._yaml_content_dict, yaml.safe_load(file))
 
         super().__init__(settings_cls)

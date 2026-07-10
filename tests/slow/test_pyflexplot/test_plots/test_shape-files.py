@@ -1,4 +1,5 @@
 """Test feature to generate shape files."""
+
 # Standard library
 import os
 import zipfile
@@ -61,14 +62,12 @@ class Test_ShapeFileGeneration(_TestBase):
         file_name = datadir + self.setup_dct["files"]["output"]
         shape_file_saver.save(filename=file_name, plot=plot, data=field_group)
         zip_shape_file = f"{file_name}.zip"
-        assert os.path.exists(
-            zip_shape_file
-        ), "Zip shape file {zip_shape_file} was not found."
+        assert os.path.exists(zip_shape_file), "Zip shape file {zip_shape_file} was not found."
         zip_file = zipfile.ZipFile(zip_shape_file, "r")
         for ext in [".shp", ".shx", ".dbf", ".shp.xml", ".prj"]:
-            assert np.any(
-                [file.endswith(ext) for file in zip_file.namelist()]
-            ), f"File in shape file with {ext} not found."
+            assert np.any([file.endswith(ext) for file in zip_file.namelist()]), (
+                f"File in shape file with {ext} not found."
+            )
         zip_file.close()
         with shapefile.Reader(zip_shape_file) as sf:
             records = sf.records()
@@ -80,9 +79,7 @@ class Test_ShapeFileGeneration(_TestBase):
             relevant_indices = np.where(fld > 0)
             fld = np.log10(fld[relevant_indices])
 
-            coordinates = np.array(
-                [[lon, lat] for lat in field.lat for lon in field.lon]
-            )[relevant_indices]
+            coordinates = np.array([[lon, lat] for lat in field.lat for lon in field.lon])[relevant_indices]
 
             true_lat = latrot2lat(
                 coordinates[:, 1],
@@ -95,19 +92,11 @@ class Test_ShapeFileGeneration(_TestBase):
                 field.mdata.simulation.grid_north_pole_lat,
                 field.mdata.simulation.grid_north_pole_lon,
             )
-            transformed_coordinates = np.array(
-                [[lon, lat] for lon, lat in zip(true_lon, true_lat)]
-            )
+            transformed_coordinates = np.array([[lon, lat] for lon, lat in zip(true_lon, true_lat)])
 
             # Compare shapefile data with original data
-            for (shape, record), (coord, conc) in zip(
-                zip(shapes, records), zip(transformed_coordinates, fld)
-            ):
-                assert np.all(
-                    np.isclose(shape.points[0], [coord[0], coord[1]])
-                ), "ERROR: Coordinates differ"
-                assert np.isclose(
-                    record[0], conc
-                ), "ERROR: Input and output fields differ"
+            for (shape, record), (coord, conc) in zip(zip(shapes, records), zip(transformed_coordinates, fld)):
+                assert np.all(np.isclose(shape.points[0], [coord[0], coord[1]])), "ERROR: Coordinates differ"
+                assert np.isclose(record[0], conc), "ERROR: Input and output fields differ"
 
             os.remove(zip_shape_file)

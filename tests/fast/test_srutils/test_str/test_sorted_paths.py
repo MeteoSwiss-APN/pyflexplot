@@ -1,4 +1,5 @@
 """Test function ``srutils.str.sorted_paths``."""
+
 # Standard library
 import dataclasses as dc
 from typing import List

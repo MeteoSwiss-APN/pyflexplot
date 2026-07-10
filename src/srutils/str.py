@@ -1,4 +1,5 @@
 """String utilities."""
+
 # Standard library
 import re
 from typing import Any
@@ -128,11 +129,7 @@ def sorted_paths(
         # Move "-" to the end for compatibility with regex brackets
         dup_sep = dup_sep.replace("-", "") + "-"
     grouped_paths: Dict[str, Dict[int, str]] = {}
-    rx = re.compile(
-        r"^(?P<base>.*?)(["
-        + str(dup_sep)
-        + r"](?P<num>[0-9]+))?((?P<suffix1>\.\w+)(?P<suffix2>\.\w+)?)?$"
-    )
+    rx = re.compile(r"^(?P<base>.*?)([" + str(dup_sep) + r"](?P<num>[0-9]+))?((?P<suffix1>\.\w+)(?P<suffix2>\.\w+)?)?$")
     for path in paths:
         match = rx.match(path)
         if match:

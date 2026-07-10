@@ -1,4 +1,5 @@
 """Test class ``pyflexplot.setup.Dimensions``."""
+
 # Third-party
 import pytest
 
@@ -152,10 +153,7 @@ class Test_Create:
         }
         dims = Dimensions.create(params)
         res = dims.dict()
-        sol = {
-            key: (tuple(sorted(val)) if isinstance(val, tuple) else val)
-            for key, val in params.items()
-        }
+        sol = {key: (tuple(sorted(val)) if isinstance(val, tuple) else val) for key, val in params.items()}
         assert res == sol
 
     def test_variable_ok(self):
@@ -327,9 +325,7 @@ class TestDecompress:
 
     def test_select_skip(self):
         dims = Dimensions.create(self.params)
-        dims_lst = dims.decompress(
-            select=["variable", "time"], skip=["time", "species_id"]
-        )
+        dims_lst = dims.decompress(select=["variable", "time"], skip=["time", "species_id"])
         dcts = [dims.dict() for dims in dims_lst]
         sol = [
             {"species_id": [1, 2], "time": [1, 2, 3], "variable": "dry_deposition"},

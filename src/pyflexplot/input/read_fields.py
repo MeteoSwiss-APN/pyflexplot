@@ -1,4 +1,5 @@
 """Data input."""
+
 # Standard library
 import dataclasses as dc
 import re
@@ -263,9 +264,7 @@ class InputFileEnsemble:
         self.config: InputConfig = config
         self.model_setup: ModelSetup = model_setup
 
-        self.paths: List[str] = prepare_paths(
-            override_raw_path or raw_path, ens_member_ids
-        )
+        self.paths: List[str] = prepare_paths(override_raw_path or raw_path, ens_member_ids)
         self.public_paths: List[str] = prepare_paths(raw_path, ens_member_ids)
         if len(self.paths) != len(self.public_paths):
             raise Exception(
@@ -310,24 +309,16 @@ class InputFileEnsemble:
             # Create individual setups at each requested time step
             panel_setups_req_time: PlotPanelSetupGroup
             panel_setups_req_time = panel_setup_i.decompress(["dimensions.time"])
-            fld_time_mem = self._read_fld_time_mem(
-                panel_setup_i, panel_setups_req_time, nc_dimensions_dct
-            )
+            fld_time_mem = self._read_fld_time_mem(panel_setup_i, panel_setups_req_time, nc_dimensions_dct)
             fld_time = self._reduce_ensemble_etc(fld_time_mem, panel_setup_i, ts_hrs)
 
             # Compute some statistics across all time steps
             time_stats = FieldTimeProperties(fld_time)
             scale_factor = panel_setup_i.dimensions.get("multiplier")
             # Create Field objects at requested time steps
-            for panel_setup_req_time, mdata_req_time in zip(
-                panel_setups_req_time, self.mdata_tss
-            ):
+            for panel_setup_req_time, mdata_req_time in zip(panel_setups_req_time, self.mdata_tss):
                 time_idx: int = panel_setup_req_time.dimensions.time
-                output_field = (
-                    fld_time[time_idx] * scale_factor
-                    if scale_factor is not None
-                    else fld_time[time_idx]
-                )
+                output_field = fld_time[time_idx] * scale_factor if scale_factor is not None else fld_time[time_idx]
                 field = Field(
                     fld=output_field,
                     lat=self.lat,
@@ -343,37 +334,26 @@ class InputFileEnsemble:
 
         # Create one FieldGroup per plot (possibly with multiple outfiles)
         field_groups: List[FieldGroup] = []
-        if (
-            plot_setup.layout.plot_type == "multipanel"
-            and plot_setup.layout.multipanel_param == "time"
-        ):
+        if plot_setup.layout.plot_type == "multipanel" and plot_setup.layout.multipanel_param == "time":
             group_attrs = FieldGroupAttrs(
                 raw_path=plot_setup.files.input,
                 paths=self.public_paths,
                 ens_member_ids=plot_setup.model.ens_member_id,
             )
-            field_lst: List[Field] = [
-                field for fields_i in field_lst_by_ts.values() for field in fields_i
-            ]
-            field_group = FieldGroup(
-                field_lst, plot_setup=plot_setup.copy(), attrs=group_attrs
-            )
+            field_lst: List[Field] = [field for fields_i in field_lst_by_ts.values() for field in fields_i]
+            field_group = FieldGroup(field_lst, plot_setup=plot_setup.copy(), attrs=group_attrs)
             field_groups.append(field_group)
         else:
             for time_idx, field_lst_i in field_lst_by_ts.items():
                 # Derive plot setup for given time step
                 panel_params = {"dimensions": {"time": time_idx}}
-                plot_setup_i = plot_setup.derive(
-                    {"panels": [panel_params] * len(plot_setup.panels)}
-                )
+                plot_setup_i = plot_setup.derive({"panels": [panel_params] * len(plot_setup.panels)})
                 group_attrs = FieldGroupAttrs(
                     raw_path=plot_setup_i.files.input,
                     paths=self.public_paths,
                     ens_member_ids=plot_setup.model.ens_member_id,
                 )
-                field_group = FieldGroup(
-                    field_lst_i, plot_setup=plot_setup_i, attrs=group_attrs
-                )
+                field_group = FieldGroup(field_lst_i, plot_setup=plot_setup_i, attrs=group_attrs)
                 field_groups.append(field_group)
         return field_groups
 
@@ -406,17 +386,13 @@ class InputFileEnsemble:
 
                 if not self.config.dry_run:
                     # Read fields for all members at all time steps
-                    fld_time_i = self._read_member_fields_over_time(
-                        fi, timeless_panel_setup
-                    )
+                    fld_time_i = self._read_member_fields_over_time(fi, timeless_panel_setup)
                 else:
                     fld_time_i = np.empty(fld_time_mem.shape[1:], np.float32)
                 fld_time_mem[idx_mem][:] = fld_time_i[:]
         return fld_time_mem
 
-    def _read_member_fields_over_time(
-        self, fi: nc4.Dataset, timeless_panel_setup: PlotPanelSetup
-    ) -> np.ndarray:
+    def _read_member_fields_over_time(self, fi: nc4.Dataset, timeless_panel_setup: PlotPanelSetup) -> np.ndarray:
         """Read field over all time steps for each member."""
         plot_variable = timeless_panel_setup.plot_variable
 
@@ -425,9 +401,7 @@ class InputFileEnsemble:
         ) -> List[np.ndarray]:
             fld_time_lst: List[np.ndarray] = []
             for dimensions in sub_setup.dimensions.decompress():
-                fld_time_lst.append(
-                    self._read_fld_over_time(fi, dimensions, sub_setup.integrate)
-                )
+                fld_time_lst.append(self._read_fld_over_time(fi, dimensions, sub_setup.integrate))
             return fld_time_lst
 
         # Read fields for all dimensions that are to be merged
@@ -435,9 +409,7 @@ class InputFileEnsemble:
             fld_time_lst = []
             for variable in timeless_panel_setup.dimensions.variable:
                 sub_setup_i = timeless_panel_setup.derive({"plot_variable": variable})
-                fld_time_lst.append(
-                    merge_fields(read_fld_time_of_dimensions(sub_setup_i))
-                )
+                fld_time_lst.append(merge_fields(read_fld_time_of_dimensions(sub_setup_i)))
             fld_time = np.moveaxis(np.array(fld_time_lst), 0, -1)
         else:
             # By default, sum up over all dimensions
@@ -573,26 +545,19 @@ class InputFileEnsemble:
                 "mean",
                 "percentile",
             ]:
-                fld_time = reduce_last_dimension(
-                    self._reduce_ensemble(fld_time_mem, panel_setup, ts_hrs)
-                )
+                fld_time = reduce_last_dimension(self._reduce_ensemble(fld_time_mem, panel_setup, ts_hrs))
             elif panel_setup.ens_variable in [
                 "std_dev",
                 "med_abs_dev",
                 "probability",
             ]:
-                fld_time = self._reduce_ensemble(
-                    reduce_last_dimension(fld_time_mem), panel_setup, ts_hrs
-                )
+                fld_time = self._reduce_ensemble(reduce_last_dimension(fld_time_mem), panel_setup, ts_hrs)
             else:
                 raise NotImplementedError(
-                    f"plot_variable='{panel_setup.plot_variable}'"
-                    f"; ens_variable='{panel_setup.ens_variable}'"
+                    f"plot_variable='{panel_setup.plot_variable}'; ens_variable='{panel_setup.ens_variable}'"
                 )
         else:
-            fld_time = reduce_last_dimension(
-                self._reduce_ensemble(fld_time_mem, panel_setup, ts_hrs)
-            )
+            fld_time = reduce_last_dimension(self._reduce_ensemble(fld_time_mem, panel_setup, ts_hrs))
 
         return fld_time
 
@@ -632,9 +597,7 @@ class InputFileEnsemble:
         elif ens_variable == "probability":
             if ens_params.thr is None:
                 raise Exception("ens_params.thr is None")
-            fld_time = ensemble_probability(
-                fld_time_mem, ens_params.thr, ens_params.thr_type
-            )
+            fld_time = ensemble_probability(fld_time_mem, ens_params.thr, ens_params.thr_type)
         elif ens_variable.startswith("cloud_"):
             if ens_params.thr is None:
                 raise Exception("ens_params.thr is None")
@@ -678,14 +641,10 @@ class InputFileEnsemble:
                 "lon": "longitude",
                 "level": "height",
             }
-        raise NotImplementedError(
-            f"dimension names for model '{self.model_setup.name}'"
-        )
+        raise NotImplementedError(f"dimension names for model '{self.model_setup.name}'")
 
     # pylint: disable=R0912,R0914  # too-many-branches, too-many-locals
-    def _read_fld_over_time(
-        self, fi: nc4.Dataset, dimensions: Dimensions, integrate: bool
-    ) -> np.ndarray:
+    def _read_fld_over_time(self, fi: nc4.Dataset, dimensions: Dimensions, integrate: bool) -> np.ndarray:
         """Read a 2D field at all time steps from disk."""
         # Indices of field along NetCDF dimensions
         renamed_dims = self._renamed_dims()
@@ -702,10 +661,7 @@ class InputFileEnsemble:
                         dim_name = var.dimensions[1]
                         break
                 else:
-                    raise Exception(
-                        f"no variable 'spec*' found among {list(fi.variables)} in"
-                        f" {fi.filepath()}"
-                    )
+                    raise Exception(f"no variable 'spec*' found among {list(fi.variables)} in {fi.filepath()}")
                 # SR_TMP >
             elif dim_name == "time":
                 idcs = slice(None)
@@ -784,9 +740,7 @@ class InputFileEnsemble:
 
         return self._handle_time_integration(fi, fld, dimensions.variable, integrate)
 
-    def _handle_time_integration(
-        self, fi: nc4.Dataset, fld: np.ndarray, variable: str, integrate: bool
-    ) -> np.ndarray:
+    def _handle_time_integration(self, fi: nc4.Dataset, fld: np.ndarray, variable: str, integrate: bool) -> np.ndarray:
         """Integrate or desintegrate the field over time."""
         if variable == "concentration":
             if integrate:

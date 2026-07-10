@@ -1,4 +1,5 @@
 """Map axes."""
+
 from __future__ import annotations
 
 # Standard library
@@ -207,9 +208,7 @@ class MapAxes:
             proj_data=self.projs.data,
         )
 
-        self.ref_dist_box: Optional[
-            ReferenceDistanceIndicator
-        ] = self._init_ref_dist_box()
+        self.ref_dist_box: Optional[ReferenceDistanceIndicator] = self._init_ref_dist_box()
 
         self._ax_add_grid()
         self._ax_add_geography()
@@ -288,9 +287,7 @@ class MapAxes:
         # (pylint 2.7.4 does not support dataclasses.field)
         transform = self.trans.proj_geo._as_mpl_transform(self.ax)
         # -> see https://stackoverflow.com/a/25421922/4419816
-        handle = self.ax.annotate(
-            s, xy=(p_lon, p_lat), xycoords=transform, zorder=zorder, **kwargs
-        )
+        handle = self.ax.annotate(s, xy=(p_lon, p_lat), xycoords=transform, zorder=zorder, **kwargs)
         self.element_handles.append(handle)
         self.elements.append(
             {
@@ -341,9 +338,7 @@ class MapAxes:
 
     def _ax_add_grid(self) -> None:
         """Show grid lines on map."""
-        gl = self.ax.gridlines(
-            linestyle=":", linewidth=1, color="black", zorder=self.zorder["grid"]
-        )
+        gl = self.ax.gridlines(linestyle=":", linewidth=1, color="black", zorder=self.zorder["grid"])
         gl.xlocator = mpl.ticker.FixedLocator(
             np.arange(-180, 180, self.config.d_lon_grid)  # type: ignore
         )
@@ -520,9 +515,7 @@ class MapAxes:
         lons = np_get_lon(cities).astype(np.float32)
         lats = np_get_lat(cities).astype(np.float32)
         lon_min, lat_min, lon_max, lat_max = self._get_domain_bbox()
-        in_domain = (
-            (lons > lon_min) & (lons < lon_max) & (lats > lat_min) & (lats < lat_max)
-        )
+        in_domain = (lons > lon_min) & (lons < lon_max) & (lats > lat_min) & (lats < lat_max)
         cities = cities[in_domain]
 
         # Select visible cities
@@ -545,9 +538,7 @@ class MapAxes:
         excluded = np.isin(names, excluded_names)
         cities = cities[~excluded]
 
-        plot_domain = mpl.patches.Rectangle(
-            xy=(0, 0), width=1.0, height=1.0, transform=self.ax.transAxes
-        )
+        plot_domain = mpl.patches.Rectangle(xy=(0, 0), width=1.0, height=1.0, transform=self.ax.transAxes)
         for city in cities:
             lon, lat = city.geometry.x, city.geometry.y
             name = get_name(city)
@@ -599,9 +590,7 @@ class MapAxes:
 
     # pylint: disable=R0914  # too-many-locals (>15)
     # pylint: disable=E0633  # unpacking-non-sequence (false negative?!?)
-    def _get_domain_bbox(
-        self, n: int = 20, pad: float = 1.0
-    ) -> Tuple[float, float, float, float]:
+    def _get_domain_bbox(self, n: int = 20, pad: float = 1.0) -> Tuple[float, float, float, float]:
         """Get ``(lon0, lat0, lon1, lat1)`` bounding box of domain."""
         trans = self.trans.axes_to_geo
         lons_s, lats_s = trans(np.linspace(0, 1, n), np.full([n], 0))

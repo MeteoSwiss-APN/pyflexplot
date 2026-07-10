@@ -1,4 +1,5 @@
 """CLI for preset setup files."""
+
 # Standard library
 import sys
 from pathlib import Path

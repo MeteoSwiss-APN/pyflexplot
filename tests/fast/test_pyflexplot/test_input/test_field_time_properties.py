@@ -1,4 +1,5 @@
 """Test class ``pyflexplot.input.data.FieldTimeProperties``."""
+
 # Third-party
 import numpy as np
 
@@ -51,9 +52,7 @@ class TestFieldTimeProperties:
             "stats": {"type": "FieldStats", **self.stats},
             "stats_nz": {"type": "FieldStats", **self.stats_nz},
         }
-        assert_nested_equal(
-            summarize(props), summary, "res", "sol", float_close_ok=True
-        )
+        assert_nested_equal(summarize(props), summary, "res", "sol", float_close_ok=True)
 
     def test_mask(self):
         props = FieldTimeProperties(self.arr)

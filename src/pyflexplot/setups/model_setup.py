@@ -1,4 +1,5 @@
 """Model setup."""
+
 # Standard library
 import dataclasses as dc
 from typing import Any
@@ -39,7 +40,5 @@ class ModelSetup(BaseSetup):
             else:
                 params["simulation_type"] = "deterministic"
         if params["simulation_type"] == "deterministic" and multiple_members:
-            raise ValueError(
-                f"deterministic simulation cannot have multiple members: {members}"
-            )
+            raise ValueError(f"deterministic simulation cannot have multiple members: {members}")
         return params

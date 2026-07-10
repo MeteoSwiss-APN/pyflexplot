@@ -5,6 +5,7 @@ subclasses of BaseSetup differ in their attributes, which requires the
 occasional isinstance assert for the subclass type to satisfy mypy.
 
 """
+
 # Standard library
 import dataclasses as dc
 from typing import Any
@@ -106,15 +107,11 @@ class BaseSetup:
         return list(cls.__dataclass_fields__)  # type: ignore[misc] # pylint: disable=E1101
 
     @classmethod
-    def _create_mod_params_pre_cast(
-        cls: Type[SetupT], params: Mapping[str, Any]
-    ) -> Dict[str, Any]:
+    def _create_mod_params_pre_cast(cls: Type[SetupT], params: Mapping[str, Any]) -> Dict[str, Any]:
         """Modify params in ``create`` before typecasting."""
         return dict(params)
 
     @classmethod
-    def _create_mod_params_post_cast(
-        cls: Type[SetupT], params: Mapping[str, Any]
-    ) -> Dict[str, Any]:
+    def _create_mod_params_post_cast(cls: Type[SetupT], params: Mapping[str, Any]) -> Dict[str, Any]:
         """Modify params in ``create`` after typecasting."""
         return dict(params)

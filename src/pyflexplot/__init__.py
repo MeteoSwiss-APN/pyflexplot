@@ -25,10 +25,7 @@ except Exception as e:  # pylint: disable=W0703  # broad-except
         dep = "geos"
     else:
         raise
-    msg = (
-        f"Cannot import 'cartopy': missing external dependency '{dep}'! -- "
-        f'{type(e).__name__}("{e}")'
-    )
+    msg = f"Cannot import 'cartopy': missing external dependency '{dep}'! -- {type(e).__name__}(\"{e}\")"
     print(msg, file=_sys.stderr)
     _sys.exit(1)
 
@@ -39,7 +36,7 @@ try:
     __version__ = importlib.metadata.version(__package__)
 except importlib.metadata.PackageNotFoundError:
     # package is not installed
-    __version__ = 'n/a'
+    __version__ = "n/a"
     pass
 
 del importlib
@@ -102,4 +99,4 @@ def _custom_showwarnings(message, category, filename, lineno, file=None, line=No
 _warnings.showwarning = _custom_showwarnings
 
 
-CONFIG = ServiceSettings('settings.yaml', os.path.join(os.path.dirname(__file__), 'config'))  # type: ignore[call-arg, arg-type]
+CONFIG = ServiceSettings("settings.yaml", os.path.join(os.path.dirname(__file__), "config"))  # type: ignore[call-arg, arg-type]

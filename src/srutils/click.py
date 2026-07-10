@@ -1,4 +1,5 @@
 """Click utilities."""
+
 from __future__ import annotations
 
 # Standard library
@@ -43,9 +44,7 @@ class CharSepList(click.ParamType):
 
         """
         if issubclass(type_, float) and separator == ".":
-            raise ValueError(
-                f"invalid separator '{separator}' for type " f"'{type_.__name__}'"
-            )
+            raise ValueError(f"invalid separator '{separator}' for type '{type_.__name__}'")
 
         self.type_: Type[Any] = type_
         self.separator: str = separator
@@ -85,9 +84,7 @@ class DerivChoice(click.ParamType):
 
     name: str = "choice"
 
-    def __init__(
-        self, base_choices: Sequence[str], derived_choices: Mapping[str, Sequence[str]]
-    ) -> None:
+    def __init__(self, base_choices: Sequence[str], derived_choices: Mapping[str, Sequence[str]]) -> None:
         """Create instance of ``DerivChoice``.
 
         Args:
@@ -98,18 +95,14 @@ class DerivChoice(click.ParamType):
 
         """
         self.base_choices: list[str] = list(base_choices)
-        self.derived_choices: dict[str, list[str]] = {
-            key: list(val) for key, val in derived_choices.items()
-        }
+        self.derived_choices: dict[str, list[str]] = {key: list(val) for key, val in derived_choices.items()}
         self._check_derived_choices()
 
     def get_metavar(self, param: click.Parameter, ctx: click.Context) -> str:
         choices = list(self.base_choices) + list(self.derived_choices)
         return f"[{'|'.join(choices)}]"
 
-    def convert(
-        self, value: Any, param: Optional[click.Parameter], ctx: Optional[click.Context]
-    ) -> Any:
+    def convert(self, value: Any, param: Optional[click.Parameter], ctx: Optional[click.Context]) -> Any:
         """Check that a string is among the given choices or combinations."""
         if value in self.base_choices:
             return value
@@ -124,10 +117,7 @@ class DerivChoice(click.ParamType):
     def _check_derived_choices(self) -> None:
         for name, derived_choice in self.derived_choices.items():
             if name in self.base_choices:
-                raise ValueError(
-                    f"derived choice '{name}' is already among base choices"
-                    f"{self.base_choices}"
-                )
+                raise ValueError(f"derived choice '{name}' is already among base choices{self.base_choices}")
             if isinstance(derived_choice, str):
                 derived_choice = [derived_choice]
             try:

@@ -1,4 +1,5 @@
 """Subpackage ``pyflexplot.cli``."""
+
 # Standard library
 from typing import List
 

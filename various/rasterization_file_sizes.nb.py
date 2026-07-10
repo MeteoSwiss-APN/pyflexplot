@@ -74,10 +74,7 @@ def group_file_names_by_model():
                 file_names_by_model[model] = []
             file_names_by_model[model].append(file_name)
         else:
-            raise Exception(
-                "file name did not match pattern"
-                f"\nfile name: {file_name}\npattern: {rx}"
-            )
+            raise Exception(f"file name did not match pattern\nfile name: {file_name}\npattern: {rx}")
     return file_names_by_model
 
 
@@ -105,9 +102,7 @@ def plot_raw_files(path, cases=None):
 
 plot_raw_files("rasterization_file_sizes_all.pdf")
 # plot_raw_files(["orig", "all_300dpi", "all_150dpi", "contourf_30dpi"])
-zorder_cases = ["orig"] + list(
-    filter(lambda case: case.startswith("zorder"), file_sizes_by_case)
-)
+zorder_cases = ["orig"] + list(filter(lambda case: case.startswith("zorder"), file_sizes_by_case))
 plot_raw_files("rasterization_file_sizes_zorder.pdf", cases=zorder_cases)
 
 

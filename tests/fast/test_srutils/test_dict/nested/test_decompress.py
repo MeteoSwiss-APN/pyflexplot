@@ -1,4 +1,5 @@
 """Test function ``srutils.dict.decompress_nested_dict``."""
+
 # Third-party
 import pytest
 
@@ -114,9 +115,7 @@ class Test_MatchEnd:
         assert res == self.sol_control
 
     def test_match_end(self):
-        res = decompress_nested_dict(
-            self.dct, branch_end_criterion=self.branch_end_criterion
-        )
+        res = decompress_nested_dict(self.dct, branch_end_criterion=self.branch_end_criterion)
         assert res == self.sol_match
 
     def test_return_paths(self):

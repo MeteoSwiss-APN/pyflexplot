@@ -1,5 +1,6 @@
 # pylint: disable=C0302  # too-many-lines (>1000)
 """Read setup files."""
+
 # Standard library
 import re
 from pathlib import Path
@@ -57,17 +58,11 @@ class SetupFile:
             try:
                 raw_data = toml.load(f)
             except Exception as e:
-                raise Exception(
-                    f"error parsing TOML file {self.path} ({type(e).__name__}: {e})"
-                ) from e
+                raise Exception(f"error parsing TOML file {self.path} ({type(e).__name__}: {e})") from e
         if not raw_data:
             raise ValueError("empty setup file", self.path)
-        semi_raw_data = nested_dict_resolve_wildcards(
-            raw_data, double_criterion=lambda key: key.endswith("+")
-        )
-        raw_params_lst = decompress_nested_dict(
-            semi_raw_data, branch_end_criterion=lambda key: not key.startswith("_")
-        )
+        semi_raw_data = nested_dict_resolve_wildcards(raw_data, double_criterion=lambda key: key.endswith("+"))
+        raw_params_lst = decompress_nested_dict(semi_raw_data, branch_end_criterion=lambda key: not key.startswith("_"))
         if override is not None:
             raw_params_lst, old_raw_params_lst = [], raw_params_lst
             for old_raw_params in old_raw_params_lst:
@@ -79,7 +74,6 @@ class SetupFile:
             raise Exception(f"no setups defined in file {self.path}")
         setups = PlotSetupGroup.create(raw_params_lst)
         return setups
-
 
     @classmethod
     def read_many(
@@ -206,9 +200,7 @@ class SetupFile:
             return False
 
     @classmethod
-    def is_valid_raw_param_value(
-        cls, name: str, raw_value: Optional[str] = None
-    ) -> bool:
+    def is_valid_raw_param_value(cls, name: str, raw_value: Optional[str] = None) -> bool:
         """Check a raw parameter with optional raw value for validity."""
         if not cls.is_valid_raw_param_name(name):
             return False

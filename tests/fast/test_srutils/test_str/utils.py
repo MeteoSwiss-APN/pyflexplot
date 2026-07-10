@@ -1,4 +1,5 @@
 """Testing utilities."""
+
 # Standard library
 from contextlib import contextmanager
 from typing import Generator
@@ -11,9 +12,7 @@ import pytest
 
 
 @contextmanager
-def not_raises(
-    unexpected_exception: Union[Type[Exception], Tuple[Type[Exception]]]
-) -> Generator[None, None, None]:
+def not_raises(unexpected_exception: Union[Type[Exception], Tuple[Type[Exception]]]) -> Generator[None, None, None]:
     """Test that an exception is not raised.
 
     Based on: https://stackoverflow.com/a/42327075/4419816

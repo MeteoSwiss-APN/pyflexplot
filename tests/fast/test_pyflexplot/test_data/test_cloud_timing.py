@@ -1,5 +1,6 @@
 # flake8: noqa  # complains about code in "fmt: off/on" blocks
 """Tests for class ``pyflexplot.data.Cloud``."""
+
 # Standard library
 import dataclasses as dc
 

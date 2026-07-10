@@ -1,4 +1,5 @@
 """Test formatting methods of ``TranslatedWord`` class."""
+
 # First-party
 from words import TranslatedWord
 
@@ -49,25 +50,11 @@ def test_title_method():
         de="Die Vitamine sind in meinen frischen Kalifornischen Rosinen",
     )
     assert w["en"].title() == "The VITAMINS Are IN My Fresh California Raisins"
-    assert (
-        w["en"].title(preserve=True)
-        == "The VITAMINS Are IN My Fresh California Raisins"
-    )
-    assert (
-        w["en"].title(preserve=False)
-        == "The Vitamins Are in My Fresh California Raisins"
-    )
-    assert (
-        w["de"].title() == "Die Vitamine sind in meinen frischen Kalifornischen Rosinen"
-    )
-    assert (
-        w["de"].title(preserve=True)
-        == "Die Vitamine sind in meinen frischen Kalifornischen Rosinen"
-    )
-    assert (
-        w["de"].title(preserve=False)
-        == "Die vitamine sind in meinen frischen kalifornischen rosinen"
-    )
+    assert w["en"].title(preserve=True) == "The VITAMINS Are IN My Fresh California Raisins"
+    assert w["en"].title(preserve=False) == "The Vitamins Are in My Fresh California Raisins"
+    assert w["de"].title() == "Die Vitamine sind in meinen frischen Kalifornischen Rosinen"
+    assert w["de"].title(preserve=True) == "Die Vitamine sind in meinen frischen Kalifornischen Rosinen"
+    assert w["de"].title(preserve=False) == "Die vitamine sind in meinen frischen kalifornischen rosinen"
 
 
 def test_title_property():

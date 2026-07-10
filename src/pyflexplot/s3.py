@@ -24,12 +24,12 @@ from pyflexplot import CONFIG
 
 _LOGGER = logging.getLogger(__name__)
 
+
 def expand_key(key: str, ens_member_id: int | None) -> str:
     """Expand a s3 key or file pattern using ensemble member identifier."""
 
     if ens_member_id is None:
-        raise ValueError(
-            f"Must provide ensemble member id as argument to expand key {key}.")
+        raise ValueError(f"Must provide ensemble member id as argument to expand key {key}.")
 
     search_patterns = ["{ens_member:03}", "{ens_member:03d}"]
 
@@ -44,25 +44,27 @@ def expand_key(key: str, ens_member_id: int | None) -> str:
 
     return key
 
+
 def split_s3_uri(infile: str) -> tuple[str, str, str]:
     """Split an S3 URI into bucket name, key, and filename."""
 
     if not infile.startswith("s3:/"):
-        raise ValueError(f'{infile} must be an S3 URI.')
+        raise ValueError(f"{infile} must be an S3 URI.")
 
     _, bucket_name, *key_prefix = [s for s in infile.split("/") if s]
     key = "/".join(key_prefix)
     if key_prefix:
         filename = key_prefix[-1]
     else:
-        filename = ''
+        filename = ""
     return bucket_name, key, filename
 
 
-def download_key_from_bucket(key: str,
-                             dest: Path,
-                             bucket: Bucket = CONFIG.main.aws.s3.input,
-                             ) -> Path:
+def download_key_from_bucket(
+    key: str,
+    dest: Path,
+    bucket: Bucket = CONFIG.main.aws.s3.input,
+) -> Path:
     """
     Download object from S3 bucket.
     Filename of resulting local file is formatted value of the key.
@@ -76,40 +78,46 @@ def download_key_from_bucket(key: str,
     client = _create_s3_client(bucket)
 
     # Make directory if not existing
-    if not os.path.exists( dest.parent ):
-        os.makedirs( dest.parent )
-
+    if not os.path.exists(dest.parent):
+        os.makedirs(dest.parent)
 
     # Download object
-    _LOGGER.info('Downloading %s from bucket %s to %s', key, bucket.name, dest)
+    _LOGGER.info("Downloading %s from bucket %s to %s", key, bucket.name, dest)
 
-    with open(dest, 'wb') as data:
+    with open(dest, "wb") as data:
         client.download_fileobj(bucket.name, key, data)
 
-    _LOGGER.info('Finished downloading %s from bucket %s to %s', key, bucket.name, dest)
+    _LOGGER.info("Finished downloading %s from bucket %s to %s", key, bucket.name, dest)
 
     return dest
 
 
-def upload_outpaths_to_s3(upload_outpaths: list[str],
-                    model: ModelSetup,
-                    bucket: Bucket = CONFIG.main.aws.s3.output,
-                    ) -> None:
-    """Upload a list of local file paths to an S3 bucket adding the product_type from ModelSetup to the metadata.
-    """
+def upload_outpaths_to_s3(
+    upload_outpaths: list[str],
+    model: ModelSetup,
+    bucket: Bucket = CONFIG.main.aws.s3.output,
+) -> None:
+    """Upload a list of local file paths to an S3 bucket adding the product_type from ModelSetup to the metadata."""
 
     if not model:
-        raise ValueError("Model object must be provided to upload to S3, \
-                         model name and base time are used in the object key.")
+        raise ValueError(
+            "Model object must be provided to upload to S3, \
+                         model name and base time are used in the object key."
+        )
     try:
         client = _create_s3_client(bucket)
 
         for outpath in upload_outpaths:
             key = f"{model.name}/{model.base_time}/{Path(outpath).name}"
             try:
-                _LOGGER.info("Uploading file: %s \
+                _LOGGER.info(
+                    "Uploading file: %s \
                              to bucket: %s \
-                             with key: %s", outpath, bucket.name, key)
+                             with key: %s",
+                    outpath,
+                    bucket.name,
+                    key,
+                )
 
                 _retry_with_backoff(
                     client.upload_file,
@@ -118,22 +126,20 @@ def upload_outpaths_to_s3(upload_outpaths: list[str],
                         bucket.name,
                         key,
                         # Add the product type as metadata if set in model
-                        dict(Metadata=dict(product_type=model.product_type) if model.product_type else None)
+                        dict(Metadata=dict(product_type=model.product_type) if model.product_type else None),
                     ],
-                    retries=int(bucket.retries)
-                    )
+                    retries=int(bucket.retries),
+                )
             except ClientError as e:
                 _LOGGER.error(e)
     except Exception as err:
-        _LOGGER.error('Error uploading paths to S3.')
+        _LOGGER.error("Error uploading paths to S3.")
         raise err
 
 
-def _retry_with_backoff(fn: Callable,
-                        args: list | None = None,
-                        kwargs: dict | None = None,
-                        retries: int = 5,
-                        backoff_in_seconds: int = 1) -> None:
+def _retry_with_backoff(
+    fn: Callable, args: list | None = None, kwargs: dict | None = None, retries: int = 5, backoff_in_seconds: int = 1
+) -> None:
     """Retry a function with exponential backoff."""
     if args is None:
         args = []
@@ -147,10 +153,11 @@ def _retry_with_backoff(fn: Callable,
         except Exception as e:
             if x == retries:
                 raise RuntimeError(f"retried {fn} {retries} times.") from e
-            sleep: float = backoff_in_seconds * 2 ** x + random.uniform(0, 1)
+            sleep: float = backoff_in_seconds * 2**x + random.uniform(0, 1)
             logging.info("Sleep: %.2f seconds", sleep)
             time.sleep(sleep)
             x += 1
+
 
 def _create_s3_client(bucket):
     """
@@ -163,25 +170,12 @@ def _create_s3_client(bucket):
     Returns:
         A configured boto3 S3 client.
     """
-    retries_config = {
-        'max_attempts': bucket.retries,
-        'mode': 'standard'
-    }
+    retries_config = {"max_attempts": bucket.retries, "mode": "standard"}
 
     # Check if endpoint_url is present to differentiate between AWS and other platforms
-    if hasattr(bucket, 'endpoint_url') and bucket.endpoint_url.strip():
+    if hasattr(bucket, "endpoint_url") and bucket.endpoint_url.strip():
         # Non-AWS configuration
-        return boto3.Session().client(
-            's3',
-            endpoint_url=bucket.endpoint_url,
-            config=Config(retries=retries_config)
-        )
+        return boto3.Session().client("s3", endpoint_url=bucket.endpoint_url, config=Config(retries=retries_config))
     else:
         # AWS S3 configuration
-        return boto3.Session().client(
-            's3',
-            config=Config(
-                region_name=bucket.region,
-                retries=retries_config
-            )
-        )
+        return boto3.Session().client("s3", config=Config(region_name=bucket.region, retries=retries_config))

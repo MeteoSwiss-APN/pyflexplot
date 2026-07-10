@@ -1,4 +1,5 @@
 """Chemical species and their attributes."""
+
 from __future__ import annotations
 
 # Standard library
@@ -26,13 +27,11 @@ class SpeciesAttribute:
 
     @overload
     @classmethod
-    def create(cls, arg1: float, arg2: Optional[str] = None):
-        ...
+    def create(cls, arg1: float, arg2: Optional[str] = None): ...
 
     @overload
     @classmethod
-    def create(cls, arg1: Tuple[float, str], arg2=None):
-        ...
+    def create(cls, arg1: Tuple[float, str], arg2=None): ...
 
     @classmethod
     def create(cls, arg1, arg2=None) -> "SpeciesAttribute":
@@ -335,13 +334,11 @@ SPECIES: List[Species] = [
 
 
 @overload
-def get_species(*, name: str) -> Species:
-    ...
+def get_species(*, name: str) -> Species: ...
 
 
 @overload
-def get_species(*, name: Union[Tuple[str, ...], List[str]]) -> Tuple[Species, ...]:
-    ...
+def get_species(*, name: Union[Tuple[str, ...], List[str]]) -> Tuple[Species, ...]: ...
 
 
 def get_species(*, name=None):

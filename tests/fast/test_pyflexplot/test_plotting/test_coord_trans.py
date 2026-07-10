@@ -1,4 +1,5 @@
 """Tests for module ``pyflexplot.plotting.coord_trans``."""
+
 # Standard library
 import dataclasses as dc
 from typing import Tuple

@@ -1,4 +1,5 @@
 """Boxed plots."""
+
 # Standard library
 import dataclasses as dc
 import sys
@@ -77,9 +78,7 @@ class ContourLevelsConfig:
     levels: np.ndarray = dc.field(default_factory=np.array)  # type: ignore
     extend: str = "max"
     include_lower: bool = True
-    legend: ContourLevelsLegendConfig = dc.field(
-        default_factory=ContourLevelsLegendConfig
-    )
+    legend: ContourLevelsLegendConfig = dc.field(default_factory=ContourLevelsLegendConfig)
     scale: str = "log"
 
     @property
@@ -172,11 +171,8 @@ class BoxedPlot:
     ) -> None:
         n_panels = len(field_group)
         # SR_TMP < TODO proper check
-        assert (
-            n_panels == len(domains) == len(map_configs) == len(self.config.panels)
-        ), (
-            f"not ({n_panels} == {len(domains)} == {len(map_configs)}"
-            f"== {len(self.config.panels)})"
+        assert n_panels == len(domains) == len(map_configs) == len(self.config.panels), (
+            f"not ({n_panels} == {len(domains)} == {len(map_configs)}== {len(self.config.panels)})"
         )
         # SR_TMP >
         if n_panels == 1:
@@ -206,9 +202,7 @@ class BoxedPlot:
                 zip(field_group, self.config.panels, domains, map_configs, sub_rects)
             ):
                 name = f"map{idx}"
-                self.add_map_plot(
-                    name, field, domain, map_config, sub_rect, panel_config
-                )
+                self.add_map_plot(name, field, domain, map_config, sub_rect, panel_config)
         else:
             raise NotImplementedError(f"{n_panels} panels")
 
@@ -257,9 +251,7 @@ class BoxedPlot:
         return box
 
 
-def _add_panel_label(
-    ax: MapAxes, panel_config: BoxedPlotPanelConfig, layout: BoxedPlotLayout
-) -> None:
+def _add_panel_label(ax: MapAxes, panel_config: BoxedPlotPanelConfig, layout: BoxedPlotLayout) -> None:
     multipanel_param = layout.setup.multipanel_param
     height = 0.10
     if multipanel_param == "ens_params.pctl":
@@ -340,7 +332,7 @@ def _draw_colors_contours(
             return
         raise e
 
-    new = ax.ax.collections[len(before):]
+    new = ax.ax.collections[len(before) :]
     for coll in new:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")

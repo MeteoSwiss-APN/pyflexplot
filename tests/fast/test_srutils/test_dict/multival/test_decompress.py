@@ -1,4 +1,5 @@
 """Test function ``srutils.dict.decompress_multival_dict``."""
+
 # Third-party
 import pytest
 

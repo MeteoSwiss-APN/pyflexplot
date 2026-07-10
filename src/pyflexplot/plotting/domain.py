@@ -1,4 +1,5 @@
 """Domains."""
+
 # Standard library
 import dataclasses as dc
 from typing import Any
@@ -123,9 +124,7 @@ class Domain:
         lllon, urlon, _, _ = self.get_bbox_extent()
         return bool(lllon > urlon)  # np.bool_ => bool (?)
 
-    def get_bbox(
-        self, ax: Axes, projs: Projections, curr_proj: str = "data"
-    ) -> ProjectedBoundingBox:
+    def get_bbox(self, ax: Axes, projs: Projections, curr_proj: str = "data") -> ProjectedBoundingBox:
         """Get bounding box of domain."""
         lllon, urlon, lllat, urlat = self.get_bbox_extent()
         bbox = ProjectedBoundingBox(
@@ -341,10 +340,7 @@ class GeoMaskBoundingBox:
         """Create a new instance."""
         shape = (lat.size, lon.size)
         if mask.shape != shape:
-            raise ValueError(
-                "inconsistent shapes of mask and lat/lon"
-                f": {mask.shape} != ({shape[0]}, {shape[1]})"
-            )
+            raise ValueError(f"inconsistent shapes of mask and lat/lon: {mask.shape} != ({shape[0]}, {shape[1]})")
         if not mask.any():
             raise self.EmptyMaskError(shape)
         self.mask: np.ndarray = mask
@@ -405,9 +401,7 @@ class GeoMaskBoundingBox:
             largest_gap = next(iter(sorted(gaps, reverse=True)))
             _, idx_gap_start, idx_gap_end = largest_gap
             idx_lllon = idx_gap_end + 1 if idx_gap_end < self.mask_lon.size - 1 else 0
-            idx_urlon = (
-                idx_gap_start - 1 if idx_gap_start > 1 else self.mask_lon.size - 1
-            )
+            idx_urlon = idx_gap_start - 1 if idx_gap_start > 1 else self.mask_lon.size - 1
             lllon = self.lon[idx_lllon]
             urlon = self.lon[idx_urlon]
             crosses_dateline = idx_lllon > idx_urlon
@@ -416,14 +410,8 @@ class GeoMaskBoundingBox:
     def __repr__(self) -> str:
         """Return a string representation."""
         mask = f"<{self.mask.shape}, true={self.mask.sum()}/{self.mask.size}>"
-        lat = (
-            f"<{self.lat.shape}, "
-            f"[{self.lat[0]}, {self.lat[1]}, ..., {self.lat[-2]}, {self.lat[-1]}]>"
-        )
-        lon = (
-            f"<{self.lon.shape}, "
-            f"[{self.lon[0]}, {self.lon[1]}, ..., {self.lon[-2]}, {self.lon[-1]}]>"
-        )
+        lat = f"<{self.lat.shape}, [{self.lat[0]}, {self.lat[1]}, ..., {self.lat[-2]}, {self.lat[-1]}]>"
+        lon = f"<{self.lon.shape}, [{self.lon[0]}, {self.lon[1]}, ..., {self.lon[-2]}, {self.lon[-1]}]>"
         return "\n".join(
             [
                 f"{type(self).__name__}(",
@@ -514,16 +502,9 @@ class ReleaseSiteDomain(Domain):
             self.config.release_lon = self.lon.mean()
 
         if not self.config.min_size_lat and not self.config.min_size_lon:
-            raise ValueError(
-                "one or both of min_size_lat and min_size_lon must be non-zero"
-            )
-        elif (
-            not self.config.min_size_lat or not self.config.min_size_lon
-        ) and not self.config.aspect:
-            raise ValueError(
-                "aspect must be non-zero unless both min_size_lat and min_size_lon are"
-                " non-zero"
-            )
+            raise ValueError("one or both of min_size_lat and min_size_lon must be non-zero")
+        elif (not self.config.min_size_lat or not self.config.min_size_lon) and not self.config.aspect:
+            raise ValueError("aspect must be non-zero unless both min_size_lat and min_size_lon are non-zero")
 
     def get_bbox_extent(self) -> Tuple[float, float, float, float]:
         """Return domain corners ``(lllon, lllat, urlon, urlat)``."""
@@ -561,9 +542,7 @@ class ReleaseSiteDomain(Domain):
         return self.config.release_lon or self.lon.mean()
 
 
-def find_gaps(
-    mask: Union[np.ndarray, Sequence[int]], periodic: bool = True
-) -> List[Tuple[int, int, int]]:
+def find_gaps(mask: Union[np.ndarray, Sequence[int]], periodic: bool = True) -> List[Tuple[int, int, int]]:
     """Return a size, start and end of all gaps in a 1D mask."""
     mask = np.asarray(mask, bool)
     if not len(mask.shape) == 1:

@@ -1,4 +1,5 @@
 """Test module ``pyflexplot.setup``."""
+
 # Third-party
 import pytest
 
@@ -47,17 +48,13 @@ class Test_Create:
         setup = PlotSetup.create(params)
         res = setup.dict()
         sol = params
-        check_is_sub_element(
-            name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
-        )
+        check_is_sub_element(name_super="result", obj_super=res, name_sub="solution", obj_sub=sol)
         self.check_hashable(setup)
 
     @pytest.mark.parametrize(
         "dct",
         [
-            {
-                "panels": [{"plot_variable": ["concentration", "tot_deposition"]}]
-            },  # [dct0]
+            {"panels": [{"plot_variable": ["concentration", "tot_deposition"]}]},  # [dct0]
             {"panels": [{"ens_variable": ["minimum", "maximum"]}]},  # [dct1]
             {"panels": [{"integrate": [True, False]}]},  # [dct2]
             {"panels": [{"combine_levels": [True, False]}]},  # [dct3]
@@ -94,9 +91,7 @@ class Test_Create:
                 {"ens_variable": "median"},
             ]
         }
-        check_is_sub_element(
-            name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
-        )
+        check_is_sub_element(name_super="result", obj_super=res, name_sub="solution", obj_sub=sol)
         self.check_hashable(setup)
 
     def test_multipanel_time(self):
@@ -118,9 +113,7 @@ class Test_Create:
                 {"dimensions": {"time": 9}},
             ]
         }
-        check_is_sub_element(
-            name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
-        )
+        check_is_sub_element(name_super="result", obj_super=res, name_sub="solution", obj_sub=sol)
         self.check_hashable(setup)
 
 
@@ -130,18 +123,14 @@ class Test_Derive:
         setup = DEFAULT_SETUP.derive(params)
         sol = params
         res = setup.dict()
-        check_is_sub_element(
-            name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
-        )
+        check_is_sub_element(name_super="result", obj_super=res, name_sub="solution", obj_sub=sol)
 
     def test_panels_dict(self):
         params = {"panels": {"plot_variable": "tot_deposition"}}
         setup = DEFAULT_SETUP.derive(params)
         sol = {"panels": [params["panels"]]}
         res = setup.dict()
-        check_is_sub_element(
-            name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
-        )
+        check_is_sub_element(name_super="result", obj_super=res, name_sub="solution", obj_sub=sol)
 
     def test_multipanel_ens_variable(self):
         params = {
@@ -162,9 +151,7 @@ class Test_Derive:
             ]
         }
         res = setup.dict()
-        check_is_sub_element(
-            name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
-        )
+        check_is_sub_element(name_super="result", obj_super=res, name_sub="solution", obj_sub=sol)
 
     def test_multipanel_time(self):
         params = {
@@ -184,9 +171,7 @@ class Test_Derive:
             ]
         }
         res = setup.dict()
-        check_is_sub_element(
-            name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
-        )
+        check_is_sub_element(name_super="result", obj_super=res, name_sub="solution", obj_sub=sol)
 
 
 class Test_Decompress:
@@ -272,9 +257,7 @@ class Test_Decompress:
 
         def test_select_two(self):
             """Decompress two select parameters."""
-            setups = self.get_setup().decompress(
-                ["dimensions.time", "dimensions.species_id"]
-            )
+            setups = self.get_setup().decompress(["dimensions.time", "dimensions.species_id"])
             assert len(setups) == 6
             assert isinstance(setups, PlotSetupGroup)
             assert all(isinstance(setup, PlotSetup) for setup in setups)
@@ -303,9 +286,7 @@ class Test_Decompress:
                 self.get_setup().decompress(["dimensions.variable"])
 
         def test_files_param(self):
-            setup = self.get_setup().derive(
-                {"files": {"output": ["foo.png", "bar.png"]}}
-            )
+            setup = self.get_setup().derive({"files": {"output": ["foo.png", "bar.png"]}})
             setups = setup.decompress(["files.output"], internal=False)
             assert len(setups) == 2
             assert isinstance(setups, list)
@@ -364,9 +345,7 @@ class Test_Decompress:
                 for ens_member_id in [1, 2, 3, 4, 5]
                 for time in [0, 1, 2]
             ]
-            check_is_sub_element(
-                name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
-            )
+            check_is_sub_element(name_super="result", obj_super=res, name_sub="solution", obj_sub=sol)
 
         def test_internal_skip(self):
             setups = self.get_setup().decompress(skip=["ens_member_id"], internal=True)
@@ -378,9 +357,7 @@ class Test_Decompress:
                 }
                 for time in [0, 1, 2]
             ]
-            check_is_sub_element(
-                name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
-            )
+            check_is_sub_element(name_super="result", obj_super=res, name_sub="solution", obj_sub=sol)
 
         def test_external_skip(self):
             setups = self.get_setup().decompress(skip=["ens_member_id"], internal=False)
@@ -393,9 +370,7 @@ class Test_Decompress:
                 }
                 for time in [0, 1, 2]
             ]
-            check_is_sub_element(
-                name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
-            )
+            check_is_sub_element(name_super="result", obj_super=res, name_sub="solution", obj_sub=sol)
 
     class Test_MultipanelEnsVariable:
         """Decompress, but skip multipanel param."""
@@ -420,11 +395,6 @@ class Test_Decompress:
             res = plot_setup.dict()
             sol = {
                 **self.params,
-                "panels": [
-                    {"ens_variable": var}
-                    for var in self.params["panels"]["ens_variable"]
-                ],
+                "panels": [{"ens_variable": var} for var in self.params["panels"]["ens_variable"]],
             }
-            check_is_sub_element(
-                name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
-            )
+            check_is_sub_element(name_super="result", obj_super=res, name_sub="solution", obj_sub=sol)

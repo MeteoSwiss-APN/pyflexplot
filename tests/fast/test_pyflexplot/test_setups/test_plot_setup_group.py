@@ -1,4 +1,5 @@
 """Tests for class ``pyflexplot.setup.SetupGroup``."""
+
 # Standard library
 from itertools import product
 from typing import Any
@@ -79,9 +80,7 @@ class Test_FromRawParams:
             }
             for species_id in [1, 2]
         ]
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
 
 class Test_Create:
@@ -124,17 +123,13 @@ class Test_Create:
             group = PlotSetupGroup.create(self.setup_lst)
             res = group.dicts()
             sol = self.dicts
-            assert_is_sub_element(
-                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-            )
+            assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
         def test_from_dicts(self):
             group = PlotSetupGroup.create(self.dicts)
             res = group.dicts()
             sol = self.dicts
-            assert_is_sub_element(
-                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-            )
+            assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     class Test_Complex:
         """Test more complex setup dicts resulting in multiple setups each."""
@@ -161,9 +156,7 @@ class Test_Create:
             group = PlotSetupGroup.create(params)
             res = group.dicts()
             sol = [{**params, "panels": [params["panels"]]}]
-            assert_is_sub_element(
-                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-            )
+            assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
         def test_combine_levels_false(self):
             params = {
@@ -205,9 +198,7 @@ class Test_Create:
                 )
                 for value in [0, 1, 2]
             ]
-            assert_is_sub_element(
-                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-            )
+            assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
         def test_combine_species_true(self):
             params = {
@@ -223,9 +214,7 @@ class Test_Create:
             group = PlotSetupGroup.create(params)
             res = group.dicts()
             sol = [{**params, "panels": [params["panels"]]}]
-            assert_is_sub_element(
-                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-            )
+            assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
         def test_combine_species_false(self):
             params = {
@@ -266,9 +255,7 @@ class Test_Create:
                 )
                 for value in [0, 1, 2]
             ]
-            assert_is_sub_element(
-                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-            )
+            assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     class Test_Cast:
         base_params = {
@@ -311,9 +298,7 @@ class Test_Create:
             group = PlotSetupGroup.create(params)
             res = group.dicts()
             sol = [{"panels": [{"combine_species": cast}]}]
-            assert_is_sub_element(
-                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-            )
+            assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
 
 class Test_Compress:
@@ -376,16 +361,12 @@ class Test_Compress:
 
     def test_two(self):
         res = PlotSetupGroup(self.setups_lst[:2]).compress().dict()
-        sol = PlotSetup.create(self.dcts[0]).derive(
-            {"panels": [{"dimensions": {"level": (0, 1)}}]}
-        )
+        sol = PlotSetup.create(self.dcts[0]).derive({"panels": [{"dimensions": {"level": (0, 1)}}]})
         assert res == sol
 
     def test_three(self):
         res = PlotSetupGroup(self.setups_lst[:3]).compress().dict()
-        sol = PlotSetup.create(self.dcts[0]).derive(
-            {"panels": [{"dimensions": {"level": (0, 1, 2)}}]}
-        )
+        sol = PlotSetup.create(self.dcts[0]).derive({"panels": [{"dimensions": {"level": (0, 1, 2)}}]})
         assert res == sol
 
 
@@ -454,11 +435,7 @@ class Test_Group:
             for combine_levels in self.combine_levels_lst
         ]
         assert len(concentration_dcts) == self.n_concentration
-        return [
-            merge_dicts(base_dct, dct)
-            for base_dct in base_dcts
-            for dct in concentration_dcts
-        ]
+        return [merge_dicts(base_dct, dct) for base_dct in base_dcts for dct in concentration_dcts]
 
     def get_setups(self):
         return PlotSetupGroup.create(self.get_setup_dcts())
@@ -543,11 +520,7 @@ class Test_Group:
         grouped = setups.group(["files.output", "combine_levels"])
         assert len(grouped) == self.n_outfile * self.n_combine_levels
         sol = set(
-            [
-                (outfile, combine_levels)
-                for outfile in self.outfile_lst
-                for combine_levels in self.combine_levels_lst
-            ]
+            [(outfile, combine_levels) for outfile in self.outfile_lst for combine_levels in self.combine_levels_lst]
         )
         assert set(grouped) == sol
 

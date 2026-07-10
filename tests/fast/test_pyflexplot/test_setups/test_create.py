@@ -1,4 +1,5 @@
 """Test class ``pyflexplot.setup.Setup.create``."""
+
 # First-party
 from pyflexplot.setups.plot_setup import PlotSetup
 from srutils.dict import merge_dicts
@@ -38,17 +39,13 @@ class Test_Empty:
         assert PlotSetup(**DEFAULT_PARAMS) == PlotSetup(**DEFAULT_PARAMS).dict()
 
     def test_init_vs_create(self):
-        assert PlotSetup(**DEFAULT_PARAMS) == PlotSetup.create(
-            MANDATORY_RAW_DEFAULT_PARAMS
-        )
+        assert PlotSetup(**DEFAULT_PARAMS) == PlotSetup.create(MANDATORY_RAW_DEFAULT_PARAMS)
 
     def test_init_vs_default_setup(self):
         assert PlotSetup(**DEFAULT_PARAMS) == DEFAULT_SETUP
 
     def test_init_vs_default_params_dict(self):
-        assert PlotSetup(**DEFAULT_PARAMS) == merge_dicts(
-            MANDATORY_RAW_DEFAULT_PARAMS, OPTIONAL_RAW_DEFAULT_PARAMS
-        )
+        assert PlotSetup(**DEFAULT_PARAMS) == merge_dicts(MANDATORY_RAW_DEFAULT_PARAMS, OPTIONAL_RAW_DEFAULT_PARAMS)
 
     def test_create_vs_create_dict(self):
         res = PlotSetup.create(MANDATORY_RAW_DEFAULT_PARAMS)
@@ -77,16 +74,12 @@ class Test_WildcardToNone:
         assert setup.panels.collect_equal("dimensions").species_id is None
 
     def test_time(self):
-        params = merge_dicts(
-            MANDATORY_RAW_DEFAULT_PARAMS, {"panels": [{"dimensions": {"time": "*"}}]}
-        )
+        params = merge_dicts(MANDATORY_RAW_DEFAULT_PARAMS, {"panels": [{"dimensions": {"time": "*"}}]})
         setup = PlotSetup.create(params)
         assert setup.panels.collect_equal("dimensions").time is None
 
     def test_level(self):
-        params = merge_dicts(
-            MANDATORY_RAW_DEFAULT_PARAMS, {"panels": [{"dimensions": {"level": "*"}}]}
-        )
+        params = merge_dicts(MANDATORY_RAW_DEFAULT_PARAMS, {"panels": [{"dimensions": {"level": "*"}}]})
         setup = PlotSetup.create(params)
         assert setup.panels.collect_equal("dimensions").level is None
 

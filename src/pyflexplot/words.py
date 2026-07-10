@@ -4,6 +4,7 @@ TODO:
     Split into primary and derived words/expressions to remove duplication
 
 """
+
 # First-party
 from words import TranslatedWords
 from words import Words
@@ -29,7 +30,7 @@ s = SYMBOLS
 WORDS = TranslatedWords("words", {})
 
 # A
-WORDS.add(en="accumulated over", de=f'akkumuliert {s["ue"]}ber')
+WORDS.add(en="accumulated over", de=f"akkumuliert {s['ue']}ber")
 WORDS.add(en="after", de="nach")
 WORDS.add(
     en={
@@ -53,9 +54,9 @@ WORDS.add(
         "of": "des beaufschlagten Gebietes",
     },
 )
-WORDS.add(en="m AGL", de=f'm {s["ue"]}.G.')
+WORDS.add(en="m AGL", de=f"m {s['ue']}.G.")
 WORDS.add(en="at", de={"level": "auf", "place": "in", "time": "um"})
-WORDS.add(en="averaged over", de=f'gemittelt {s["ue"]}ber')
+WORDS.add(en="averaged over", de=f"gemittelt {s['ue']}ber")
 # B
 WORDS.add(en="based on", de="basierend auf")
 # C
@@ -161,7 +162,7 @@ WORDS.add(en="from now", de="ab jetzt")
 # G
 # H
 WORDS.add(en="half-life", de="Halbwertszeit")
-WORDS.add(en="height", de=f'H{s["oe"]}he')
+WORDS.add(en="height", de=f"H{s['oe']}he")
 WORDS.add(
     en={"*": "hour", "pl": "hours", "abbr": "h"},
     de={"*": "Stunde", "pl": "Stunden", "abbr": "h"},
@@ -246,9 +247,9 @@ WORDS.add(
 WORDS.add(en="latitude", de="Breite")
 WORDS.add(en="lead time", de="Vorhersagezeit")
 WORDS.add(en="level", de="Level")
-WORDS.add(en="longitude", de=f'L{s["ae"]}nge')
+WORDS.add(en="longitude", de=f"L{s['ae']}nge")
 # M
-WORDS.add(en="m AGL", de=f'm {s["ue"]}.G.')
+WORDS.add(en="m AGL", de=f"m {s['ue']}.G.")
 WORDS.add(en={"*": "maximum", "abbr": "max."}, de={"*": "Maximum", "abbr": "Max."})
 WORDS.add(en="mean", de="Mittel")
 WORDS.add(en="median", de="Median")
@@ -296,7 +297,7 @@ WORDS.add(en={"*": "south", "abbr": "S"}, de={"*": "S{s['ue']}den", "abbr": "S"}
 WORDS.add(en="standard deviation", de="Standardabweichung")
 WORDS.add(en="start", de="Start")
 WORDS.add(en="substance", de="Substanz")
-WORDS.add(en="summed over", de=f'aufsummiert {s["ue"]}ber')
+WORDS.add(en="summed over", de=f"aufsummiert {s['ue']}ber")
 WORDS.add(
     en={
         "*": "surface deposition",

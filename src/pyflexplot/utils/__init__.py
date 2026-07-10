@@ -1,4 +1,5 @@
 """Subpackage ``pyflexplot.utils``."""
+
 # Standard library
 from typing import List
 

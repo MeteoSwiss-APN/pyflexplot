@@ -1,4 +1,5 @@
 """Test function ``srutils.dict.flatten_nested_dict``."""
+
 # Third-party
 import pytest
 

@@ -1,4 +1,5 @@
 """Tests for functions in module ``pyflexplot.input.meta_data``."""
+
 # Standard library
 from typing import Optional
 

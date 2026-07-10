@@ -1,4 +1,5 @@
 """Tests for function ``pyflexplot.utils.dataclasses.cast_field_value``."""
+
 # Standard library
 import dataclasses as dc
 from datetime import datetime
@@ -291,9 +292,7 @@ class TestList:
             Cfg("strs", ["foo"], ["foo"]),  # [cfg0]
             Cfg("strs", "foo", ["f", "o", "o"], kw={"auto_wrap": False}),  # [cfg1]
             Cfg("strs", "foo", ["foo"], kw={"auto_wrap": True}),  # [cfg2]
-            Cfg(
-                "strs", "foo", ["foo"], kw={"auto_wrap": True, "unpack_str": False}
-            ),  # [cfg3]
+            Cfg("strs", "foo", ["foo"], kw={"auto_wrap": True, "unpack_str": False}),  # [cfg3]
             Cfg("ints", (1, 2), [1, 2]),  # [cfg4]
             Cfg("ints", ["123"], [123]),  # [cfg5]
             Cfg("ints", "123", [1, 2, 3]),  # [cfg6]
@@ -429,9 +428,7 @@ class TestDatetime:
         [
             Cfg("dt", "202012021308", dt(2020, 12, 2, 13, 8)),  # [cfg0]
             Cfg("dt", 202012021308, dt(2020, 12, 2, 13, 8)),  # [cfg1]
-            Cfg(
-                "dt", "2020-12-02", dt(2020, 12, 2), kw={"datetime_fmt": "%Y-%m-%d"}
-            ),  # [cfg2]
+            Cfg("dt", "2020-12-02", dt(2020, 12, 2), kw={"datetime_fmt": "%Y-%m-%d"}),  # [cfg2]
             Cfg("opt_dt", None, None),  # [cfg3]
             Cfg("opt_dt", "202012021308", dt(2020, 12, 2, 13, 8)),  # [cfg4]
             Cfg("opt_dt", 202012021308, dt(2020, 12, 2, 13, 8)),  # [cfg5]

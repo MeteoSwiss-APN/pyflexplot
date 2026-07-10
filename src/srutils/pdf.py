@@ -1,4 +1,5 @@
 """Work with PDF files."""
+
 from __future__ import annotations
 
 # Standard library

@@ -1,4 +1,5 @@
 """Tests for function ``pyflexplot.data.ensemble_probability``."""
+
 # Third-party
 import numpy as np
 import pytest  # noqa: F401  # imported but unused
