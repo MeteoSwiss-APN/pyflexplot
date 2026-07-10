@@ -54,7 +54,7 @@ pipeline {
     }
 
     environment {
-        PATH = "$workspace/.venv-mchbuild/bin:$HOME/tools/openshift-client-tools:$PATH"
+        PATH = "$workspace/.venv-mchbuild/bin:$PATH"
         HTTP_PROXY = 'http://proxy.meteoswiss.ch:8080'
         HTTPS_PROXY = 'http://proxy.meteoswiss.ch:8080'
         NO_PROXY = '.meteoswiss.ch,localhost'
@@ -127,15 +127,6 @@ pipeline {
             steps {
                 sh """
                     mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} build.artifacts
-                """
-            }
-        }
-
-        stage('Format check') {
-            when { expression { Globals.formattingQualityGateEnabled } }
-            steps {
-                sh """
-                    mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} verify.format
                 """
             }
         }

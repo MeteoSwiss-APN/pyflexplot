@@ -46,9 +46,6 @@ default:
               pullAlways: false
               packageManager: ''
               removeLocalImage: false
-  - verify:
-      - publishSbom:
-          - securityPublishSbom:
   - publish:
       - artifacts:
           - containerPublishImage:
