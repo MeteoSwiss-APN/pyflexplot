@@ -103,7 +103,7 @@ class BaseSetup:
 
     @classmethod
     def get_params(cls: Type[SetupT]) -> List[str]:
-        return list(cls.__dataclass_fields__)  # pylint: disable=E1101
+        return list(cls.__dataclass_fields__)  # type: ignore[misc] # pylint: disable=E1101
 
     @classmethod
     def _create_mod_params_pre_cast(

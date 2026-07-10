@@ -2241,7 +2241,7 @@ version = "2.5.1"
 description = "Fundamental package for array computing in Python"
 optional = false
 python-versions = ">=3.12"
-groups = ["main"]
+groups = ["main", "dev", "lint"]
 files = [
     {file = "numpy-2.5.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:2c889b56fe48b1018f764b0eec8df59ab654e9148aa91faa12596043500de277"},
     {file = "numpy-2.5.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:ab451b59c5643c570974c43aef780703ef1d3b4965d2be07afd530615a9358d1"},
@@ -2288,6 +2288,50 @@ files = [
     {file = "numpy-2.5.1-cp314-cp314t-win_arm64.whl", hash = "sha256:5a6db61f9aaa57e369905c67d852045d3c4f7126405b29d09b19dec118e9c9cb"},
     {file = "numpy-2.5.1.tar.gz", hash = "sha256:a48a113e6afea91f5608793bafa7ef2ad481fefbda87ec5069f483de61cb9fa3"},
 ]
+
+[package.source]
+type = "legacy"
+url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
+reference = "pypi-meteoswiss"
+
+[[package]]
+name = "numpy-typing-compat"
+version = "20260602.2.5"
+description = "Static typing compatibility layer for older versions of NumPy"
+optional = false
+python-versions = ">=3.12"
+groups = ["dev", "lint"]
+files = [
+    {file = "numpy_typing_compat-20260602.2.5-py3-none-any.whl", hash = "sha256:21ba7757c8924d359a9ed3ab2163c282a70983ae64498fdba6d1892a6641c8b1"},
+    {file = "numpy_typing_compat-20260602.2.5.tar.gz", hash = "sha256:1885a678e9a24564839ed5d1711c0031735fb7de7f0b5ed88d550e5d45a8d4f9"},
+]
+
+[package.dependencies]
+numpy = ">=2.5rc1,<2.6"
+
+[package.source]
+type = "legacy"
+url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
+reference = "pypi-meteoswiss"
+
+[[package]]
+name = "optype"
+version = "0.18.0"
+description = "Building Blocks for Precise & Flexible Type Hints"
+optional = false
+python-versions = ">=3.12"
+groups = ["dev", "lint"]
+files = [
+    {file = "optype-0.18.0-py3-none-any.whl", hash = "sha256:91822ed8516e7a4f225ba53d30f291776c35f31553fb952d7cda98286679c5a6"},
+    {file = "optype-0.18.0.tar.gz", hash = "sha256:ea10dee61b15ca299ed0d97025d362585c4dfc5481159bb999a1d0d414bbcb04"},
+]
+
+[package.dependencies]
+numpy = {version = ">=2.0,<2.8", optional = true, markers = "extra == \"numpy\""}
+numpy-typing-compat = {version = ">=20260602.2.0,<20260603", optional = true, markers = "extra == \"numpy\""}
+
+[package.extras]
+numpy = ["numpy (>=2.0,<2.8)", "numpy-typing-compat (>=20260602.2.0,<20260603)"]
 
 [package.source]
 type = "legacy"
@@ -3316,6 +3360,29 @@ url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
 reference = "pypi-meteoswiss"
 
 [[package]]
+name = "scipy-stubs"
+version = "1.18.0.0"
+description = "Type annotations for SciPy"
+optional = false
+python-versions = ">=3.12"
+groups = ["dev", "lint"]
+files = [
+    {file = "scipy_stubs-1.18.0.0-py3-none-any.whl", hash = "sha256:872ec1066a75feb5c5d8451231e8f7826d08d53fb806c526abd5f97bb1ba29fb"},
+    {file = "scipy_stubs-1.18.0.0.tar.gz", hash = "sha256:a1fc917da66e4d338998839170e218754a669f6455c24243890a1e572bde98f6"},
+]
+
+[package.dependencies]
+optype = {version = ">=0.14.0,<0.19", extras = ["numpy"]}
+
+[package.extras]
+scipy = ["scipy (>=1.18.0rc2,<1.19)"]
+
+[package.source]
+type = "legacy"
+url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
+reference = "pypi-meteoswiss"
+
+[[package]]
 name = "shapely"
 version = "2.1.2"
 description = "Manipulation and analysis of geometric objects"
@@ -3514,6 +3581,43 @@ url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
 reference = "pypi-meteoswiss"
 
 [[package]]
+name = "types-shapely"
+version = "2.1.0.20260630"
+description = "Typing stubs for shapely"
+optional = false
+python-versions = ">=3.10"
+groups = ["dev", "lint"]
+files = [
+    {file = "types_shapely-2.1.0.20260630-py3-none-any.whl", hash = "sha256:43cd568af2ab74c81600bc43ea0560e2f270cdd620bc59dfc1c380186951fd64"},
+    {file = "types_shapely-2.1.0.20260630.tar.gz", hash = "sha256:727c8e42b182d9fb6df3a9376d8ac7ade56e5b13fde5bc69b9541ce66ed56eec"},
+]
+
+[package.dependencies]
+numpy = ">=1.20"
+
+[package.source]
+type = "legacy"
+url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
+reference = "pypi-meteoswiss"
+
+[[package]]
+name = "types-toml"
+version = "0.10.8.20260518"
+description = "Typing stubs for toml"
+optional = false
+python-versions = ">=3.10"
+groups = ["dev", "lint"]
+files = [
+    {file = "types_toml-0.10.8.20260518-py3-none-any.whl", hash = "sha256:0e564ab05f6fde62a315b3b5a9b6624fda569399795d30a37e64705a70459303"},
+    {file = "types_toml-0.10.8.20260518.tar.gz", hash = "sha256:80e10facd24fdeda9d5c672187d72be3ac284843788d67f5aae59e3e016db6fe"},
+]
+
+[package.source]
+type = "legacy"
+url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
+reference = "pypi-meteoswiss"
+
+[[package]]
 name = "typing-extensions"
 version = "4.16.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
@@ -3619,4 +3723,4 @@ reference = "pypi-meteoswiss"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "f4cd0e17932eb08178219f35eca4097d8bb416dac88f2e4a6dc0e4c85be33568"
+content-hash = "80c214cf8e00b99f03d64bd33ab52d2e91b729159b33756d7f7397bf5008f5ee"

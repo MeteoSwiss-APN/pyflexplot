@@ -55,6 +55,9 @@ lint = [
   "pylint (>=4.0.6,<5.0.0)",
   "types-pyyaml (>=6.0.12.20260518,<7.0.0)",
   "types-setuptools (>=83.0.0.20260706,<84.0.0)",
+  "types-toml (>=0.10.8.20260518,<0.11.0.0)",
+  "scipy-stubs (>=1.18.0.0,<2.0.0.0)",
+  "types-shapely (>=2.1.0.20260630,<3.0.0.0)",
 ]
 test = [
   "moto[s3] (>=5.2.2,<6.0.0)",
@@ -134,16 +137,6 @@ exclude = [
 module = [
   # Add external modules w/o type hints here
   "cartopy.*",
-  "click.*",
-  "geopy.*",
-  "IPython.*",
-  "matplotlib.*",
-  "netCDF4.*",
-  "PyPDF2.*",
-  "scipy.*",
-  "shapely.*",
-  "tomlkit.*",
-  "toml.*",
 ]
 ignore_missing_imports = true
 
