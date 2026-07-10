@@ -19,7 +19,6 @@ import matplotlib as mpl
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
-import warnings
 
 # Local
 from ..input.field import Field

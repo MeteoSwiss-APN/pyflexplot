@@ -6,7 +6,6 @@ import os
 import shutil
 import time
 import zipfile
-from copy import copy
 from functools import partial
 from multiprocessing.pool import Pool
 from os.path import abspath
@@ -27,7 +26,6 @@ import click
 from click import Context
 
 # First-party
-from srutils.format import ordinal
 from srutils.format import sfmt
 from srutils.paths import PathsOrganizer
 from srutils.pdf import MultiPagePDF
@@ -41,8 +39,7 @@ from pyflexplot.plots import format_out_file_paths
 from pyflexplot.setups.plot_setup import PlotSetupGroup
 from pyflexplot.setups.setup_file import SetupFile
 from pyflexplot.utils.logging import log
-from pyflexplot.s3 import download_key_from_bucket, split_s3_uri, expand_key, upload_outpaths_to_s3
-from pyflexplot.config.service_settings import Bucket
+from pyflexplot.s3 import split_s3_uri, upload_outpaths_to_s3
 from pyflexplot import CONFIG
 
 

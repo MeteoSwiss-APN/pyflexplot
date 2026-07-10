@@ -10,7 +10,6 @@ import os
 from typing import Union, Any, Type
 
 import yaml
-from pydantic import BaseModel, Extra
 from pydantic.fields import FieldInfo
 from pydantic.v1.utils import deep_update
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict, InitSettingsSource
