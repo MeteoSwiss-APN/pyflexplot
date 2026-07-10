@@ -1,13 +1,12 @@
 class Globals {
-    // Pin mchbuild to stable version to avoid breaking changes
-    static String mchbuildPipPackage = 'mchbuild>=0.12.2,<0.13.0'
-//    static String mchbuildPipPackage = 'mchbuild==0.1.dev510+g9d58a9272'
-
-    // sets to abort the pipeline if the Sonarqube QualityGate fails
+    // set to true to abort the pipeline if the SonarQube quality gate fails
     static boolean qualityGateAbortPipeline = false
 
-    // the default python version
-    static String pythonVersion = '3.12'
+    // set to false to disable the formatting quality gate
+    static boolean formattingQualityGateEnabled = false
+
+    // Threshold for mypy issues before failing the build
+    static int mypyIssueThreshold = 10
 
     // Name of the container image
     static String containerImageName= ''
@@ -15,24 +14,42 @@ class Globals {
     // Semantic version of the artifact
     static String semanticVersion = ''
 
-    static String PIP_INDEX_URL = 'https://hub.meteoswiss.ch/nexus/repository/python-all/simple'
+    // Flag to indicate merge request builds
+    static boolean mergeRequestBuild = false
+
+    // Build ID
+    static String buildId = 'n/a'
+
+    // Documentation version
+    static String docVersion = 'n/a'
+
+    // Pin mchbuild to stable version to avoid breaking changes
+    static String mchbuildPipPackage = 'mchbuild>=1.0.0,<2.0.0'
 }
 
 String rebuild_cron = env.BRANCH_NAME == "main" ? "@midnight" : ""
 
-@Library('dev_tools@main') _
 pipeline {
     agent { label 'podman' }
 
     triggers { cron(rebuild_cron) }
 
     options {
-        // New jobs should wait until older jobs are finished
+        // Prevent concurrent builds; new builds wait for the current one to finish
         disableConcurrentBuilds()
-        // Discard old builds
-        buildDiscarder(logRotator(artifactDaysToKeepStr: '7', artifactNumToKeepStr: '1', daysToKeepStr: '45', numToKeepStr: '10'))
-        // Timeout the pipeline build after 1 hour
+
+        // Automatically discard old builds and artifacts to save space
+        buildDiscarder(logRotator(
+            artifactDaysToKeepStr: '7',  // Keep Jenkins artifacts for 7 days
+            artifactNumToKeepStr: '1',  // Keep only the latest Jenkins artifact
+            daysToKeepStr: '45',  // Keep build records for 45 days
+            numToKeepStr: '10'  // Keep the last 10 builds
+        ))
+
+        // Set a timeout for the pipeline build (1 hour)
         timeout(time: 1, unit: 'HOURS')
+
+        // Use the specified GitLab connection for SCM integration to publish pipeline status
         gitLabConnection('CollabGitLab')
     }
 
@@ -50,32 +67,50 @@ pipeline {
                 updateGitlabCommitStatus name: 'Build', state: 'running'
 
                 script {
-                    echo '---- INSTALL MCHBUILD ----'
+                    echo '---- INSTALLING MCHBUILD ----'
                     sh """
-                    python -m venv .venv-mchbuild
-                    PIP_INDEX_URL=${Globals.PIP_INDEX_URL} \
-                      .venv-mchbuild/bin/pip install --upgrade "${Globals.mchbuildPipPackage}"
+                        python -m venv .venv-mchbuild
+                        PIP_INDEX_URL=https://hub.meteoswiss.ch/nexus/repository/python-all/simple \
+                            .venv-mchbuild/bin/pip install --upgrade "${Globals.mchbuildPipPackage}"
                     """
 
-                    echo '---- INITIALIZE PARAMETERS ----'
+                    // Set the buildId to the first 7 digits of the commit hash
+                    Globals.buildId = env.GIT_COMMIT.take(7)
 
+                    // We calculate the docVersion, setting it to "latest" if building from main
+                    // and to the tag value if building from a tag
+                    if (env.BRANCH_NAME == 'main') {
+                        Globals.docVersion = 'latest'
+                    } else if (env.TAG_NAME) {
+                        Globals.docVersion = env.TAG_NAME
+                    }
+
+                    echo '---- INITIALIZING PARAMETERS ----'
                     if (env.TAG_NAME) {
-                        echo "Detected release build triggered from tag ${env.TAG_NAME}."
+                        echo "Release build detected, triggered by tag: ${env.TAG_NAME}."
                         def isMajorMinorPatch = sh(
                             script: "mchbuild -s version=${env.TAG_NAME} -g isMajorMinorPatch build.checkGivenSemanticVersion",
                             returnStdout: true
                         )
                         if (isMajorMinorPatch != 'true') {
                             currentBuild.result = 'ABORTED'
-                            error('Build aborted because release builds are only triggered for tags of the form <major>.<minor>.<patch>.')
+                            error("The provided tag '${env.TAG_NAME}' does not follow the semantic versioning" +
+                                " format <major>.<minor>.<patch>. Aborting release.")
                         }
-                        Globals.semanticVersion  = env.TAG_NAME
-                    } else {
-                        echo "Detected development build triggered from branch."
-                        Globals.semanticVersion = sh(
+                        Globals.semanticVersion = env.TAG_NAME
+                    } else
+                    {
+                        echo "Development build detected, triggered from a branch."
+                        Globals.semanticVersion= sh(
                             script: 'mchbuild -g semanticVersion build.getSemanticVersion',
                             returnStdout: true
                         )
+                        if (env.CHANGE_ID) {
+                            echo "Development build triggered from a merge request."
+                            Globals.mergeRequestBuild = true
+                            // Merge request builds can use any version, as long as it avoids conflicts with normal branch builds.
+                            Globals.semanticVersion += "-mr${env.CHANGE_ID}"
+                        }
                     }
 
                     Globals.containerImageName = sh(
@@ -90,12 +125,14 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo '---- BUILDING CONTAINER IMAGES ----'
                 sh """
                     mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} build.artifacts
                 """
+            }
+        }
 
-                echo("---- RUNNING UNIT TESTS & COLLECTING COVERAGE ----")
+        stage('Test') {
+            steps {
                 sh """
                     mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} test.unit
                 """
@@ -109,44 +146,48 @@ pipeline {
 
         stage('Scan') {
             steps {
-                echo '---- LINT & TYPE CHECK ----'
-                sh "mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} test.lint"
+                echo '---- LINTING & TYPE CHECKING ----'
+                sh """
+                    mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} test.lint
+                """
+
                 script {
-                    try {
-                        recordIssues(qualityGates: [[threshold: 10, type: 'TOTAL', unstable: false]], tools: [myPy(pattern: 'test_reports/mypy.log')])
-                    }
-                    catch (err) {
-                        error "Too many mypy issues, exiting now..."
+                    // Mypy quality gate
+                    def annotatedReport = scanForIssues(
+                        tool: myPy(pattern: 'test_reports/mypy.log'),
+                    )
+                    publishIssues issues: [annotatedReport]
+                    def totalMypyIssues = annotatedReport.size()
+                    if (totalMypyIssues > Globals.mypyIssueThreshold) {
+                        error("Too many mypy issues detected (${totalMypyIssues} > ${Globals.mypyIssueThreshold}). Aborting build.")
                     }
                 }
 
                 echo("---- SONARQUBE ANALYSIS ----")
                 withSonarQubeEnv("Sonarqube-PROD") {
-                    // fix source path in coverage.xml
-                    // (required because coverage is calculated using podman which uses a differing file structure)
-                    // https://stackoverflow.com/questions/57220171/sonarqube-client-fails-to-parse-pytest-coverage-results
+                    // Adjust source paths in coverage.xml for compatibility with SonarQube
+                    // This is necessary due to differences in file structure when using Podman
+                    // Reference: https://stackoverflow.com/questions/57220171/sonarqube-client-fails-to-parse-pytest-coverage-results
                     sh "sed -i 's/\\/src\\/app-root/.\\//g' test_reports/coverage.xml"
                     sh "${SCANNER_HOME}/bin/sonar-scanner"
                 }
 
                 echo("---- SONARQUBE QUALITY GATE ----")
                 timeout(time: 1, unit: 'HOURS') {
-                    // Parameter indicates whether to set pipeline to UNSTABLE if Quality Gate fails
-                    // true = set pipeline to UNSTABLE, false = don't
+                    // If the quality gate fails, the pipeline will be aborted based on the configured flag
                     waitForQualityGate abortPipeline: Globals.qualityGateAbortPipeline
                 }
             }
         }
 
         stage('Publish Artifacts') {
+            when { expression { !Globals.mergeRequestBuild } }
             environment {
                 REGISTRY_AUTH_FILE = "$workspace/.containers/auth.json"
             }
             steps {
                 echo "---- PUBLISHING CONTAINER IMAGES ----"
-                withCredentials([usernamePassword(credentialsId: 'openshift-nexus',
-                                                  passwordVariable: 'NXPASS',
-                                                  usernameVariable: 'NXUSER')]) {
+                withCredentials([usernamePassword(credentialsId: 'openshift-nexus', passwordVariable: 'NXPASS', usernameVariable: 'NXUSER')]) {
                     sh """
                         mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} publish.artifacts
                     """
@@ -157,17 +198,18 @@ pipeline {
 
     post {
         cleanup {
+            echo '---- CLEANING UP WORKSPACE ----'
             sh """
-            mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} clean
+                mchbuild -s semanticVersion=${Globals.semanticVersion} clean
             """
-            cleanWs()
         }
         aborted {
+            echo 'Build was aborted.'
             updateGitlabCommitStatus name: 'Build', state: 'canceled'
         }
         failure {
+            echo 'Build failed. Sending notification email...'
             updateGitlabCommitStatus name: 'Build', state: 'failed'
-            echo 'Sending email'
             sh 'df -h'
             emailext(subject: "${currentBuild.fullDisplayName}: ${currentBuild.currentResult}",
                 attachLog: true,
@@ -178,7 +220,7 @@ pipeline {
                 recipientProviders: [requestor(), developers()])
         }
         success {
-            echo 'Build succeeded'
+            echo 'Build completed successfully.'
             updateGitlabCommitStatus name: 'Build', state: 'success'
         }
     }

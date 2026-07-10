@@ -1,22 +1,24 @@
-FROM dockerhub.apps.cp.meteoswiss.ch/mch/python-3.13 AS builder
+FROM dockerhub.apps.cp.meteoswiss.ch/mch/python-3.13:latest-poetry2 AS builder
 ARG VERSION
 LABEL ch.meteoswiss.project=pyflexplot-${VERSION}
 
-COPY poetry.lock /src/app-root/
-COPY pyproject.toml /src/app-root/
+COPY poetry.lock pyproject.toml README.md /src/app-root/
 COPY src/ /src/app-root/src/
-COPY README.md /src/app-root/
 
-RUN cd /src/app-root \
-    # we need to build the wheel in order to install the binary python  \
-    # package that uses click to parse the command arguments
-    && poetry build --format wheel \
+WORKDIR /src/app-root
+# we need to build the wheel in order to install the binary python  \
+# package that uses click to parse the command arguments
+RUN poetry build --format wheel \
     && poetry export -o requirements.txt \
-    && poetry export --dev -o requirements_dev.txt
+    && poetry export --with dev -o requirements_dev.txt
 
 FROM dockerhub.apps.cp.meteoswiss.ch/mch/python-3.13:latest-slim AS base
 ARG VERSION
+ARG BUILD_ID
 LABEL ch.meteoswiss.project=pyflexplot-${VERSION}
+
+ENV VERSION=$VERSION
+ENV BUILD_ID=$BUILD_ID
 
 COPY --from=builder /src/app-root/dist/*.whl /src/app-root/
 COPY --from=builder /src/app-root/requirements.txt /src/app-root/

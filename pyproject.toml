@@ -1,105 +1,95 @@
-[tool.poetry]
+[project]
 name = "pyflexplot"
-version = "2.6.0"
 description = "PyFlexPlot - Visualize and post-process FLEXPART dispersion simulation results stored in NetCDF format"
-authors = ["Stefan Ruedisuehli <stefan.ruedisuehli@env.ethz.ch>", "Pirmin Kaufmann <pirmin.kaufmann@meteoswiss.ch>"]
-packages = [
-    { include = "pyflexplot", from = "src" },
-    { include = "srtools", from = "src" },
-    { include = "srutils", from = "src" },
-    { include = "words", from = "src" }
-]
 readme = "README.md"
-repository = "https://github.com/MeteoSwiss-APN/pyflexplot"
+requires-python = ">=3.13,<3.14"
+authors = [
+  { name = "Stefan Ruedisuehli", email = "stefan.ruedisuehli@env.ethz.ch" },
+]
+maintainers = [
+  { name = "Pirmin Kaufmann", email = "pirmin.kaufmann@meteoswiss.ch" },
+]
+keywords = ["COSMO", "Dispersion", "Flexpart", "mapping", "visualization"]
+dynamic = ["classifiers", "version"]
+
+dependencies = [
+  "PyYAML (>=6.0.3,<7.0.0)",
+  "boto3 (>=1.43.41,<2.0.0)",
+  "botocore (>=1.43.41,<2.0.0)",
+  "cartopy (>=0.25.0,<0.26.0)",
+  "click (>=8.4.2,<9.0.0)",
+  "geopy (>=2.4.1,<3.0.0)",
+  "matplotlib (>=3.11.0,<4.0.0)",
+  "netCDF4 (>=1.7.4,<2.0.0)",
+  "numpy (>=2.5.1,<3.0.0)",
+  "pydantic-settings (>=2.14.2,<3.0.0)",
+  "pydantic (>=2.13.4,<3.0.0)",
+  "pypdf (>=6.14.2,<7.0.0)",
+  "pyshp (>=3.1.4,<4.0.0)",
+  "scipy (>=1.18.0,<2.0.0)",
+  "shapely (>=2.1.2,<3.0.0)",
+  "toml (>=0.10.2,<0.11.0)",
+  "typing-extensions (>=4.16.0,<5.0.0)",
+]
+
+[project.urls]
 documentation = "https://github.io/MeteoSwiss-APN/pyflexplot"
-keywords = [
-    "Dispersion",
-    "Flexpart",
-    "COSMO",
-    "mapping",
-    "visualization",
-]
-classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
-    "Intended Audience :: Developers",
-    "Natural Language :: English",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.13",
-]
+repository = "https://github.com/MeteoSwiss-APN/pyflexplot"
 
-[tool.poetry.scripts]
-pyflexplot  = "pyflexplot.cli.cli:cli"
+[project.scripts]
 crop-netcdf = "srtools.crop_netcdf:main"
+pyflexplot = "pyflexplot.cli.cli:cli"
 
-[[tool.poetry.source]]
-name = "pypi-meteoswiss"
-url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
-priority = "primary"
-
-[[tool.poetry.source]]
-name = "pypi-mch-publish"
-# only hub entrypoint can be used for publishing libraries (accessible from CI/CD server)
-url = "https://hub.meteoswiss.ch/nexus/repository/python-mch/"
-priority = "explicit"
-
-[tool.poetry.dependencies]
-python = "~3.13"
-boto3 = "^1.43.41"
-botocore = "^1.43.41"
-cartopy = "^0.25.0"
-click = "^8.4.2"
-geopy = "^2.4.1"
-matplotlib = "^3.11.0"
-netCDF4 = "^1.7.4"
-pydantic = "^2.13.4"
-pydantic-settings = "^2.14.2"
-pypdf = "^6.14.2"
-toml = "^0.10.2"
-typing-extensions = "^4.16.0"
-shapely = "^2.1.2"
-PyYAML = "^6.0.3"
-numpy = "^2.5.1"
-scipy = "^1.18.0"
-pyshp = "^3.1.4"
-
-[tool.poetry.group.dev.dependencies]
-black = "^26.5.1"
-boto3-stubs = "^1.43.41"
-botocore-stubs = "^1.43.14"
-codespell = "^2.4.2"
-flake8 = "^7.3.0"
-moto = {extras = ["s3"], version = "^5.2.2"}
-mypy = "^2.1.0"
-pydata-sphinx-theme = "^0.19.0"
-pydocstyle = "^6.3.0"
-pytest = "^9.1.1"
-pytest-cov = "^7.1.0"
-pylint = "^4.0.6"
-Sphinx = "^9.1.0"
-sphinx-autoapi = "^3.8.0"
-types-setuptools = "^83.0.0.20260706"
-types-pyyaml = "^6.0.12.20260518"
-
-[tool.pytest.ini_options]
-pythonpath = "src"
-testpaths = ["tests"]
-addopts = [
-    "-s",
-    "-ra",
-    "--pdbcls=IPython.terminal.debugger:TerminalPdb",
-    "--tb=short",
-    # "--cov=pyflexplot",
-    # "--mypy",
+[dependency-groups]
+dev = [
+  { include-group = "lint" },
+  { include-group = "test" },
 ]
+lint = [
+  "black (>=26.5.1,<27.0.0)",
+  "boto3-stubs (>=1.43.41,<2.0.0)",
+  "botocore-stubs (>=1.43.14,<2.0.0)",
+  "codespell (>=2.4.2,<3.0.0)",
+  "flake8 (>=7.3.0,<8.0.0)",
+  "mypy (>=2.1.0,<3.0.0)",
+  "pylint (>=4.0.6,<5.0.0)",
+  "types-pyyaml (>=6.0.12.20260518,<7.0.0)",
+  "types-setuptools (>=83.0.0.20260706,<84.0.0)",
+  "types-toml (>=0.10.8.20260518,<0.11.0.0)",
+  "scipy-stubs (>=1.18.0.0,<2.0.0.0)",
+  "types-shapely (>=2.1.0.20260630,<3.0.0.0)",
+]
+test = [
+  "moto[s3] (>=5.2.2,<6.0.0)",
+  "pytest-cov (>=7.1.0,<8.0.0)",
+  "pytest (>=9.1.1,<10.0.0)",
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.codespell]
+ignore-words-list = "ende,ue,fo,activ,nd,feld"
+skip = "requirements/*,*.pdf,environment.yml"
 
 [tool.coverage.run]
 # To prevent the following error we exclude netCDF4 sources from the coverage report
 # No source for code: '/src/app-root/src/netCDF4/_netCDF4.pyx'; see https://coverage.readthedocs.io/en/7.14.3/messages.html#error-no-source
-omit = [
-    "*/netCDF4/*",
-]
+omit = ["*/netCDF4/*"]
 
-[tool.black]
+[tool.flake8]
+max-line-length = 88
+# max-complexity = 10
+ignore = [
+  "E203",  # Allow whitespace before ':' (https://github.com/PyCQA/pycodestyle/issues/373)
+  "F811",  # Allow redefinition of unused name (necessary for typing.overload)
+  "I002",  # Don't check for isort configuration
+  "W503",  # Allow line break before binary operator (PEP 8-compatible)
+]
+per-file-ignores = [
+  "__init__.py: F401",  # Allow unused imports
+]
 
 [tool.isort]
 default_section = "THIRDPARTY"
@@ -120,134 +110,92 @@ import_heading_firstparty = "First-party"
 import_heading_localfolder = "Local"
 # Known modules to avoid misclassification
 known_standard_library = [
-    # Add standard library modules that may be misclassified by isort
+  # Add standard library modules that may be misclassified by isort
 ]
 known_third_party = [
-    # Add third-party modules that may be misclassified by isort
+  # Add third-party modules that may be misclassified by isort
 ]
 known_first_party = [
-    # Add first-party modules that may be misclassified by isort
-    "pyflexplot",
-    "srtools",
-    "srutils",
-    "words",
+  # Add first-party modules that may be misclassified by isort
+  "pyflexplot",
+  "srtools",
+  "srutils",
+  "words",
 ]
 
 [tool.mypy]
 disable_error_code = ["annotation-unchecked"]
 warn_unused_ignores = true
-files = ["src/**/*.py", "tests/**/*.py", "various/**/*.py"]
+files = ["src", "tests", "various"]
 exclude = [
-    "^ref_.*\\.py$" # exclude generated python reference files
-    ]
-
+  "ref_.*\\.py$"  # exclude generated python reference files
+]
 
 [[tool.mypy.overrides]]
 # Note: Only globally ignore missing imports as a matter of last resort!
 # See https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
 module = [
-    # Add external modules w/o type hints here
-    # Todo: replace by "type: ignore [import]" directives in code
-    "cartopy.*",
-    "click.*",
-    "geopy.*",
-    "IPython.*",
-    "matplotlib.*",
-    "netCDF4.*",
-    "PyPDF2.*",
-    "scipy.*",
-    "shapely.*",
-    "tomlkit.*",
-    "toml.*"
+  # Add external modules w/o type hints here
+  "cartopy.*",
 ]
 ignore_missing_imports = true
 
-[tool.flake8]
-max-line-length = 88
-# max-complexity = 10
-ignore = [
-    "E203", # Allow whitespace before ':' (https://github.com/PyCQA/pycodestyle/issues/373)
-    "F811", # Allow redefinition of unused name (necessary for typing.overload)
-    "I002", # Don't check for isort configuration
-    "W503", # Allow line break before binary operator (PEP 8-compatible)
+[tool.poetry]
+requires-poetry = ">=2.0,<3.0"
+version = "0.0.0"  # DO NOT SET. The version of the package is always set by the CI/CD pipeline using mchbuild tasks.
+packages = [
+  { include = "pyflexplot", from = "src" },
+  { include = "srtools", from = "src" },
+  { include = "srutils", from = "src" },
+  { include = "words", from = "src" },
 ]
-per-file-ignores = [
-    "__init__.py: F401",  # Allow unused imports
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
 ]
 
-[tool.pylint]
-recursive = true
-ignore-imports = true
-max-line-length = 88
-# Tweak valid name formats
-# Defaults (http://pylint-messages.wikidot.com/messages:c0103):
-#  argument-rgx  = "^[a-z_][a-z0-9_]{2,30}$"
-#  attr-rgx      = "^[a-z_][a-z0-9_]{2,30}$"
-#  function-rgx  = "^[a-z_][a-z0-9_]{2,30}$"
-#  method-rgx    = "^[a-z_][a-z0-9_]{2,30}$"
-#  variable-rgx  = "^[a-z_][a-z0-9_]{2,30}$"
-#  class-rgx     = "^[A-Z_][a-zA-Z0-9]+$"
-#  const-rgx     = "^(([A-Z_][A-Z0-9_]*)|(__.*__))$"
-#  module-rgx    = "^(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$"
-argument-rgx  = "^[a-z_][a-z0-9_]{,40}$"
-attr-rgx      = "^[a-z_][a-z0-9_]{,40}$"
-function-rgx  = "^[a-z_][a-z0-9_]{,40}$"
-method-rgx    = "^[a-z_][a-z0-9_]{,40}$"
-variable-rgx  = "^[a-z_][a-z0-9_]{,40}$"
-class-rgx     = "^[A-Z_][a-zA-Z0-9]+$"
-const-rgx     = "^(([a-z_][a-z0-9_]*)|([A-Z_][A-Z0-9_]*)|(__[a-zA-Z0-9]+__))$"
-module-rgx    = "^(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$"
-inlinevar-rgx = "^[A-Za-z_][A-Za-z0-9_]*$"
-# Disable selected warnings, errors etc. that conflict with style guide etc.
-# Note: To locally ignore certain errors, use "pylint: disable=XXXX" comments instead!
+[[tool.poetry.source]]
+name = "pypi-meteoswiss"
+url = "https://service.meteoswiss.ch/nexus/repository/python-all/simple"
+priority = "primary"
+
+[[tool.poetry.source]]
+name = "pypi-mch-publish"
+# only hub entrypoint can be used for publishing libraries (accessible from CI/CD server)
+url = "https://hub.meteoswiss.ch/nexus/repository/python-mch/"
+priority = "explicit"
+
+[tool.pylint.master]
 disable = [
-    "C0115", # Missing class docstring
-    "C0116", # Missing function or method docstring
-    "R0903", # Too few public methods (*/2) (too-few-public-methods)
-    # "R0801", # Similar lines in 2 files (duplicate-code)
-    # -> see https://github.com/PyCQA/pylint/issues/214
-    "R1705", # Unnecessary "elif" after "return" (no-else-return)
-    "R1720", # Unnecessary "elif" after "raise" (no-else-raise)
-    "R1724", # Unnecessary "elif" after "continue" (no-else-continue)
-    "W1116", # Second argument of isinstance is not a type (isinstance-second-argument-not-valid-type)
-    # Migrated from old blueprint, check if still needed
-    "W0602", # Using global for '...' but no assignment is done (global-variable-not-assigned)
-    "E0401", # Unable to import '...' (import-error)
-    # -> Wrongly triggered for relative imports (pylint v2.11.1, 2022-03-09)
-    # -> TODO Re-enable once fixed (see https://github.com/PyCQA/pylint/issues/3651)
-    "R0801", # Similar lines in 2 files (duplicate-code)
-]
-# Ignore (sub-)modules that trigger errors like E1101 (no-member) or E0611 (no-name-in-module)
-#ignored-modules = [
-#    # Migrated from old blueprint, todo: replace by pylint disable directives in code
-#    "cartopy",  # E1101 (no-member) (PlateCarree)
-#    "netCDF4",  # E1101 (no-member)
-#]
-
-[tool.pydocstyle]
-# All codes: http://www.pydocstyle.org/en/stable/error_codes.html
-ignore = [
-    # "D100", # Missing docstring in public module
-    "D101", # Missing docstring in public class
-    "D102", # Missing docstring in public method
-    "D103", # Missing docstring in public function
-    # "D104", # Missing docstring in public package
-    "D105", # Missing docstring in magic method
-    # "D105", # Missing docstring in public nested class
-    # "D107", # Missing docstring in __init__
-    "D203", # Blank line required before class docstring
-    "D213", # Multi-line docstring summary should start at the second line
-    "D405", # Section name should be properly capitalized
-    "D406", # Section name should end with a newline
-    "D407", # Missing dashed underline after section
+  "C0114",  # missing-module-docstring
+  "C0115",  # missing-class-docstring
+  "C0116",  # missing-function-docstring
+  "R0801",  # duplications are already covered by SonarQube
+  "W0511",  # fix me or to-do comments are already covered by SonarQube
 ]
 
-[tool.rstcheck]
-ignore_directives = [
-    "automodule",
-    "mdinclude",
-]
+[tool.pylint.basic]
+argument-naming-style = "any"
+attr-naming-style = "any"
+max-args = 8
+max-positional-arguments = 8
 
-[tool.codespell]
-ignore-words-list = "ende,ue,fo,activ,nd,feld"
-skip = "requirements/*,*.pdf,environment.yml"
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint.design]
+# Minimum number of public methods for a class (see R0903).
+min-public-methods = 0
+
+[tool.pytest.ini_options]
+addopts = [
+  "-s",
+  "-ra",
+  "--pdbcls=IPython.terminal.debugger:TerminalPdb",
+  "--tb=short",
+]
+pythonpath = "src"
+testpaths = ["tests"]
