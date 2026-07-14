@@ -1,4 +1,5 @@
 """Tests for ``pyflexplot.setups.plot_panel_setup.PlotPanelSetupGroup``."""
+
 # Third-party
 import pytest
 
@@ -23,9 +24,7 @@ class Test_Create:
             group = PlotPanelSetupGroup.create(self.params)
             res = group.dicts()
             sol = [self.params]
-            assert_is_sub_element(
-                name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
-            )
+            assert_is_sub_element(name_super="result", obj_super=res, name_sub="solution", obj_sub=sol)
 
         def test_params_list(self):
             group = PlotPanelSetupGroup.create([self.params])
@@ -55,9 +54,7 @@ class Test_Create:
                     PlotPanelSetupGroup.create([self.params])
 
             def test_params_dict(self):
-                group = PlotPanelSetupGroup.create(
-                    self.params, multipanel_param="ens_params.pctl"
-                )
+                group = PlotPanelSetupGroup.create(self.params, multipanel_param="ens_params.pctl")
                 res = group.dicts()
                 sol = [
                     {"ens_params": {"pctl": 30}},
@@ -65,14 +62,10 @@ class Test_Create:
                     {"ens_params": {"pctl": 70}},
                     {"ens_params": {"pctl": 90}},
                 ]
-                assert_is_sub_element(
-                    name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
-                )
+                assert_is_sub_element(name_super="result", obj_super=res, name_sub="solution", obj_sub=sol)
 
             def test_params_list_vs_dict(self):
-                group_dict = PlotPanelSetupGroup.create(
-                    self.params, multipanel_param="ens_params.pctl"
-                )
+                group_dict = PlotPanelSetupGroup.create(self.params, multipanel_param="ens_params.pctl")
                 params_lst = [
                     merge_dicts(
                         self.params,
@@ -81,9 +74,7 @@ class Test_Create:
                     )
                     for val in self.params["ens_params"]["pctl"]
                 ]
-                group_list = PlotPanelSetupGroup.create(
-                    params_lst, multipanel_param="ens_params.pctl"
-                )
+                group_list = PlotPanelSetupGroup.create(params_lst, multipanel_param="ens_params.pctl")
                 res = group_list.dicts()
                 sol = group_dict.dicts()
                 assert_nested_equal(res, sol)
@@ -99,9 +90,7 @@ class Test_Create:
                 }
 
                 def test_params_dict(self):
-                    group = PlotPanelSetupGroup.create(
-                        self.params, multipanel_param="dimensions.species_id"
-                    )
+                    group = PlotPanelSetupGroup.create(self.params, multipanel_param="dimensions.species_id")
                     res = group.dicts()
                     sol = [
                         {"dimensions": {"species_id": 1, "time": (0, 4, 8, 12)}},
@@ -117,9 +106,7 @@ class Test_Create:
                     )
 
                 def test_params_list_vs_dict(self):
-                    group_dict = PlotPanelSetupGroup.create(
-                        self.params, multipanel_param="species_id"
-                    )
+                    group_dict = PlotPanelSetupGroup.create(self.params, multipanel_param="species_id")
                     params_lst = [
                         merge_dicts(
                             self.params,
@@ -128,9 +115,7 @@ class Test_Create:
                         )
                         for val in self.params["dimensions"]["species_id"]
                     ]
-                    group_list = PlotPanelSetupGroup.create(
-                        params_lst, multipanel_param="dimensions.species_id"
-                    )
+                    group_list = PlotPanelSetupGroup.create(params_lst, multipanel_param="dimensions.species_id")
                     res = group_list.dicts()
                     sol = group_dict.dicts()
                     assert_nested_equal(res, sol)
@@ -146,9 +131,7 @@ class Test_Create:
                 }
 
                 def test_params_dict(self):
-                    group = PlotPanelSetupGroup.create(
-                        self.params, multipanel_param="dimensions.time"
-                    )
+                    group = PlotPanelSetupGroup.create(self.params, multipanel_param="dimensions.time")
                     res = group.dicts()
                     sol = [
                         {"dimensions": {"species_id": (1, 2, 3, 4), "time": 0}},
@@ -164,9 +147,7 @@ class Test_Create:
                     )
 
                 def test_params_list_vs_dict(self):
-                    group_dict = PlotPanelSetupGroup.create(
-                        self.params, multipanel_param="time"
-                    )
+                    group_dict = PlotPanelSetupGroup.create(self.params, multipanel_param="time")
                     params_lst = [
                         merge_dicts(
                             self.params,
@@ -175,9 +156,7 @@ class Test_Create:
                         )
                         for val in self.params["dimensions"]["time"]
                     ]
-                    group_list = PlotPanelSetupGroup.create(
-                        params_lst, multipanel_param="dimensions.time"
-                    )
+                    group_list = PlotPanelSetupGroup.create(params_lst, multipanel_param="dimensions.time")
                     res = group_list.dicts()
                     sol = group_dict.dicts()
                     assert_nested_equal(res, sol)
@@ -204,9 +183,7 @@ class Test_Create:
                     PlotPanelSetupGroup.create([self.params])
 
             def test_params_dict(self):
-                group = PlotPanelSetupGroup.create(
-                    self.params, multipanel_param="plot_variable"
-                )
+                group = PlotPanelSetupGroup.create(self.params, multipanel_param="plot_variable")
                 res = group.dicts()
                 sol = [
                     {"plot_variable": "concentration"},
@@ -222,16 +199,9 @@ class Test_Create:
                 )
 
             def test_params_list_vs_dict(self):
-                group_dict = PlotPanelSetupGroup.create(
-                    self.params, multipanel_param="plot_variable"
-                )
-                params_lst = [
-                    {**self.params, "plot_variable": val}
-                    for val in self.params["plot_variable"]
-                ]
-                group_list = PlotPanelSetupGroup.create(
-                    params_lst, multipanel_param="plot_variable"
-                )
+                group_dict = PlotPanelSetupGroup.create(self.params, multipanel_param="plot_variable")
+                params_lst = [{**self.params, "plot_variable": val} for val in self.params["plot_variable"]]
+                group_list = PlotPanelSetupGroup.create(params_lst, multipanel_param="plot_variable")
                 res = group_list.dicts()
                 sol = group_dict.dicts()
                 assert_nested_equal(res, sol)
@@ -260,9 +230,7 @@ class Test_Collect:
 
     @property
     def group(self) -> PlotPanelSetupGroup:
-        return PlotPanelSetupGroup.create(
-            self.params, multipanel_param="dimensions.species_id"
-        )
+        return PlotPanelSetupGroup.create(self.params, multipanel_param="dimensions.species_id")
 
     def test_variable(self):
         vals = self.group.collect("dimensions.variable")
@@ -318,14 +286,10 @@ class Test_Decompress:
             groups_external = group.decompress(internal=False)
             assert isinstance(group_internal, PlotPanelSetupGroup)
             assert isinstance(groups_external, list)
-            assert all(
-                isinstance(group, PlotPanelSetupGroup) for group in groups_external
-            )
+            assert all(isinstance(group, PlotPanelSetupGroup) for group in groups_external)
             assert all(len(group) == 1 for group in groups_external)
             dcts_internal = group_internal.dicts()
-            dcts_external = [
-                setup.dict() for group in groups_external for setup in group
-            ]
+            dcts_external = [setup.dict() for group in groups_external for setup in group]
             assert dcts_internal == dcts_external
 
         def test_full(self):
@@ -428,9 +392,7 @@ class Test_Decompress:
 
         def test_select_skip(self):
             group_in = PlotPanelSetupGroup.create(self.params)
-            group_out = group_in.decompress(
-                select=["level", "species_id", "time"], skip=["time"]
-            )
+            group_out = group_in.decompress(select=["level", "species_id", "time"], skip=["time"])
             dcts = group_out.dicts()
             sol = [
                 {"dimensions": {"level": 0, "species_id": 1, "time": [1, 2, 3]}},
@@ -520,9 +482,7 @@ class Test_Decompress:
 
         def test_skip_all(self):
             group = PlotPanelSetupGroup.create(self.params)
-            groups = group.decompress(
-                internal=False, skip=["level", "species_id", "time"]
-            )
+            groups = group.decompress(internal=False, skip=["level", "species_id", "time"])
             dcts = [group.dicts() for group in groups]
             sol = [
                 [
@@ -565,9 +525,7 @@ class Test_Decompress:
 
         def test_select_all(self):
             group = PlotPanelSetupGroup.create(self.params)
-            groups = group.decompress(
-                internal=False, select=["level", "species_id", "time"]
-            )
+            groups = group.decompress(internal=False, select=["level", "species_id", "time"])
             dcts = [group.dicts() for group in groups]
             sol = [
                 [{"dimensions": {"level": 4, "species_id": 1, "time": 1}}],

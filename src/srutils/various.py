@@ -1,4 +1,5 @@
 """Various utilities."""
+
 from __future__ import annotations
 
 # Standard library
@@ -10,9 +11,7 @@ from typing import Tuple
 from typing import Union
 
 
-def check_array_indices(
-    shape: Tuple[int, ...], inds: Sequence[Union[int, slice]]
-) -> None:
+def check_array_indices(shape: Tuple[int, ...], inds: Sequence[Union[int, slice]]) -> None:
     """Check that slicing indices are consistent with array shape."""
 
     def inds2str(inds: Sequence[Union[int, slice]]) -> str:
@@ -43,14 +42,10 @@ def check_array_indices(
         else:
             continue
         inds_str = inds2str(inds)
-        raise IndexError(
-            f"index {j} of {inds_str} out of bounds for shape {shape}: {e}"
-        )
+        raise IndexError(f"index {j} of {inds_str} out of bounds for shape {shape}: {e}")
 
 
-def group_kwargs(
-    name: str, name_out: Optional[str] = None, separator: Optional[str] = None
-) -> Callable:
+def group_kwargs(name: str, name_out: Optional[str] = None, separator: Optional[str] = None) -> Callable:
     """Collect all keyword arguments whose name starts with a prefix.
 
     All keyword arguments '<name>__foo', '<name>__bar', etc. are collected and

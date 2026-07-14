@@ -1,4 +1,5 @@
 """Iteration utilities."""
+
 # Standard library
 from typing import Sequence
 
@@ -49,9 +50,7 @@ def isiterable(obj, str_ok=True):
         return True
 
 
-def resolve_indices(
-    idcs: Sequence[int], n: int, force_in_range: bool = False
-) -> Sequence[int]:
+def resolve_indices(idcs: Sequence[int], n: int, force_in_range: bool = False) -> Sequence[int]:
     """Resolve indices, like subtracting negative indices from the end.
 
     Args:

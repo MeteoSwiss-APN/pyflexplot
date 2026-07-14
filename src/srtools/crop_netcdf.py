@@ -1,4 +1,5 @@
 """Crop fields in a NetCDF file."""
+
 from __future__ import annotations
 
 # Standard library
@@ -30,9 +31,7 @@ class Setup:
 
 # Show default values of options by default
 _click_option = click.option
-click.option = lambda *args, **kwargs: _click_option(
-    *args, **{**kwargs, "show_default": True}
-)
+click.option = lambda *args, **kwargs: _click_option(*args, **{**kwargs, "show_default": True})
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -116,21 +115,15 @@ def transfer_dimensions(fi: nc4.Dataset, fo: nc4.Dataset, setup: Setup) -> None:
         transfer_dimension(fi, fo, dim, setup)
 
 
-def transfer_dimension(
-    fi: nc4.Dataset, fo: nc4.Dataset, dim: nc4.Dimension, setup: Setup
-) -> None:
+def transfer_dimension(fi: nc4.Dataset, fo: nc4.Dataset, dim: nc4.Dimension, setup: Setup) -> None:
     """Transfer single dimension from in- to outfile."""
     # Determine dimension size
     if dim.isunlimited():
         size = None
     elif dim.name == setup.lat_name and setup.lat_slice != slice(None):
-        size = len(
-            range(setup.lat_slice.start, setup.lat_slice.stop, setup.lat_slice.step)
-        )
+        size = len(range(setup.lat_slice.start, setup.lat_slice.stop, setup.lat_slice.step))
     elif dim.name == setup.lon_name and setup.lon_slice != slice(None):
-        size = len(
-            range(setup.lon_slice.start, setup.lon_slice.stop, setup.lon_slice.step)
-        )
+        size = len(range(setup.lon_slice.start, setup.lon_slice.stop, setup.lon_slice.step))
     else:
         size = dim.size
 
@@ -147,9 +140,7 @@ def transfer_dimension(
         transfer_variable(fo, var, setup)
 
 
-def len_slice(
-    arg: Union[slice, Tuple[Optional[int], Optional[int], Optional[int]]], n: int
-) -> int:
+def len_slice(arg: Union[slice, Tuple[Optional[int], Optional[int], Optional[int]]], n: int) -> int:
     """Count number of elements selected by slice."""
     if not isinstance(arg, slice):
         if arg == (None, None, None):
@@ -168,9 +159,7 @@ def transfer_variables(fi: nc4.Dataset, fo: nc4.Dataset, setup: Setup) -> None:
 def transfer_variable(fo: nc4.Dataset, var: nc4.Variable, setup: Setup) -> None:
     """Transfer single variable from in- to outfile."""
     # Create variable
-    new_var = fo.createVariable(
-        varname=var.name, datatype=var.datatype, dimensions=var.dimensions
-    )
+    new_var = fo.createVariable(varname=var.name, datatype=var.datatype, dimensions=var.dimensions)
 
     # Transfer data, slicing along lat/lon
     if var.dimensions:

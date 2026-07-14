@@ -1,4 +1,5 @@
 """Shared resources for setup tests."""
+
 # Standard library
 from copy import deepcopy
 from typing import Any
@@ -75,9 +76,7 @@ OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
 }
 
 
-RAW_DEFAULT_PARAMS = merge_dicts(
-    MANDATORY_RAW_DEFAULT_PARAMS, OPTIONAL_RAW_DEFAULT_PARAMS
-)
+RAW_DEFAULT_PARAMS = merge_dicts(MANDATORY_RAW_DEFAULT_PARAMS, OPTIONAL_RAW_DEFAULT_PARAMS)
 
 
 DEFAULT_PARAMS = merge_dicts(
@@ -92,16 +91,8 @@ DEFAULT_PARAMS = merge_dicts(
                     **merge_dicts(
                         RAW_DEFAULT_PARAMS["panels"][0],
                         {
-                            "dimensions": Dimensions(
-                                [
-                                    CoreDimensions(
-                                        **RAW_DEFAULT_PARAMS["panels"][0]["dimensions"]
-                                    )
-                                ]
-                            ),
-                            "ens_params": EnsembleParams(
-                                **RAW_DEFAULT_PARAMS["panels"][0]["ens_params"]
-                            ),
+                            "dimensions": Dimensions([CoreDimensions(**RAW_DEFAULT_PARAMS["panels"][0]["dimensions"])]),
+                            "ens_params": EnsembleParams(**RAW_DEFAULT_PARAMS["panels"][0]["ens_params"]),
                         },
                         overwrite_seqs=True,
                         overwrite_seq_dicts=True,

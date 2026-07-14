@@ -1,4 +1,5 @@
 """Bounding box."""
+
 from __future__ import annotations
 
 # Standard library
@@ -231,9 +232,7 @@ class ProjectedBoundingBox:
         try:
             rel_x_offset, rel_y_offset = [float(i) for i in rel_offset]
         except Exception as e:
-            raise ValueError(
-                f"rel_offset expected to be a pair of floats, not {rel_offset}"
-            ) from e
+            raise ValueError(f"rel_offset expected to be a pair of floats, not {rel_offset}") from e
 
         # Restrict zoom to geographical latitude range [-90, 90]
         geo = copy(self).to_geo()

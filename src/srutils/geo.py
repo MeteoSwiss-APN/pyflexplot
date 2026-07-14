@@ -1,4 +1,5 @@
 """Geometric/geographic utilities."""
+
 from __future__ import annotations
 
 # Standard library
@@ -66,9 +67,7 @@ class Degrees:
         else:
             self._frac = float(degs) + mins / 60.0 + secs / 3600.0
 
-        raise ValueError(
-            f"invalid deg='{deg}'; must be `float` or `(degs, [mins, [secs,]])`"
-        )
+        raise ValueError(f"invalid deg='{deg}'; must be `float` or `(degs, [mins, [secs,]])`")
 
     def frac(self) -> float:
         """Return degrees as a fraction."""

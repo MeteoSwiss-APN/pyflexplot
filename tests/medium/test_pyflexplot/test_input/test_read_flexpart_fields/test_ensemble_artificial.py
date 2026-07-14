@@ -4,6 +4,7 @@ These tests use artificial ensemble data comprised of input fields that are
 constant and equal in value to the respective ensemble member id.
 
 """
+
 # Standard library
 import dataclasses as dc
 from typing import List

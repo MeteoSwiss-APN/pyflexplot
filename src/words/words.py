@@ -1,4 +1,5 @@
 """TranslatedWords."""
+
 from __future__ import annotations
 
 # Standard library
@@ -34,9 +35,7 @@ class TranslatedWords:
     def __init__(
         self,
         name: Optional[str],
-        words_langs: Optional[
-            Mapping[str, Mapping[str, Union[TranslatedWord, WordT, str]]]
-        ] = None,
+        words_langs: Optional[Mapping[str, Mapping[str, Union[TranslatedWord, WordT, str]]]] = None,
         *,
         active_lang: Optional[str] = None,
     ) -> None:
@@ -78,23 +77,16 @@ class TranslatedWords:
             self._langs = langs
         elif set(langs) != set(self._langs):
             raise ValueError(
-                f"word '{name}' not defined in all necessary languages: set({langs}) "
-                f"!= set({self._langs})"
+                f"word '{name}' not defined in all necessary languages: set({langs}) != set({self._langs})"
             )
-        word: TranslatedWord = self.cls_word(
-            name, active_lang_query=lambda: self.active_lang, **word_langs
-        )
+        word: TranslatedWord = self.cls_word(name, active_lang_query=lambda: self.active_lang, **word_langs)
         self.words[name] = word
         return word
 
     @staticmethod
-    def _prepare_word_name(
-        name: Optional[str], word_langs: Mapping[str, Mapping[str, Union[Word, str]]]
-    ) -> str:
+    def _prepare_word_name(name: Optional[str], word_langs: Mapping[str, Mapping[str, Union[Word, str]]]) -> str:
         if name is None:
-            tmp_name: Union[str, Mapping[str, Union[Word, str]]] = next(
-                iter(word_langs.values())
-            )
+            tmp_name: Union[str, Mapping[str, Union[Word, str]]] = next(iter(word_langs.values()))
             if isinstance(tmp_name, Mapping):
                 try:
                     tmp_name = str(next(iter(tmp_name.values())))
@@ -103,13 +95,9 @@ class TranslatedWords:
                         f"cannot derive name of {word_langs} from {tmp_name} of type "
                         f"{type(tmp_name).__name__}: not a str or non-empty dict-like"
                     ) from e
-            name = VariableName(tmp_name).format(
-                lower=True, c_filter=lambda c: "_" if c in "- " else ""
-            )
+            name = VariableName(tmp_name).format(lower=True, c_filter=lambda c: "_" if c in "- " else "")
         if not isinstance(name, str):
-            raise ValueError(
-                f"argument `name`: expect type str, got {type(name).__name__}"
-            )
+            raise ValueError(f"argument `name`: expect type str, got {type(name).__name__}")
         return name
 
     def set_active_lang(self, lang: str) -> None:
@@ -126,8 +114,7 @@ class TranslatedWords:
         lang: Literal[None] = ...,
         *,
         chain: Literal[True] = True,
-    ) -> ContextWord:
-        ...
+    ) -> ContextWord: ...
 
     @overload
     def get(
@@ -137,8 +124,7 @@ class TranslatedWords:
         lang: Optional[str] = ...,
         *,
         chain: bool = ...,
-    ) -> WordT:
-        ...
+    ) -> WordT: ...
 
     def get(self, name: str, ctx=None, lang=None, *, chain=True):
         try:

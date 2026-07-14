@@ -1,4 +1,5 @@
 """Tests for classes pyflexplot.utils.formatting.LevelRangeFormatter*``."""
+
 # Standard library
 import dataclasses as dc
 from typing import Any

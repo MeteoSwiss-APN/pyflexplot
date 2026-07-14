@@ -1,4 +1,5 @@
 """Manipulate paths."""
+
 from __future__ import annotations
 
 # Standard library
@@ -40,9 +41,7 @@ class PathsOrganizer:
             [["foo.x", "foo.1.x"], ["bar.0.x", "bar.1.x"]]
 
         """
-        rx_numbered = re.compile(
-            f"{re.escape(self._dup_sep)}[0-9]+{re.escape(self._suffix)}$"
-        )
+        rx_numbered = re.compile(f"{re.escape(self._dup_sep)}[0-9]+{re.escape(self._suffix)}$")
         paths = list(paths)
         grouped_file_paths: list[list[str]] = []
         for path in list(paths):
@@ -55,18 +54,12 @@ class PathsOrganizer:
             path_base = path.rstrip(self._suffix)
             paths.remove(path)
             grouped_file_paths.append([path])
-            rx_related = re.compile(
-                f"{re.escape(path_base)}\\.[0-9]+{re.escape(self._suffix)}"
-            )
+            rx_related = re.compile(f"{re.escape(path_base)}\\.[0-9]+{re.escape(self._suffix)}")
             for other_path in list(paths):
                 if rx_related.search(other_path):
                     paths.remove(other_path)
                     grouped_file_paths[-1].append(other_path)
-        return [
-            sorted_paths(group, dup_sep=self._dup_sep)
-            for group in grouped_file_paths
-            if len(group) > 1
-        ]
+        return [sorted_paths(group, dup_sep=self._dup_sep) for group in grouped_file_paths if len(group) > 1]
 
     def merge(self, paths: list[str]) -> str:
         """Format paths with shared base in a compact way.
@@ -99,10 +92,7 @@ class PathsOrganizer:
 
         """
         idcs: list[int] = []
-        rx = re.compile(
-            f"(?P<base>^.*?)({re.escape(self._dup_sep)}(?P<idx>[0-9]+))?"
-            f"{re.escape(self._suffix)}$"
-        )
+        rx = re.compile(f"(?P<base>^.*?)({re.escape(self._dup_sep)}(?P<idx>[0-9]+))?{re.escape(self._suffix)}$")
         unnumbered = False
         base: Optional[str] = None
         for path in paths:
@@ -125,9 +115,7 @@ class PathsOrganizer:
             s_idcs = str(next(iter(idcs)))
         else:
             if syntax == "braces":
-                idcs_fmtd = format_numbers_range(
-                    sorted(idcs), join_range="..", join_others=","
-                )
+                idcs_fmtd = format_numbers_range(sorted(idcs), join_range="..", join_others=",")
                 s_idcs = "{" + idcs_fmtd + "}"
             else:
                 raise value_error_syntax

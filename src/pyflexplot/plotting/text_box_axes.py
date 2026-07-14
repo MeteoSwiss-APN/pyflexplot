@@ -1,4 +1,5 @@
 """Text boxes."""
+
 # Standard library
 import dataclasses as dc
 from typing import List
@@ -81,12 +82,8 @@ class TextBoxElementText(TextBoxElement):
         self.kwargs = kwargs
         # SR_TMP < TODO consider removing this
         # Add alignment parameters, unless specified in input kwargs
-        self.kwargs["ha"] = self.kwargs.get(
-            "horizontalalignment", self.kwargs.get("ha", self.loc.ha)
-        )
-        self.kwargs["va"] = self.kwargs.get(
-            "verticalalignment", self.kwargs.get("va", self.loc.va)
-        )
+        self.kwargs["ha"] = self.kwargs.get("horizontalalignment", self.kwargs.get("ha", self.loc.ha))
+        self.kwargs["va"] = self.kwargs.get("verticalalignment", self.kwargs.get("va", self.loc.va))
         # SR_TMP >
 
         # SR_TMP <
@@ -312,9 +309,7 @@ class TextBoxAxes:
         for element in self.elements:
             element.draw()
 
-    def text(
-        self, s: str, loc: LocationType, dx: float = 0.0, dy: float = 0.0, **kwargs
-    ) -> None:
+    def text(self, s: str, loc: LocationType, dx: float = 0.0, dy: float = 0.0, **kwargs) -> None:
         """Add text positioned relative to a reference location.
 
         Args:
@@ -428,18 +423,15 @@ class TextBoxAxes:
         elif len(colors) == len(blocks):
             colors_blocks = colors
         else:
-            raise ValueError(
-                f"different no. colors than blocks: {len(colors)} != {len(blocks)}"
-            )
+            raise ValueError(f"different no. colors than blocks: {len(colors)} != {len(blocks)}")
 
         for i, block in enumerate(blocks):
             if colors_blocks[i] is None:
                 colors_blocks[i] = [None] * len(block)
             elif len(colors_blocks) != len(blocks):
-                ith = f"{i}{({1: 'st', 2: 'nd', 3: 'rd'}.get(i, 'th'))}"
+                ith = f"{i}{ ({1: 'st', 2: 'nd', 3: 'rd'}.get(i, 'th')) }"
                 raise ValueError(
-                    f"colors of {ith} block must have same length as block: "
-                    f"{len(colors_blocks[i])} != {len(block)}"
+                    f"colors of {ith} block must have same length as block: {len(colors_blocks[i])} != {len(block)}"
                 )
             for j in range(len(block)):
                 if colors_blocks[i][j] is not None:
@@ -447,9 +439,7 @@ class TextBoxAxes:
 
         return colors_blocks
 
-    def text_block_hfill(
-        self, block: RawTextBlockType, loc_y: LocationType = "t", **kwargs
-    ) -> None:
+    def text_block_hfill(self, block: RawTextBlockType, loc_y: LocationType = "t", **kwargs) -> None:
         """Single block of horizontally filled lines.
 
         Args:
@@ -466,9 +456,7 @@ class TextBoxAxes:
         blocks: Sequence[RawTextBlockType] = [block]
         self.text_blocks_hfill(blocks, loc_y, **kwargs)
 
-    def text_blocks_hfill(
-        self, blocks: RawTextBlocksType, loc_y: LocationType = "t", **kwargs
-    ) -> None:
+    def text_blocks_hfill(self, blocks: RawTextBlocksType, loc_y: LocationType = "t", **kwargs) -> None:
         r"""Add blocks of horizontally-filling lines.
 
         Lines are split at a tab character ('\t'), with the text before the tab
@@ -600,9 +588,7 @@ class TextBoxAxes:
         if ec is None:
             ec = fc
         fancy_loc = TextBoxLocation(self, loc, dx, dy)
-        self.elements.append(
-            TextBoxElementColorRect(self, fancy_loc, w=w, h=h, fc=fc, ec=ec, **kwargs)
-        )
+        self.elements.append(TextBoxElementColorRect(self, fancy_loc, w=w, h=h, fc=fc, ec=ec, **kwargs))
         if self.show_baselines:
             self.elements.append(TextBoxElementHLine(self, fancy_loc))
 
@@ -680,8 +666,7 @@ class TextFitter:
                 n_shrink_max = int(n_shrink_max)
             except ValueError as e:
                 raise ValueError(
-                    f"n_shrink_max of type {type(n_shrink_max).__name__} not "
-                    f"int-compatible: {n_shrink_max}"
+                    f"n_shrink_max of type {type(n_shrink_max).__name__} not int-compatible: {n_shrink_max}"
                 ) from e
             if n_shrink_max < 0:
                 n_shrink_max = None
@@ -865,9 +850,7 @@ class TextBoxLocation:
         elif self.loc_y == "t":
             return 1.0 - self.pad_y
         else:
-            raise Exception(
-                f"invalid {type(self).__name__} instance attr loc_y: '{self.loc_y}'"
-            )
+            raise Exception(f"invalid {type(self).__name__} instance attr loc_y: '{self.loc_y}'")
 
     @property
     def x0(self):
@@ -879,9 +862,7 @@ class TextBoxLocation:
         elif self.loc_x == "r":
             return 1.0 - self.pad_x
         else:
-            raise Exception(
-                f"invalid {type(self).__name__} instance attr loc_x: '{self.loc_x}'"
-            )
+            raise Exception(f"invalid {type(self).__name__} instance attr loc_x: '{self.loc_x}'")
 
     @property
     def x(self):

@@ -1,5 +1,6 @@
 # pylint: disable=R0914  # too-many-locals
 """Command line interface of PyFlexPlot."""
+
 # Standard library
 import warnings
 from typing import Any
@@ -33,9 +34,7 @@ add_to_preset_paths(presets_data_path)
 
 # Show default values of options by default
 _click_option = click.option
-click.option = lambda *args, **kwargs: _click_option(
-    *args, **{**kwargs, "show_default": True}
-)
+click.option = lambda *args, **kwargs: _click_option(*args, **{**kwargs, "show_default": True})
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
@@ -48,10 +47,7 @@ click.option = lambda *args, **kwargs: _click_option(
 )
 @click.option(
     "--auto-tmp/--no-auto-tmp",
-    help=(
-        "Use a temporary directory with an automatically generated name. Overridden by"
-        " --tmp=TMP_DIR."
-    ),
+    help=("Use a temporary directory with an automatically generated name. Overridden by --tmp=TMP_DIR."),
     default=False,
 )
 @click.option(
@@ -131,20 +127,14 @@ click.option = lambda *args, **kwargs: _click_option(
 )
 @click.option(
     "--preset-cat",
-    help=(
-        "Show the contents of preset setup files matching PATTERN (wildcards:"
-        " '*', '?')."
-    ),
+    help=("Show the contents of preset setup files matching PATTERN (wildcards: '*', '?')."),
     metavar="PATTERN",
     callback=wrap_callback(click_cat_preset_and_exit),
     expose_value=False,
 )
 @click.option(
     "--preset-skip",
-    help=(
-        "Among preset setup files specified with --preset, skip those matching "
-        " PATTERN (wildcards: '*', '?')."
-    ),
+    help=("Among preset setup files specified with --preset, skip those matching  PATTERN (wildcards: '*', '?')."),
     metavar="PATTERN",
     multiple=True,
     is_eager=True,
@@ -179,19 +169,13 @@ click.option = lambda *args, **kwargs: _click_option(
 @click.option(
     "--suffix",
     "suffixes",
-    help=(
-        "Override suffix of output files. May be passed multiple times to"
-        " create plots in multiple formats."
-    ),
+    help=("Override suffix of output files. May be passed multiple times to create plots in multiple formats."),
     multiple=True,
 )
 @click.option(
     "--tmp",
     "tmp_dir",
-    help=(
-        "Temporary directory in which the plots are created before being moved to"
-        " DEST_DIR in the end."
-    ),
+    help=("Temporary directory in which the plots are created before being moved to DEST_DIR in the end."),
     metavar="TMP_DIR",
     type=click.Path(exists=False),
     default=None,

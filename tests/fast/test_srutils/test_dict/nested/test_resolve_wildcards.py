@@ -1,4 +1,5 @@
 """Test function ``srutils.dict.nested_dict_resolve_wildcards``."""
+
 # First-party
 from srutils.dict import nested_dict_resolve_wildcards
 
@@ -235,9 +236,7 @@ def test_double_star_linear_flat_with_criterion():
         },
     }
     # fmt: on
-    res = nested_dict_resolve_wildcards(
-        dct, double_criterion=lambda key: key.startswith("b")
-    )
+    res = nested_dict_resolve_wildcards(dct, double_criterion=lambda key: key.startswith("b"))
     assert res == sol
 
 
@@ -370,9 +369,7 @@ def test_double_star_nested_linear_flat_with_criterion():
         },
     }
     # fmt: on
-    res = nested_dict_resolve_wildcards(
-        dct, double_criterion=lambda key: not key.startswith("_")
-    )
+    res = nested_dict_resolve_wildcards(dct, double_criterion=lambda key: not key.startswith("_"))
     assert res == sol
 
 
@@ -560,7 +557,5 @@ def test_mixed_stars_with_criterion():
         },
     }
     # fmt: on
-    res = nested_dict_resolve_wildcards(
-        dct, double_criterion=lambda key: key.endswith("+")
-    )
+    res = nested_dict_resolve_wildcards(dct, double_criterion=lambda key: key.endswith("+"))
     assert res == sol

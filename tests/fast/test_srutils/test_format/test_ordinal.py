@@ -1,4 +1,5 @@
 """Tests for function ``srutils.format.ordinal``."""
+
 # Standard library
 import dataclasses as dc
 

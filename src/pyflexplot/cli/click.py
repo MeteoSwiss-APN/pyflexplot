@@ -1,4 +1,5 @@
 """CLI utils."""
+
 # Standard library
 import sys
 import traceback
@@ -40,9 +41,7 @@ def click_validate_setup_params(ctx, param, value):
         if not SetupFile.is_valid_raw_param_name(raw_name):
             click_error(ctx, f"Invalid setup parameter '{raw_name}'")
         elif not SetupFile.is_valid_raw_param_value(raw_name, raw_value):
-            click_error(
-                ctx, f"setup parameter '{raw_name}' has invalid value '{raw_value}'"
-            )
+            click_error(ctx, f"setup parameter '{raw_name}' has invalid value '{raw_value}'")
     return value
 
 

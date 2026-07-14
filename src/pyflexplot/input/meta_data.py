@@ -1,4 +1,5 @@
 """Meta data."""
+
 # Standard library
 import dataclasses as dc
 import re
@@ -50,8 +51,7 @@ def format_meta_datum(
     unit: Optional[Union[str, Tuple[str, ...]]] = None,
     *,
     join_values: str = ...,
-) -> str:
-    ...
+) -> str: ...
 
 
 @overload
@@ -60,8 +60,7 @@ def format_meta_datum(
     unit: Union[str, Tuple[str, ...]] = ...,
     *,
     join_values: str = ...,
-) -> str:
-    ...
+) -> str: ...
 
 
 # pylint: disable=R0911  # too-many-return-statements
@@ -113,10 +112,7 @@ def _format_meta_datum_with_unit(
         # Create a copy of the unit for each of the multiple values
         unit = tuple([unit] * len(value))
     elif len(value) != len(unit):
-        raise ValueError(
-            f"different number of values ({len(value)}) and units ({len(unit)})"
-            f": {value}, {unit}"
-        )
+        raise ValueError(f"different number of values ({len(value)}) and units ({len(unit)}): {value}, {unit}")
     kwargs = {"join_values": join_values}
     value_fmtd = tuple(map(lambda v: format_meta_datum(v, **kwargs), value))
     unit_fmtd = tuple(map(lambda u: _format_unit(format_meta_datum(u, **kwargs)), unit))
@@ -147,10 +143,7 @@ class MetaData:
         return dataclass_repr(self, fmt=lambda obj: dataclass_repr(obj, nested=1))
 
     def dict(self) -> Dict[str, Dict[str, Any]]:
-        return {
-            field: getattr(self, field).dict()
-            for field in get_dataclass_fields(type(self))
-        }
+        return {field: getattr(self, field).dict() for field in get_dataclass_fields(type(self))}
 
     # pylint: disable=R0914  # too-many-locals
     def merge_with(self, others: Collection["MetaData"]) -> "MetaData":
@@ -162,9 +155,7 @@ class MetaData:
         """
         unique_others: List["MetaData"] = []
         for other in others:
-            if other != self and not any(
-                unique_other == other for unique_other in unique_others
-            ):
+            if other != self and not any(unique_other == other for unique_other in unique_others):
                 unique_others.append(other)
         others = unique_others
 
@@ -216,9 +207,7 @@ class MetaData:
         # SR_TMP < TODO implement different meta data per level (if required)
         # Ensure the number of meta data per level range are all equal
         if len(set(map(len, level_ranges.values()))) != 1:
-            raise NotImplementedError(
-                f"number of meta data differ betwenen level ranges: {level_ranges}"
-            )
+            raise NotImplementedError(f"number of meta data differ betwenen level ranges: {level_ranges}")
         # SR_TMP >
 
         params_ref = None
@@ -231,10 +220,7 @@ class MetaData:
             if idx == 0:
                 params_ref = params
             elif params != params_ref:
-                raise Exception(
-                    f"variable meta data differ:\n\n{pformat(params)}"
-                    f"\n\n!=\n\n{params_ref}\n\n(idx={idx})"
-                )
+                raise Exception(f"variable meta data differ:\n\n{pformat(params)}\n\n!=\n\n{params_ref}\n\n(idx={idx})")
         variable_params: Dict[str, Any] = {
             **grouped_params["variable"][0],
             "bottom_level": level_ranges_lst[0][0][0],
@@ -320,12 +306,8 @@ class MetaData:
         """Collect meta data from file."""
         return cls(
             release=ReleaseMetaData.from_file(fi, dimensions),
-            simulation=SimulationMetaData.from_file(
-                fi, model_setup, dimensions, integrate, add_ts0
-            ),
-            variable=VariableMetaData.from_file(
-                fi, model_setup, dimensions, plot_variable
-            ),
+            simulation=SimulationMetaData.from_file(fi, model_setup, dimensions, integrate, add_ts0),
+            variable=VariableMetaData.from_file(fi, model_setup, dimensions, plot_variable),
             species=SpeciesMetaData.from_file(fi, model_setup, dimensions),
         )
 
@@ -425,15 +407,11 @@ class VariableMetaData(_MetaDataBase):
             try:
                 level_bot = 0.0 if idx == 0 else float(var[idx - 1])
             except IndexError as e:
-                raise Exception(
-                    f"index of bottom level out of bounds: {idx} > {var.size - 1}"
-                ) from e
+                raise Exception(f"index of bottom level out of bounds: {idx} > {var.size - 1}") from e
             try:
                 level_top = float(var[idx])
             except IndexError as e:
-                raise Exception(
-                    f"index of top level out of bounds: {idx} > {var.size - 1}"
-                ) from e
+                raise Exception(f"index of top level out of bounds: {idx} > {var.size - 1}") from e
             level_unit = getncattr(var, "units")
         return cls(
             unit=unit,
@@ -461,12 +439,10 @@ class SimulationMetaData(_MetaDataBase):
     grid_north_pole_lon: float
 
     @overload
-    def get_duration(self, unit: None = None) -> timedelta:
-        ...
+    def get_duration(self, unit: None = None) -> timedelta: ...
 
     @overload
-    def get_duration(self, unit: str) -> float:
-        ...
+    def get_duration(self, unit: str) -> float: ...
 
     def get_duration(self, unit=None):
         if unit is None:
@@ -475,9 +451,7 @@ class SimulationMetaData(_MetaDataBase):
             return self.get_duration().total_seconds() / 3600
         else:
             choices = [None, "h", "hours"]
-            raise ValueError(
-                f"unit {sfmt(unit)} not among [{', '.join(map(sfmt, choices))}]"
-            )
+            raise ValueError(f"unit {sfmt(unit)} not among [{', '.join(map(sfmt, choices))}]")
 
     # pylint: disable=R0913  # too-many-arguments (>5)
     @classmethod
@@ -490,9 +464,7 @@ class SimulationMetaData(_MetaDataBase):
         add_ts0: bool,
     ) -> "SimulationMetaData":
         # Start and end timesteps of simulation
-        start = init_datetime(
-            str(getncattr(fi, "ibdate")) + str(getncattr(fi, "ibtime"))
-        )
+        start = init_datetime(str(getncattr(fi, "ibdate")) + str(getncattr(fi, "ibtime")))
         end = init_datetime(str(getncattr(fi, "iedate")) + str(getncattr(fi, "ietime")))
         step = int(getncattr(fi, "loutstep"))
 
@@ -506,9 +478,7 @@ class SimulationMetaData(_MetaDataBase):
         )
 
         # Current time step and start time step of current integration period
-        collector = TimeStepMetaDataCollector(
-            fi, dimensions, integrate, add_ts0=add_ts0
-        )
+        collector = TimeStepMetaDataCollector(fi, dimensions, integrate, add_ts0=add_ts0)
         now = collector.now()
         reduction_start = collector.integration_start()
         now_rel: timedelta = collector.now_rel()
@@ -569,9 +539,7 @@ class ReleaseMetaData(_MetaDataBase):
         raw = RawReleaseMetaData.from_file(fi, dimensions)
         raw_site_name = raw.site
         site_name = (
-            raw_site_name.replace("ae", SYMBOLS["ae"].s)
-            .replace("oe", SYMBOLS["oe"].s)
-            .replace("ue", SYMBOLS["ue"].s)
+            raw_site_name.replace("ae", SYMBOLS["ae"].s).replace("oe", SYMBOLS["oe"].s).replace("ue", SYMBOLS["ue"].s)
         )
         start_rel = raw.rel_start
         end_rel = raw.rel_end
@@ -700,8 +668,7 @@ class RawReleaseMetaData:
     @classmethod
     def create(cls, params: Dict[str, Any]) -> "RawReleaseMetaData":
         params = {
-            param: cast_field_value(cls, param, value, timedelta_unit="seconds")
-            for param, value in params.items()
+            param: cast_field_value(cls, param, value, timedelta_unit="seconds") for param, value in params.items()
         }
         return cls(**params)
 
@@ -720,8 +687,7 @@ class RawReleaseMetaData:
             raise Exception(f"invalid species_id: {dimensions.species_id} <= 0")
         elif dimensions.species_id > n_species:
             raise Exception(
-                f"invalid species_id: {dimensions.species_id} > {n_species}"
-                f" (no. species in {Path(fi.filepath()).name})"
+                f"invalid species_id: {dimensions.species_id} > {n_species} (no. species in {Path(fi.filepath()).name})"
             )
         idx_spec = dimensions.species_id - 1
 
@@ -741,19 +707,13 @@ class RawReleaseMetaData:
                 idx_release = 0
         elif n > 1:
             if idx_release is None:
-                raise ValueError(
-                    f"file '{fi.name}': idx is None despite {n} release points"
-                )
+                raise ValueError(f"file '{fi.name}': idx is None despite {n} release points")
         assert idx_release is not None  # mypy
         if idx_release < 0 or idx_release >= n:
-            raise ValueError(
-                f"file '{fi.name}': invalid index {idx_release} for {n} release points"
-            )
+            raise ValueError(f"file '{fi.name}': invalid index {idx_release} for {n} release points")
 
         # Name: convert from byte character array
-        site = (
-            var[idx_release][~var[idx_release].mask].tobytes().decode("utf-8").rstrip()
-        )
+        site = var[idx_release][~var[idx_release].mask].tobytes().decode("utf-8").rstrip()
 
         # Other attributes
         key_pairs = [
@@ -782,9 +742,7 @@ class RawReleaseMetaData:
             elif var.dimensions == ("nageclass",):
                 params[key_out] = var[idx_age].tolist()
             else:
-                raise NotImplementedError(
-                    f"dimensions {var.dimensions} (variable {var.name})"
-                )
+                raise NotImplementedError(f"dimensions {var.dimensions} (variable {var.name})")
             # SR_TMP >
             if key_out in store_units:
                 unit = getncattr(fi.variables[key_in], "units")

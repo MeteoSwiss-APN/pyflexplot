@@ -1,4 +1,5 @@
 """Test function ``srutils.str.split_outside_parens``."""
+
 # Third-party
 import pytest
 

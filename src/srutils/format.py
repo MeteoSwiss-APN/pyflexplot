@@ -1,4 +1,5 @@
 """Format objects as strings."""
+
 # Standard library
 from collections.abc import Sequence
 from typing import Any
@@ -77,9 +78,7 @@ def titlecase(s, preserve=True):
     if not preserve:
         s = s.lower()
     words_input = s.split(" ")
-    words_title = [capitalize(words_input[0])] + [
-        w if w in lower else capitalize(w) for w in words_input[1:-1]
-    ]
+    words_title = [capitalize(words_input[0])] + [w if w in lower else capitalize(w) for w in words_input[1:-1]]
     if len(words_input) >= 2:
         words_title += [capitalize(words_input[-1])]
 
@@ -124,8 +123,7 @@ def nested_repr(obj: Any, params: Optional[Sequence[str]] = None) -> str:
             params = obj.get_params()
         except AttributeError as e:
             raise ValueError(
-                f"cannot derive params from {type(obj).__name__} obj"
-                "; consider passing params instead"
+                f"cannot derive params from {type(obj).__name__} obj; consider passing params instead"
             ) from e
     s_attrs_lst: List[str] = []
     for param in params:
@@ -193,8 +191,6 @@ def format_numbers_range(
             try:
                 formatted_numbers.append(template.format(num=number))
             except ValueError as e:
-                raise Exception(
-                    "cannot format number with template", number, template
-                ) from e
+                raise Exception("cannot format number with template", number, template) from e
         formatted_numbers_and_ranges.append(join.join(formatted_numbers))
     return join_others.join(formatted_numbers_and_ranges)

@@ -1,4 +1,5 @@
 """Test method ``srutils.str.VariableName.format``."""
+
 # Third-party
 import pytest
 

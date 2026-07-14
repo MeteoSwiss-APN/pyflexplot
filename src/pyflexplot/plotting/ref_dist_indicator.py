@@ -1,4 +1,5 @@
 """Reference distance indicator for map plot."""
+
 # Standard library
 import dataclasses as dc
 from typing import Any
@@ -181,9 +182,7 @@ class ReferenceDistanceIndicator:
             self.x0_line = x_box_center - 0.5 * w_line
             self.x1_line = x_box_center + 0.5 * w_line
 
-    def _calc_horiz_dist(
-        self, x0: float, direction: str, axes_to_geo: PointConverterT
-    ) -> float:
+    def _calc_horiz_dist(self, x0: float, direction: str, axes_to_geo: PointConverterT) -> float:
         calculator = MapDistanceCalculator(axes_to_geo, self.config.unit)
         x1, _, _ = calculator.run(x0, self.y_line, self.config.dist, direction)
         return x1
@@ -194,9 +193,7 @@ class ReferenceDistanceIndicator:
 class MapDistanceCalculator:
     """Calculate geographic distance along a line on a map plot."""
 
-    def __init__(
-        self, axes_to_geo: PointConverterT, unit: str = "km", p: float = 0.001
-    ) -> None:
+    def __init__(self, axes_to_geo: PointConverterT, unit: str = "km", p: float = 0.001) -> None:
         """Initialize an instance of MapDistanceCalculator.
 
         Args:

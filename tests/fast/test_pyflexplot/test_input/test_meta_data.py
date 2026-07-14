@@ -1,4 +1,5 @@
 """Tests for module ``pyflexplot.input.meta_data``."""
+
 # Standard library
 import datetime as dt
 from typing import Any

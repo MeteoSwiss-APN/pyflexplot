@@ -6,23 +6,18 @@ import boto3
 from moto import mock_aws
 import pytest
 
-from pyflexplot.s3 import (
-    download_key_from_bucket,
-    upload_outpaths_to_s3,
-    expand_key,
-    split_s3_uri)
+from pyflexplot.s3 import download_key_from_bucket, upload_outpaths_to_s3, expand_key, split_s3_uri
 from pyflexplot import CONFIG
 from pyflexplot.config.service_settings import Bucket
 from pyflexplot.setups.model_setup import ModelSetup
 
 
-
 @pytest.fixture(autouse=True)
 def aws_credentials(monkeypatch):
-    monkeypatch.setenv("AWS_ACCESS_KEY_ID", 'testing')
-    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", 'testing')
-    monkeypatch.setenv("AWS_SECURITY_TOKEN", 'testing')
-    monkeypatch.setenv("AWS_SESSION_TOKEN", 'testing')
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "testing")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "testing")
+    monkeypatch.setenv("AWS_SECURITY_TOKEN", "testing")
+    monkeypatch.setenv("AWS_SESSION_TOKEN", "testing")
     monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
     if "AWS_PROFILE" in os.environ:
         monkeypatch.delenv("AWS_PROFILE")
@@ -39,7 +34,7 @@ def s3(aws_credentials):
     """
     with mock_aws():
         session = boto3.Session()
-        s3 = session.client('s3')
+        s3 = session.client("s3")
         s3.create_bucket(Bucket=CONFIG.main.aws.s3.input.name)
         s3.create_bucket(Bucket=CONFIG.main.aws.s3.output.name)
         yield s3
@@ -52,10 +47,12 @@ def test_expand_key_valid():
     result = expand_key("data_{ens_member:03d}.nc", 21)
     assert result == "data_021.nc"
 
+
 def test_expand_key_no_ensemble_members():
     with pytest.raises(ValueError) as exc_info:
         expand_key("data_{ens_member:03}.nc", None)
     assert str(exc_info.value) == "Must provide ensemble member id as argument to expand key data_{ens_member:03}.nc."
+
 
 def test_expand_key_invalid_pattern():
     with pytest.raises(RuntimeError) as exc_info:
@@ -68,20 +65,24 @@ def test_split_s3_uri():
     expected = ("my_bucket", "path/to/my_file.txt", "my_file.txt")
     assert result == expected
 
+
 def test_split_s3_uri_root_file():
     result = split_s3_uri("s3://my_bucket/my_file.txt")
     expected = ("my_bucket", "my_file.txt", "my_file.txt")
     assert result == expected
+
 
 def test_split_s3_uri_with_slashes():
     result = split_s3_uri("s3:///my_bucket///path///to///my_file.txt")
     expected = ("my_bucket", "path/to/my_file.txt", "my_file.txt")
     assert result == expected
 
+
 def test_split_s3_uri_only_bucket():
     result = split_s3_uri("s3://my_bucket")
     expected = ("my_bucket", "", "")
     assert result == expected
+
 
 def test_split_s3_uri_invalid():
     with pytest.raises(ValueError) as exc_info:
@@ -100,7 +101,7 @@ def test_download_key_from_bucket(s3):
             temp_file = tempfile.NamedTemporaryFile(delete=False, prefix=f"test_file_{i}_", suffix=".txt")
             test_files.append(Path(str(temp_file.name)))
 
-            with open(Path(str(temp_file.name)), 'w') as f:
+            with open(Path(str(temp_file.name)), "w") as f:
                 f.write(f"Dummy data for test file {i}\n")
 
         _add_files_to_bucket(bucket, test_files, s3)
@@ -111,7 +112,7 @@ def test_download_key_from_bucket(s3):
         actual_objs = []
         with tempfile.TemporaryDirectory() as tmpdirname:
             for key in expected_objs:
-                actual_objs.append(download_key_from_bucket(key, Path(tmpdirname)/key, bucket))
+                actual_objs.append(download_key_from_bucket(key, Path(tmpdirname) / key, bucket))
 
         for obj in actual_objs:
             assert obj.name in expected_objs
@@ -132,7 +133,7 @@ def test_upload_outpaths_to_s3(s3):
     # given
     bucket = CONFIG.main.aws.s3.output
 
-    model = ModelSetup(name = 'COSMO-1E', base_time='1234', product_type='my-product-type')
+    model = ModelSetup(name="COSMO-1E", base_time="1234", product_type="my-product-type")
 
     test_files = []
 
@@ -141,21 +142,20 @@ def test_upload_outpaths_to_s3(s3):
             temp_file = tempfile.NamedTemporaryFile(delete=False, prefix=f"test_file_{i}", suffix=".txt")
             test_files.append(Path(str(temp_file.name)))
 
-            with open(Path(str(temp_file.name)), 'w') as f:
+            with open(Path(str(temp_file.name)), "w") as f:
                 f.write(f"Dummy data for test file {i}\n")
 
         # when
         upload_outpaths_to_s3(test_files, model, bucket=bucket)
 
         # then
-        assert 'Contents' in s3.list_objects(Bucket = bucket.name)
+        assert "Contents" in s3.list_objects(Bucket=bucket.name)
 
-        for path in test_files :
-
+        for path in test_files:
             # check the files were uploaded as expected
             s3_object = s3.get_object(Bucket=bucket.name, Key=f"{model.name}/{model.base_time}/{path.name}")
             actual = s3_object["Body"].read()
-            with open(path, mode='rb') as f:
+            with open(path, mode="rb") as f:
                 assert actual == f.read()
 
             # check that the product type metadata is set
@@ -168,7 +168,6 @@ def test_upload_outpaths_to_s3(s3):
                 os.remove(file)
             except OSError as e:
                 print(f"Error deleting file {file}: {e}")
-
 
 
 def _add_files_to_bucket(bucket: Bucket, files: list[Path], s3) -> None:

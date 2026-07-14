@@ -1,4 +1,5 @@
 """Layout setup."""
+
 # Standard library
 import dataclasses as dc
 from typing import Any

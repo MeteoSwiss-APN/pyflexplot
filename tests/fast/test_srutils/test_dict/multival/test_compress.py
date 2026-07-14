@@ -1,4 +1,5 @@
 """Test function ``srutils.dict.compress_multival_dicts``."""
+
 # First-party
 from srutils.dict import compress_multival_dicts
 

@@ -1,5 +1,6 @@
 # pylint: disable=C0302  # too-many-lines
 """Plot setup and setup files."""
+
 # Standard library
 import dataclasses as dc
 from pprint import pformat
@@ -74,8 +75,7 @@ class CoreDimensions:
                 params[param] = cls.cast(param, value)
             except InvalidParameterValueError as e:
                 raise ValueError(
-                    f"cannot cast value of param '{param}' of type"
-                    f" {type(value).__name__}: {sfmt(value)}"
+                    f"cannot cast value of param '{param}' of type {type(value).__name__}: {sfmt(value)}"
                 ) from e
         return cls(**params)
 
@@ -108,16 +108,10 @@ class Dimensions:
         self._core: List[CoreDimensions] = list(core)
 
     @overload
-    def get(
-        self, param: str, *, unpack_single: Literal[False] = ...
-    ) -> Tuple[Any, ...]:
-        ...
+    def get(self, param: str, *, unpack_single: Literal[False] = ...) -> Tuple[Any, ...]: ...
 
     @overload
-    def get(
-        self, param: str, *, unpack_single: Literal[True] = ...
-    ) -> Optional[Union[Any, Tuple[Any, ...]]]:
-        ...
+    def get(self, param: str, *, unpack_single: Literal[True] = ...) -> Optional[Union[Any, Tuple[Any, ...]]]: ...
 
     def get(self, param, *, unpack_single=True):
         """Gather the value(s) of a parameter in compact form.
@@ -219,9 +213,7 @@ class Dimensions:
 
         mode_choices = ["all", "first"]
         if mode not in mode_choices:
-            raise ValueError(
-                f"invalid mode: {mode} (choices: {', '.join(mode_choices)})"
-            )
+            raise ValueError(f"invalid mode: {mode} (choices: {', '.join(mode_choices)})")
 
         obj = self if inplace else self.copy()
 
@@ -235,9 +227,7 @@ class Dimensions:
             elif plot_variable == "affected_area":
                 obj.variable = ("concentration", "dry_deposition", "wet_deposition")
             else:
-                raise NotImplementedError(
-                    f"set {_name_}.variable for plot_variable '{plot_variable}'"
-                )
+                raise NotImplementedError(f"set {_name_}.variable for plot_variable '{plot_variable}'")
 
         if obj.species_id is None:
             if mode == "all":
@@ -389,10 +379,7 @@ class Dimensions:
         if plot_variable is not None:
             loc_params["variable"] = cls.derive_variable(plot_variable)  # type: ignore[assignment]
         elif "variable" not in loc_params:
-            raise ValueError(
-                "add 'variable' to params, or pass plot_variable:"
-                f"\n{pformat(loc_params)}"
-            )
+            raise ValueError(f"add 'variable' to params, or pass plot_variable:\n{pformat(loc_params)}")
         n_max = 1
         for param, value in loc_params.items():
             if not isinstance(value, Sequence) or isinstance(value, str):

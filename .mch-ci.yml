@@ -22,6 +22,15 @@ default:
               target: runner
               extraArgs: *buildArtifactExtraArgs
               pullAlways: false
+  - verify:
+      - format:
+          - pythonContainerRun:
+              imageName: ${var.containerImageName}-tester
+              imageTag: ${var.semanticVersion}
+              pullAlways: false
+              packageManager: ''
+              removeLocalImage: false
+              commands: ruff format --check || { echo "Format check failed. Run 'ruff format' to fix."; exit 1; }
   - test:
       - unit:
           - script: mkdir -p test_reports

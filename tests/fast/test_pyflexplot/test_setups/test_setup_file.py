@@ -1,4 +1,5 @@
 """Test module ``pyflexplot.setup.SetupFile``."""
+
 # Standard library
 from collections.abc import Sequence
 from textwrap import dedent
@@ -46,9 +47,7 @@ class Test_Single:
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = setups.dicts()
         sol = [BASE]
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     def test_minimal_renamed_section(self, tmp_path):
         """Read setup file with single minimal section with arbitrary name."""
@@ -61,9 +60,7 @@ class Test_Single:
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = setups.dicts()
         sol = [BASE]
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     def test_single_section(self, tmp_path):
         """Read setup file with single non-empty section."""
@@ -95,9 +92,7 @@ class Test_Single:
                 overwrite_seqs=True,
             )
         ]
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
 
 class Test_Multiple:
@@ -117,9 +112,7 @@ class Test_Multiple:
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = setups.dicts()
         sol = [BASE] * 2
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     def test_two_nested_empty_sections(self, tmp_path):
         """Read setup file with two nested empty sections."""
@@ -134,9 +127,7 @@ class Test_Multiple:
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = setups.dicts()
         sol = [BASE]
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     def test_nested_sections(self, tmp_path):
         """Read setup file with two nested non-empty sections."""
@@ -234,15 +225,10 @@ class Test_Multiple:
                 ]
             },
         ]
-        sol = [
-            merge_dicts(sol_base, sol_spc, overwrite_seqs=True)
-            for sol_spc in sol_specific
-        ]
+        sol = [merge_dicts(sol_base, sol_spc, overwrite_seqs=True) for sol_spc in sol_specific]
         group = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = group.dicts()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     def test_override(self, tmp_path):
         """Read setup file and override some parameters."""
@@ -320,15 +306,10 @@ class Test_Multiple:
                 ]
             },
         ]
-        sol = [
-            merge_dicts(sol_base, sol_spc, overwrite_seqs=True)
-            for sol_spc in sol_specific
-        ]
+        sol = [merge_dicts(sol_base, sol_spc, overwrite_seqs=True) for sol_spc in sol_specific]
         group = SetupFile(tmp_setup_file(tmp_path, content)).read(override=override)
         res = group.dicts()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
 
 class Test_RealCase:
@@ -454,9 +435,7 @@ class Test_RealCase:
             {
                 "files": {
                     "input": "data/cosmo1_2019052800.nc",
-                    "output": (
-                        "concentration_{species_id}_{domain}_{lang}_{time:02d}.png"
-                    ),
+                    "output": ("concentration_{species_id}_{domain}_{lang}_{time:02d}.png"),
                 },
                 "panels": [
                     {
@@ -477,14 +456,12 @@ class Test_RealCase:
                     "name": "COSMO-1",
                     "simulation_type": "deterministic",
                     "product_type": "forecast-cosmo1-dispersion-test",
-                }
+                },
             },
             {
                 "files": {
                     "input": "data/cosmo1_2019052800.nc",
-                    "output": (
-                        "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"
-                    ),
+                    "output": ("integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"),
                 },
                 "panels": [
                     {
@@ -567,9 +544,7 @@ class Test_RealCase:
         ]
         group = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = group.dicts()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
 
 class Test_Wildcards:
@@ -643,9 +618,7 @@ class Test_Wildcards:
         ]
         group = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = group.dicts()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     def test_equal_depth(self, tmp_path):
         """Apply double-star wildcard subdict to an equal-depth nested dict."""
@@ -705,9 +678,7 @@ class Test_Wildcards:
         ]
         group = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = group.dicts()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     def test_double_variable_depth(self, tmp_path):
         """Apply double-star wildcard subdict to variable-depth nested dict."""
@@ -754,16 +725,8 @@ class Test_Wildcards:
                 overwrite_seqs=True,
             )
             for dct in [
-                {
-                    "panels": [
-                        {"plot_variable": "concentration", "dimensions": {"time": 5}}
-                    ]
-                },
-                {
-                    "panels": [
-                        {"plot_variable": "concentration", "dimensions": {"time": 10}}
-                    ]
-                },
+                {"panels": [{"plot_variable": "concentration", "dimensions": {"time": 5}}]},
+                {"panels": [{"plot_variable": "concentration", "dimensions": {"time": 10}}]},
                 {
                     "panels": [
                         {
@@ -781,9 +744,7 @@ class Test_Wildcards:
         ]
         group = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = group.dicts()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     def test_combine(self, tmp_path):
         """Apply single- and double-star wildcards in combination."""
@@ -847,9 +808,7 @@ class Test_Wildcards:
         ]
         group = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = group.dicts()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
 
 class Test_IndividualParams_SingleOrMultipleValues:
@@ -878,9 +837,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
         ]
         group = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = group.dicts()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     def test_level(self, tmp_path):
         content = """\
@@ -907,9 +864,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
         ]
         group = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = group.dicts()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     def test_level_none(self, tmp_path):
         content = """\
@@ -940,9 +895,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
         ]
         group = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = group.dicts()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
 
 class Test_Multipanel:
@@ -974,9 +927,7 @@ class Test_Multipanel:
         group = SetupFile(tmp_setup_file(tmp_path, content)).read()
         assert len(group) == 1
         res = next(iter(group)).dict()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     def test_time(self, tmp_path):
         """Declare multi-panel plot based on time steps."""
@@ -1004,9 +955,7 @@ class Test_Multipanel:
         group = SetupFile(tmp_setup_file(tmp_path, content)).read()
         assert len(group) == 1
         res = next(iter(group)).dict()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     def test_time_inherited_once(self, tmp_path):
         """Inherit multipanel plot from single-panel plot."""
@@ -1083,9 +1032,7 @@ class Test_Multipanel:
                 ],
             },
         ]
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)
 
     def test_time_inherited_twice(self, tmp_path):
         """Inherit multipanel plot from single-panel plot."""
@@ -1164,6 +1111,4 @@ class Test_Multipanel:
                 ],
             },
         ]
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=sol, name_super="result", obj_super=res)

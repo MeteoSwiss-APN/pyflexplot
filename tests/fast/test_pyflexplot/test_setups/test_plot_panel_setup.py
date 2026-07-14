@@ -1,4 +1,5 @@
 """Test module ``pyflexplot.setup``."""
+
 # Standard library
 from typing import Any
 from typing import Dict
@@ -16,9 +17,7 @@ class Test_Create:
         params = {"combine_levels": True, "dimensions": {"level": (1, 2)}}
         setup = PlotPanelSetup.create(params)
         res = setup.dict()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=params, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=params, name_super="result", obj_super=res)
 
     def test_combine_levels_fail(self):
         params = {"combine_levels": False, "dimensions": {"level": (1, 2)}}
@@ -29,9 +28,7 @@ class Test_Create:
         params = {"combine_species": True, "dimensions": {"species_id": (1, 2)}}
         setup = PlotPanelSetup.create(params)
         res = setup.dict()
-        assert_is_sub_element(
-            name_sub="solution", obj_sub=params, name_super="result", obj_super=res
-        )
+        assert_is_sub_element(name_sub="solution", obj_sub=params, name_super="result", obj_super=res)
 
     def test_combine_species_fail(self):
         params = {"combine_species": False, "dimensions": {"species_id": (1, 2)}}
@@ -109,9 +106,7 @@ class Test_CompleteDimensions:
         assert setup.dimensions.species_id == (1, 2)
 
     def test_others(self):
-        setup = PlotPanelSetup.create(
-            {"dimensions": {"nageclass": "*", "release": "*"}}
-        )
+        setup = PlotPanelSetup.create({"dimensions": {"nageclass": "*", "release": "*"}})
         assert setup.dimensions.nageclass is None
         assert setup.dimensions.release is None
         setup = setup.complete_dimensions(self.raw_dimensions, self.species_ids)
@@ -126,9 +121,7 @@ class Test_CompleteDimensions:
             "nageclass": "*",
             "release": "*",
         }
-        setup = PlotPanelSetup.create(
-            {"dimensions": dimensions, "dimensions_default": "all"}
-        )
+        setup = PlotPanelSetup.create({"dimensions": dimensions, "dimensions_default": "all"})
         assert setup.dimensions.time is None
         assert setup.dimensions.level is None
         assert setup.dimensions.species_id is None
@@ -149,9 +142,7 @@ class Test_CompleteDimensions:
             "nageclass": "*",
             "release": "*",
         }
-        setup = PlotPanelSetup.create(
-            {"dimensions": dimensions, "dimensions_default": "first"}
-        )
+        setup = PlotPanelSetup.create({"dimensions": dimensions, "dimensions_default": "first"})
         assert setup.dimensions.time is None
         assert setup.dimensions.level is None
         assert setup.dimensions.species_id is None

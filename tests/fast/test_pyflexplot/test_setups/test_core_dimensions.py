@@ -1,4 +1,5 @@
 """Test class ``pyflexplot.setup.CoreDimensions``."""
+
 # Third-party
 import pytest
 

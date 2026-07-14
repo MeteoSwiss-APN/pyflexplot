@@ -1,4 +1,5 @@
 """Custom types for type hints."""
+
 # Standard library
 from typing import Callable
 from typing import List

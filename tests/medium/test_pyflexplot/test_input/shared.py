@@ -1,4 +1,5 @@
 """Utilities for tests for module ``pyflexplot.input``."""
+
 # Standard library
 import shutil
 from pathlib import Path

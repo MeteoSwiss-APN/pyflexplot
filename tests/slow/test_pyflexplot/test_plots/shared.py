@@ -1,4 +1,5 @@
 """Shared functions and classes for tests of elements of complete plots."""
+
 # Standard library
 import importlib
 import logging
@@ -80,9 +81,7 @@ class _TestBase:
     def get_field_group(self, datadir):
         infile = f"{datadir}/{self.setup_dct['files']['input']}"
         setups = self.get_setups()
-        field_groups = read_fields(
-            setups, {"add_ts0": True, "missing_ok": True}, _override_infile=infile
-        )
+        field_groups = read_fields(setups, {"add_ts0": True, "missing_ok": True}, _override_infile=infile)
         assert len(field_groups) == self.n_plots
         # SR_TMP <
         assert self.n_plots == 1

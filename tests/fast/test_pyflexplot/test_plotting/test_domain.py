@@ -1,4 +1,5 @@
 """Tests for module ``pyflexplot.plotting.domain``."""
+
 # Standard library
 import dataclasses as dc
 from typing import List
@@ -121,9 +122,7 @@ class Test_GlobalCloudDomain:
 
         def test_min_lon(self):
             """Adjust longitude upward to minimum."""
-            bbox = self.get_bbox_corners(
-                -2, 2, 5, 15, periodic_lon=True, min_size_lon=60
-            )
+            bbox = self.get_bbox_corners(-2, 2, 5, 15, periodic_lon=True, min_size_lon=60)
             assert bbox == (150.0, -150.0, -35.0, 55.0)
 
     class Test_NonContinuousNearDateline(General):
@@ -141,9 +140,7 @@ class Test_GlobalCloudDomain:
 
         def test_non_continuous_periodic(self):
             """W/o specified aspect ratio but with periodic zonal boundaries."""
-            bbox = self.get_bbox_corners(
-                [(31, 33, 10, 17), (1, 4, 10, 17)], periodic_lon=True
-            )
+            bbox = self.get_bbox_corners([(31, 33, 10, 17), (1, 4, 10, 17)], periodic_lon=True)
             assert bbox == (135, -145, 15, 75)
 
     class Test_NonContinuousAcrossPoleAndDateline(General):
@@ -193,9 +190,7 @@ class Test_GlobalCloudDomain:
 
         def test(self):
             """Based on a real case that crashed v0.1.7."""
-            bbox = self.get_bbox_corners(
-                -356, -358, 120, 179, periodic_lon=True, aspect=1.45, min_size_lon=20.0
-            )
+            bbox = self.get_bbox_corners(-356, -358, 120, 179, periodic_lon=True, aspect=1.45, min_size_lon=20.0)
             assert bbox == (-175.5, -178.5, -89.5, 89.5)
 
 

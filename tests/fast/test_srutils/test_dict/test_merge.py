@@ -1,4 +1,5 @@
 """Tests for function ``srutils.dict.merge_dicts``."""
+
 # Standard library
 import dataclasses as dc
 from typing import Any

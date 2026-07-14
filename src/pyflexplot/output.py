@@ -88,9 +88,7 @@ class FilePathFormatter:
         species_name: str,
     ) -> str:
         # Prepare base time
-        base_time = self._format_time_step(
-            cast(int, setup.model.base_time), setup.files.output_time_format
-        )
+        base_time = self._format_time_step(cast(int, setup.model.base_time), setup.files.output_time_format)
 
         # Prepare plot variable
         plot_variable = setup.panels.collect_equal("plot_variable")
@@ -107,9 +105,7 @@ class FilePathFormatter:
             if ens_variable == "percentile":
                 if plot_type == "multipanel" and multipanel_param == "ens_params.pctl":
                     # pylint: disable=C0209  # consider-using-f-string (v2.11.1)
-                    s_pctl = "+".join(
-                        map("{:g}".format, setup.panels.collect("ens_params.pctl"))
-                    )
+                    s_pctl = "+".join(map("{:g}".format, setup.panels.collect("ens_params.pctl")))
                 else:
                     s_pctl = f"{setup.panels.collect_equal('ens_params.pctl'):g}"
                 ens_variable += f"-{s_pctl}"
@@ -123,37 +119,24 @@ class FilePathFormatter:
 
         # Prepare Prepare ens variable
         ens_variable: str
-        if (
-            setup.layout.plot_type == "multipanel"
-            and setup.layout.multipanel_param == "ens_variable"
-        ):
+        if setup.layout.plot_type == "multipanel" and setup.layout.multipanel_param == "ens_variable":
             ens_variable = "_".join(
-                [
-                    prepare_ens_variable(ens_variable_i)
-                    for ens_variable_i in setup.panels.collect("ens_variable")
-                ]
+                [prepare_ens_variable(ens_variable_i) for ens_variable_i in setup.panels.collect("ens_variable")]
             )
         else:
             ens_variable = setup.panels.collect_equal("ens_variable")
             ens_variable = prepare_ens_variable(ens_variable)
 
         # Prepare release start
-        release_start_fmtd: str = self._format_time_step(
-            release_start, setup.files.output_time_format
-        )
+        release_start_fmtd: str = self._format_time_step(release_start, setup.files.output_time_format)
 
         # time steps
-        time_steps_fmtd: List[str] = self._format_time_steps(
-            time_steps, setup.files.output_time_format
-        )
+        time_steps_fmtd: List[str] = self._format_time_steps(time_steps, setup.files.output_time_format)
         time_idx: Optional[int] = None
         time_step: Optional[str] = None
         time_idx_seq: Optional[Sequence[int]] = None
         time_step_seq: Optional[Sequence[str]] = None
-        if (
-            setup.layout.plot_type == "multipanel"
-            and setup.layout.multipanel_param == "time"
-        ):
+        if setup.layout.plot_type == "multipanel" and setup.layout.multipanel_param == "time":
             time_idx_seq = setup.panels.collect("dimensions.time")
             time_step_seq = [time_steps_fmtd[time_idx_i] for time_idx_i in time_idx_seq]
         else:
@@ -183,9 +166,7 @@ class FilePathFormatter:
         }
         return self._replace_format_keys(template, kwargs)
 
-    def _format_time_steps(
-        self, tss_int: Sequence[Union[int, datetime]], outfile_time_format: str
-    ) -> List[str]:
+    def _format_time_steps(self, tss_int: Sequence[Union[int, datetime]], outfile_time_format: str) -> List[str]:
         return [self._format_time_step(ts, outfile_time_format) for ts in tss_int]
 
     @staticmethod
@@ -214,14 +195,13 @@ class FilePathFormatter:
                 formatted_key = "+".join([f"{{{f}}}".format(v) for v in val])
 
                 # Replace format key in the path by the just formatted string
-                start, end = path[:m.span()[0]], path[m.span()[1]:]
+                start, end = path[: m.span()[0]], path[m.span()[1] :]
                 path = f"{start}{formatted_key}{end}"
 
         # Check that all keys have been formatted
         if "{" in path or "}" in path:
             raise Exception(
-                "formatted output file path still appears to contain format keys:"
-                f" {path} (template: {template})"
+                f"formatted output file path still appears to contain format keys: {path} (template: {template})"
             )
 
         return path

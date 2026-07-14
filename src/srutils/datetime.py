@@ -1,4 +1,5 @@
 """Datetime utilities."""
+
 from __future__ import annotations
 
 # Standard library
@@ -25,9 +26,7 @@ def derive_datetime_fmt(raw: Union[int, str]) -> str:
     try:
         n = len(str(int(raw)))
     except ValueError as e:
-        raise ValueError(
-            f"invalid raw datetime '{raw}' of type {type(raw).__name__}"
-        ) from e
+        raise ValueError(f"invalid raw datetime '{raw}' of type {type(raw).__name__}") from e
     fmts = {
         4: "%Y",
         6: "%Y%m",
@@ -59,8 +58,7 @@ def datetime_range(
     *,
     convert: Literal[None] = None,
     fmt: str = ...,
-) -> list[dt.datetime]:
-    ...
+) -> list[dt.datetime]: ...
 
 
 @overload
@@ -71,8 +69,7 @@ def datetime_range(
     *,
     convert: Callable[[str], ConvertT],
     fmt: str = ...,
-) -> list[ConvertT]:
-    ...
+) -> list[ConvertT]: ...
 
 
 def datetime_range(start, end, step, *, convert=None, fmt="%Y%m%d%H%M%S"):

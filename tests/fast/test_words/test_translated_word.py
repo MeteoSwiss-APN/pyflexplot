@@ -1,4 +1,5 @@
 """Test class ``words.word.TranslatedWord``."""
+
 # Standard library
 import dataclasses as dc
 import functools
@@ -83,9 +84,7 @@ class Test_ContextWord:
 class Test_Context_OneMany:
     """A word depending on context in one language."""
 
-    w = p_TranslatedWord(
-        en="at", de=dict(place="bei", time="um", level="auf"), active_lang="de"
-    )
+    w = p_TranslatedWord(en="at", de=dict(place="bei", time="um", level="auf"), active_lang="de")
 
     def test_name(self):
         assert self.w.name == "at"
@@ -240,6 +239,4 @@ class Test_Creation:
 
     def test_fail_inconsistent_contexts(self):
         with pytest.raises(ValueError):
-            TranslatedWord(
-                en={"foo": "bar", "hello": "world"}, de={"bar": "baz", "hello": "world"}
-            )
+            TranslatedWord(en={"foo": "bar", "hello": "world"}, de={"bar": "baz", "hello": "world"})

@@ -1,4 +1,5 @@
 """TranslatedWord."""
+
 from __future__ import annotations
 
 # Standard library
@@ -149,9 +150,7 @@ class TranslatedWord:
         # Set name of word (valid Python variable name)
         try:
             if name is None:
-                tmp_name: Union[WordT, str, Mapping[str, Union[WordT, str]]] = next(
-                    iter(translations.values())
-                )
+                tmp_name: Union[WordT, str, Mapping[str, Union[WordT, str]]] = next(iter(translations.values()))
                 if isinstance(tmp_name, Mapping):
                     tmp_name = next(iter(tmp_name.values()))
                 name = VariableName(str(tmp_name)).format(lower=True)
@@ -177,9 +176,7 @@ class TranslatedWord:
                 if any(isinstance(v, ContextWord) for v in word.values()):
                     # Note [2022-03-09]: Not sure what should happen in this case,
                     # but it does not happen in the testsuite, anyway...
-                    raise NotImplementedError(
-                        f"word variant is of type ContextWord: '{word}'"
-                    )
+                    raise NotImplementedError(f"word variant is of type ContextWord: '{word}'")
                 word = cast(Mapping[str, Union[Word, str]], word)  # mypy
                 if set(word.keys()) != set(ctxs) and "*" not in word:
                     raise ValueError(
@@ -188,10 +185,7 @@ class TranslatedWord:
                         f"context '*'"
                     )
             else:
-                raise ValueError(
-                    f"word '{self.name}' in language '{lang}' has "
-                    f"unexpected type {type(word).__name__}"
-                )
+                raise ValueError(f"word '{self.name}' in language '{lang}' has unexpected type {type(word).__name__}")
             self._translations[lang] = ContextWord(lang, **word)
 
         self.set_active_lang(lang=active_lang, query=active_lang_query)
@@ -208,9 +202,7 @@ class TranslatedWord:
         """List of languages the word is defined in."""
         return list(self._translations.keys())
 
-    def set_active_lang(
-        self, lang: Optional[str] = None, query: Optional[Callable[[], str]] = None
-    ) -> None:
+    def set_active_lang(self, lang: Optional[str] = None, query: Optional[Callable[[], str]] = None) -> None:
         """Set the active language, either hard-coded or queryable.
 
         Args:
@@ -243,18 +235,13 @@ class TranslatedWord:
         try:
             return self._translations[lang]
         except KeyError as e:
-            raise ValueError(
-                f"word '{self.name}' not defined in language '{lang}', only in "
-                f"{self.langs}"
-            ) from e
+            raise ValueError(f"word '{self.name}' not defined in language '{lang}', only in {self.langs}") from e
 
     @overload
-    def ctx(self, name: Optional[str], as_str: Literal[False] = False) -> Word:
-        ...
+    def ctx(self, name: Optional[str], as_str: Literal[False] = False) -> Word: ...
 
     @overload
-    def ctx(self, name: Optional[str], as_str: Literal[True]) -> str:
-        ...
+    def ctx(self, name: Optional[str], as_str: Literal[True]) -> str: ...
 
     def ctx(self, name, as_str=False):
         return self.get_in(self.active_lang).ctx(name, as_str)
@@ -265,12 +252,8 @@ class TranslatedWord:
         return w.s
 
     def __repr__(self) -> str:
-        s_langs = ", ".join(
-            [f"{lang}={repr(word)}" for lang, word in self._translations.items()]
-        )
-        return (
-            f"{type(self).__name__}({self.name}, {s_langs}, lang='{self.active_lang}')"
-        )
+        s_langs = ", ".join([f"{lang}={repr(word)}" for lang, word in self._translations.items()])
+        return f"{type(self).__name__}({self.name}, {s_langs}, lang='{self.active_lang}')"
 
     def __eq__(self, other: Any) -> bool:
         return str(self) == str(other)
@@ -294,17 +277,13 @@ class TranslatedWord:
                 raise ValueError("invalid language specifier", lang)
             if not isinstance(word, (Word, ContextWord, str, Mapping)):
                 # Wrong word type
-                raise ValueError(
-                    f"word not str or dict-like: {word} {type(word).__name__}"
-                )
+                raise ValueError(f"word not str or dict-like: {word} {type(word).__name__}")
             if not word:
                 # Undefined word
                 raise ValueError(f"empty word passed in language '{lang}'")
 
     @staticmethod
-    def _collect_contexts(
-        translations: Mapping[str, Union[WordT, str, Mapping[str, Union[WordT, str]]]]
-    ) -> list[str]:
+    def _collect_contexts(translations: Mapping[str, Union[WordT, str, Mapping[str, Union[WordT, str]]]]) -> list[str]:
         ctxs: list[str] = []
         for word in translations.values():
             if isinstance(word, Mapping):

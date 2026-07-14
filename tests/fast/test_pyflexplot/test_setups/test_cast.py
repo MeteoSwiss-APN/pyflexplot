@@ -1,4 +1,5 @@
 """Test casting methods of class ``pyflexplot.setup.Setup``."""
+
 # Third-party
 import pytest
 

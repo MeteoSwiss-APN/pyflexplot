@@ -1,4 +1,5 @@
 """Utilities for tests for module ``pyflexplot.input``."""
+
 # Standard library
 from typing import Collection
 from typing import List

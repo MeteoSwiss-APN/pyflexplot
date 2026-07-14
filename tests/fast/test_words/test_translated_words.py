@@ -1,4 +1,5 @@
 """Test module ``words.word``."""
+
 # Standard library
 import functools
 

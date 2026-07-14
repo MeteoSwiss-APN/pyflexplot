@@ -3,6 +3,7 @@
 These tests use ensemble data.
 
 """
+
 # Standard library
 from typing import Any
 from typing import Dict
@@ -111,9 +112,7 @@ class TestReadFieldEnsemble_Single:
         fld = next(iter(field_groups[0])).fld
 
         # SR_TMP <
-        plot_setups_lst = decompress_twice(
-            plot_setups, "dimensions.time", skip=["model.ens_member_id"]
-        )
+        plot_setups_lst = decompress_twice(plot_setups, "dimensions.time", skip=["model.ens_member_id"])
         assert len(plot_setups_lst) == 1
         var_setups = next(iter(plot_setups_lst))
         plot_setups = var_setups.compress().decompress(skip=["model.ens_member_id"])
@@ -225,9 +224,7 @@ class TestReadFieldEnsemble_Multiple:
 
         # Read input fields
         field_groups = read_fields(plot_setup_group, {"add_ts0": False})
-        fld_arr = np.array(
-            [field.fld for field_group in field_groups for field in field_group]
-        )
+        fld_arr = np.array([field.fld for field_group in field_groups for field in field_group])
         assert fld_arr.shape[0] == len(time)
 
         def read_fld_ref(plot_setup_group: PlotSetupGroup) -> np.ndarray:
@@ -236,13 +233,9 @@ class TestReadFieldEnsemble_Multiple:
             fld_lst: List[np.ndarray] = []
             for plot_setup_i in plot_setup.decompress(["dimensions.time"]):
                 fld_mem_time: List[List[np.ndarray]] = []
-                for plot_setup_ij in plot_setup_i.decompress(
-                    skip=["model.ens_member_id"]
-                ):
+                for plot_setup_ij in plot_setup_i.decompress(skip=["model.ens_member_id"]):
                     fld_mem_time.append([])
-                    for plot_setup_ijk in plot_setup_ij.decompress(
-                        ["model.ens_member_id"], internal=False
-                    ):
+                    for plot_setup_ijk in plot_setup_ij.decompress(["model.ens_member_id"], internal=False):
                         assert plot_setup_ijk.model.ens_member_id is not None  # mypy
                         ens_member_id = next(iter(plot_setup_ijk.model.ens_member_id))
                         # SR_TMP <
@@ -250,14 +243,10 @@ class TestReadFieldEnsemble_Multiple:
                         panel_setup = next(iter(plot_setup_ijk.panels))
                         # SR_TMP >
                         fld_mem_time_i_lst = []
-                        for dimensions in panel_setup.dimensions.decompress(
-                            ["variable"]
-                        ):
+                        for dimensions in panel_setup.dimensions.decompress(["variable"]):
                             fld = (
                                 read_flexpart_field(
-                                    self.datafile(
-                                        ens_member_id, datafile_fmt=datafile_fmt
-                                    ),
+                                    self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                                     get_var_name_ref(dimensions, var_names_ref),
                                     dimensions,
                                     integrate=panel_setup.integrate,
@@ -281,8 +270,7 @@ class TestReadFieldEnsemble_Multiple:
             if np.isclose(np.nanmin(fld_rel), np.nanmax(fld_rel)):
                 f = np.nanmean(fld_rel)
                 raise AssertionError(
-                    f"fields differ by constant factor: result = "
-                    f"{f:g} * reference (1 / {1.0 / f:g}))"
+                    f"fields differ by constant factor: result = {f:g} * reference (1 / {1.0 / f:g}))"
                 ) from error
             else:
                 raise error
@@ -294,9 +282,7 @@ class TestReadFieldEnsemble_Multiple:
         fct_reduce_mem = {
             "mean": lambda arr: np.nanmean(arr, axis=0),
             "maximum": lambda arr: np.nanmax(arr, axis=0),
-            "probability": (
-                lambda arr: ensemble_probability(arr, self.ens_prob_thr_concentration)
-            ),
+            "probability": (lambda arr: ensemble_probability(arr, self.ens_prob_thr_concentration)),
         }[ens_var]
         setup_params = {
             "files": {
@@ -308,9 +294,7 @@ class TestReadFieldEnsemble_Multiple:
             },
         }
         if ens_var == "probability":
-            setup_params["panels"]["ens_params"] = {
-                "thr": self.ens_prob_thr_concentration
-            }
+            setup_params["panels"]["ens_params"] = {"thr": self.ens_prob_thr_concentration}
         self.run(
             datafile_fmt=datafile_fmt,
             var_names_ref=[f"spec{self.species_id:03d}"],
@@ -386,9 +370,7 @@ def test_affected_area_stats(datadir):  # npqa:F811
             },
         }
         plot_setups = PlotSetupGroup.create(setup_dct)
-        field_groups = read_fields(
-            plot_setups, {"add_ts0": True}, _override_indir=datadir
-        )
+        field_groups = read_fields(plot_setups, {"add_ts0": True}, _override_indir=datadir)
         assert len(field_groups) == 1
         field_group = next(iter(field_groups))
         assert len(field_group) == 1

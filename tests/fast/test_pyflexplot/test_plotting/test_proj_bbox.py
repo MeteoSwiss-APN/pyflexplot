@@ -1,4 +1,5 @@
 """Test for module ``pyflexplot.plotting.proj_bbox``."""
+
 # Standard library
 import dataclasses as dc
 

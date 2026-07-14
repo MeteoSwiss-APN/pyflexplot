@@ -1,4 +1,5 @@
 """Formatting utilities."""
+
 # Standard library
 import dataclasses as dc
 import re
@@ -192,10 +193,7 @@ def format_level_ranges(
     else:
         align_choices = ["left", "right", "center", "edges"]
         if align not in align_choices:
-            raise ValueError(
-                f"invalid value '{align}' of argument align; "
-                f"must be one of {','.join(align_choices)}"
-            )
+            raise ValueError(f"invalid value '{align}' of argument align; must be one of {','.join(align_choices)}")
     if include is None:
         include = "lower"
     formatters = {
@@ -210,13 +208,9 @@ def format_level_ranges(
     try:
         cls = formatters[style]
     except AttributeError as e:
-        raise ValueError(
-            f"unknown style '{style}'; options: {sorted(formatters)}"
-        ) from e
+        raise ValueError(f"unknown style '{style}'; options: {sorted(formatters)}") from e
     else:
-        formatter = cls(
-            widths=widths, extend=extend, align=align, include=include, **kwargs
-        )
+        formatter = cls(widths=widths, extend=extend, align=align, include=include, **kwargs)
     return formatter.format_multiple(levels)
 
 
@@ -365,9 +359,7 @@ class LevelRangeFormatter:
 
         return f"{s_l}{s_c}{s_r}"
 
-    def _format_components(
-        self, lvl0: Optional[float], lvl1: Optional[float]
-    ) -> Components:
+    def _format_components(self, lvl0: Optional[float], lvl1: Optional[float]) -> Components:
         open_left = lvl0 in (None, np.inf)
         open_right = lvl1 in (None, np.inf)
         if open_left and open_right:
@@ -448,9 +440,7 @@ class LevelRangeFormatterInt(LevelRangeFormatter):
             include=include,
         )
 
-    def _format_components(
-        self, lvl0: Optional[float], lvl1: Optional[float]
-    ) -> Components:
+    def _format_components(self, lvl0: Optional[float], lvl1: Optional[float]) -> Components:
         if lvl1 is not None:
             if lvl0 is not None:
                 if self.include == "lower":
@@ -493,9 +483,7 @@ class LevelRangeFormatterMath(LevelRangeFormatter):
             include=include,
         )
 
-    def _format_components(
-        self, lvl0: Optional[float], lvl1: Optional[float]
-    ) -> Components:
+    def _format_components(self, lvl0: Optional[float], lvl1: Optional[float]) -> Components:
         return Components.create(
             "-inf" if lvl0 is None else f"[{self._format_level(lvl0)}",
             ",",
@@ -727,7 +715,5 @@ def format_ens_file_path(in_file_path, ens_member_ids: Optional[Sequence[int]]) 
     match = re.match(pattern, in_file_path)
     if not match:
         raise Exception(f"file path did not match '{pattern}': {in_file_path}")
-    s_ids = format_numbers_range(
-        sorted(ens_member_ids), fmt=match.group("fmt"), join_range="..", join_others=","
-    )
+    s_ids = format_numbers_range(sorted(ens_member_ids), fmt=match.group("fmt"), join_range="..", join_others=",")
     return f"{match.group('start')}{{{s_ids}}}{match.group('end')}"

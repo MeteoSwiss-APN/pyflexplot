@@ -1,4 +1,5 @@
 """Dataclasses utilities."""
+
 from __future__ import annotations
 
 # Standard library
@@ -41,8 +42,7 @@ def asdict(obj: Any, *, shallow: bool = False) -> dict[str, Any]:
         if "can not be copied" not in str(e):
             raise e
         raise TypeError(
-            f"asdict with depcopy of {type(obj).__name__} instance failed"
-            "; consider passing shallow=True"
+            f"asdict with depcopy of {type(obj).__name__} instance failed; consider passing shallow=True"
         ) from e
 
 
@@ -64,9 +64,7 @@ def get_dataclass_fields(obj: DataclassT) -> list[str]:
     return getattr(obj, "__dataclass_fields__")
 
 
-def dataclass_merge(
-    objs: Sequence[DataclassT], reduce_equal: bool = False
-) -> DataclassT:
+def dataclass_merge(objs: Sequence[DataclassT], reduce_equal: bool = False) -> DataclassT:
     """Merge multiple dataclass objects by merging their values into tuples."""
     obj0 = objs[0]
     cls = type(obj0)
@@ -79,9 +77,7 @@ def dataclass_merge(
     kwargs: dict[str, Any] = {}
     for param in get_dataclass_fields(cls):
         if dc.is_dataclass(type(getattr(obj0, param))):
-            kwargs[param] = dataclass_merge(
-                [getattr(obj, param) for obj in objs], reduce_equal=reduce_equal
-            )
+            kwargs[param] = dataclass_merge([getattr(obj, param) for obj in objs], reduce_equal=reduce_equal)
         else:
             values = tuple(getattr(obj, param) for obj in objs)
             if reduce_equal and all(value == values[0] for value in values[1:]):
@@ -219,9 +215,7 @@ def cast_value(
 
     def error(value: Any, type_: str, msg: str = "") -> Exception:
         msg = f": {msg}" if msg else ""
-        return IncompatibleTypesError(
-            f"type '{type(value).__name__}' incompatible with '{type_}'{msg}"
-        )
+        return IncompatibleTypesError(f"type '{type(value).__name__}' incompatible with '{type_}'{msg}")
 
     def has_same_type(value: Any, type_: str) -> bool:
         """Check whether the type of a value matches the type string."""
@@ -262,10 +256,7 @@ def cast_value(
                 if cls is not None:
                     value = cls(value)
             else:
-                msg = (
-                    "auto-wrap strings with auto_wrap=True"
-                    " or unpack them with unpack_str=True"
-                )
+                msg = "auto-wrap strings with auto_wrap=True or unpack them with unpack_str=True"
                 raise error(value, type_, msg)
         else:
             if auto_wrap:
@@ -366,14 +357,11 @@ def cast_value(
             return prepare_wrapped_value(value, type_name)
         if len(inner_types) == 1:
             inner_type = inner_types[0]
-            inner_values = [
-                cast_value(inner_type, inner_value, **kwargs) for inner_value in value
-            ]
+            inner_values = [cast_value(inner_type, inner_value, **kwargs) for inner_value in value]
             return tuple(inner_values)
         elif len(inner_types) > 1:
             inner_values = [
-                cast_value(inner_type, inner_value, **kwargs)
-                for inner_type, inner_value in zip(inner_types, value)
+                cast_value(inner_type, inner_value, **kwargs) for inner_type, inner_value in zip(inner_types, value)
             ]
             return tuple(inner_values)
 
@@ -388,12 +376,8 @@ def cast_value(
         if len(inner_types) == 0:
             return prepare_wrapped_value(value, type_name)
         inner_type = inner_types[0]
-        cls: Callable[[Iterable], Sequence] = (
-            list if isinstance(value, str) else type(value)
-        )
-        return cls(
-            [cast_value(inner_type, inner_value, **kwargs) for inner_value in value]
-        )
+        cls: Callable[[Iterable], Sequence] = list if isinstance(value, str) else type(value)
+        return cls([cast_value(inner_type, inner_value, **kwargs) for inner_value in value])
 
     elif type_name == type(value).__name__:
         return value

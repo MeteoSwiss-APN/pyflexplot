@@ -1,4 +1,5 @@
 """Represent a string as a Python variable name."""
+
 # Standard library
 import re
 from typing import Any
@@ -49,9 +50,7 @@ class VariableName:
         """
         self._s = self.format(**kwargs)
 
-    def format(
-        self, *, lower: bool = False, c_filter: Optional[Callable[[str], str]] = None
-    ) -> str:
+    def format(self, *, lower: bool = False, c_filter: Optional[Callable[[str], str]] = None) -> str:
         """Format to a valid variable name, leaving the instance as is.
 
         Args:
@@ -73,9 +72,7 @@ class VariableName:
                 var += c
             self.check_valid(var)
         except (InvalidVariableNameError, InvalidVariableNameCharFilterError) as e:
-            raise e if not c_filter else ValueError(
-                f"invalid character filter {c_filter}: {e}"
-            ) from e
+            raise e if not c_filter else ValueError(f"invalid character filter {c_filter}: {e}") from e
         if lower:
             var = var.lower()
         return var
@@ -83,21 +80,15 @@ class VariableName:
     def _filter_c(self, c: str, c_filter: Optional[Callable[[str], str]] = None) -> str:
         """Filter an invalid variable name character."""
         if len(c) != 1:
-            raise ValueError(
-                f"ch has invalid value '{c}': expected single character, got {len(c)}"
-            )
+            raise ValueError(f"ch has invalid value '{c}': expected single character, got {len(c)}")
         if c_filter is None:
             c_filter = self._default_c_filter
         try:
             c = c_filter(c)
         except Exception as e:
-            raise InvalidVariableNameCharFilterError(
-                f"raises {type(e).__name__}('{str(e)}') for '{c}'"
-            ) from e
+            raise InvalidVariableNameCharFilterError(f"raises {type(e).__name__}('{str(e)}') for '{c}'") from e
         if not isinstance(c, str):
-            raise InvalidVariableNameCharFilterError(
-                f"returns a {type(c).__name__}, not a str"
-            )
+            raise InvalidVariableNameCharFilterError(f"returns a {type(c).__name__}, not a str")
         return c
 
     def __str__(self) -> str:
@@ -120,7 +111,5 @@ class VariableName:
     def _default_c_filter(ch: str):
         """Replace an invalid variable name character by an underscore ('_')."""
         if len(ch) != 1:
-            raise ValueError(
-                f"ch has invalid value '{ch}': expected single character, got {len(ch)}"
-            )
+            raise ValueError(f"ch has invalid value '{ch}': expected single character, got {len(ch)}")
         return "_"

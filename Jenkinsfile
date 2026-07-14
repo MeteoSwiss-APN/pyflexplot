@@ -3,7 +3,7 @@ class Globals {
     static boolean qualityGateAbortPipeline = false
 
     // set to false to disable the formatting quality gate
-    static boolean formattingQualityGateEnabled = false
+    static boolean formattingQualityGateEnabled = true
 
     // Threshold for mypy issues before failing the build
     static int mypyIssueThreshold = 10
@@ -127,6 +127,15 @@ pipeline {
             steps {
                 sh """
                     mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} build.artifacts
+                """
+            }
+        }
+
+        stage('Format check') {
+            when { expression { Globals.formattingQualityGateEnabled } }
+            steps {
+                sh """
+                    mchbuild -s semanticVersion=${Globals.semanticVersion} -s containerImageName=${Globals.containerImageName} verify.format
                 """
             }
         }

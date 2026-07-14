@@ -1,4 +1,5 @@
 """Tests for function ``srutils.datetime.datetime_range``."""
+
 # Standard library
 import dataclasses as dc
 import datetime as dt

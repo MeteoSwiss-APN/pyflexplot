@@ -1,4 +1,5 @@
 """Test the elements of complete plots based on ensemble COSMO-2 data."""
+
 # Local
 from .shared import _TestBase
 from .shared import _TestCreatePlot  # noqa:F401

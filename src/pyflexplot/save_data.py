@@ -1,4 +1,5 @@
 """Contains the implementation for data saving strategies."""
+
 # Standard library
 import os
 import zipfile
@@ -56,9 +57,7 @@ class GeneralDataSaver:
                 plot.config,
             )
 
-    def write_standalone_release_info(
-        self, plot_path: str, plot_config: BoxedPlotConfig
-    ) -> str:
+    def write_standalone_release_info(self, plot_path: str, plot_config: BoxedPlotConfig) -> str:
         """Write standalone release information for the plot."""
         path = Path(plot_path).with_suffix(f".release_info{Path(plot_path).suffix}")
 
@@ -141,30 +140,22 @@ class ShapeFileSaver:
                 field_name = str(field.mdata.species.name)
                 shapefile_writer.field(field_name, "F", 8, 15)
                 if len(fld) == 0:
-                    shapefile_writer.point(
-                        field.mdata.release.lon, field.mdata.release.lat
-                    )
+                    shapefile_writer.point(field.mdata.release.lon, field.mdata.release.lat)
                     shapefile_writer.record(field_name=[-100.0])
                     lat_values.extend([field.mdata.release.lat])
                     lon_values.extend([field.mdata.release.lon])
                     continue
 
-                coordinates = np.array(
-                    [[lon, lat] for lat in field.lat for lon in field.lon]
-                )[relevant_indices]
+                coordinates = np.array([[lon, lat] for lat in field.lat for lon in field.lon])[relevant_indices]
 
-                true_lat = latrot2lat(
-                    coordinates[:, 1], coordinates[:, 0], grid_north_pole_lat
-                )
+                true_lat = latrot2lat(coordinates[:, 1], coordinates[:, 0], grid_north_pole_lat)
                 true_lon = lonrot2lon(
                     coordinates[:, 1],
                     coordinates[:, 0],
                     grid_north_pole_lat,
                     grid_north_pole_lon,
                 )
-                coordinates = np.array(
-                    [[lon, lat] for lon, lat in zip(true_lon, true_lat)]
-                )
+                coordinates = np.array([[lon, lat] for lon, lat in zip(true_lon, true_lat)])
                 lat_values.extend([np.max(true_lat), np.min(true_lat)])
                 lon_values.extend([np.max(true_lon), np.min(true_lon)])
                 for coord, conc in zip(coordinates, fld):
@@ -183,9 +174,7 @@ class ShapeFileSaver:
             )
             self._move_shape_file_to_zip(base_file_dir, zip_file)
             # Some GIS Software require information about the projection
-            self._write_projection_file_to_zip(
-                os.path.basename(base_file_dir), zip_file
-            )
+            self._write_projection_file_to_zip(os.path.basename(base_file_dir), zip_file)
             zip_file.close()
 
     def _move_shape_file_to_zip(self, base_file_dir: str, zip_file: zipfile.ZipFile):
@@ -201,15 +190,11 @@ class ShapeFileSaver:
             file_in_zip.close()
             os.remove(file_to_copy)
 
-    def _write_metadata_file(
-        self, filename: str, zip_file: zipfile.ZipFile, metadata: dict
-    ):
+    def _write_metadata_file(self, filename: str, zip_file: zipfile.ZipFile, metadata: dict):
         """Write the metadata of the shapefile as an XML content (.shp.xml)."""
         title_string, *_ = metadata["title"].values()
         title_latex_string = "<BR>".join(list(metadata["title"].values()))
-        release_latex_string = metadata["release_info"]["lines_str"].replace(
-            "\n", "<BR>"
-        )
+        release_latex_string = metadata["release_info"]["lines_str"].replace("\n", "<BR>")
         model_info_string = "<BR>".join(list(metadata["bottom"].values()))
 
         for key, value in ShapeFileSaver.replacements.items():

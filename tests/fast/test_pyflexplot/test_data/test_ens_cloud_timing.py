@@ -1,4 +1,5 @@
 """Tests for class ``pyflexplot.data.EnsembleCloud``."""
+
 # flake8: noqa  # complains about code in "fmt: off/on" blocks
 # Standard library
 import dataclasses as dc
