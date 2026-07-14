@@ -1,14 +1,18 @@
 FROM dockerhub.apps.cp.meteoswiss.ch/mch/python-3.13:latest-poetry2 AS builder
-ARG VERSION
+ARG VERSION=0.0.0
+
 LABEL ch.meteoswiss.project=pyflexplot-${VERSION}
 
 COPY poetry.lock pyproject.toml README.md /src/app-root/
 COPY src/ /src/app-root/src/
 
 WORKDIR /src/app-root
-# we need to build the wheel in order to install the binary python  \
-# package that uses click to parse the command arguments
-RUN poetry build --format wheel \
+
+# mchbuild's semantic version uses a SemVer '-' pre-release separator (e.g. 9.9.9-main), which is not valid PEP 440.
+# Convert it to a PEP 440 local version label instead and set it for the poetry build command
+RUN poetry version "$(echo ${VERSION} | sed -E 's/-/+/; s/-/./g')" \
+    # The wheel is required to install the python package that uses click to parse the command arguments
+    && poetry build --format wheel \
     && poetry export -o requirements.txt \
     && poetry export --with dev -o requirements_dev.txt
 

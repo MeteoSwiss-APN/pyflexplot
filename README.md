@@ -66,6 +66,7 @@ poetry config --local virtualenvs.create false
 Alternative build with mchbuild see further below.
 
 ```bash
+poetry version $(git describe --tags --always | sed 's/-\([0-9]*\)-/.dev\1+g/')
 poetry install
 ```
 
