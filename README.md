@@ -51,8 +51,9 @@ cd pyflexplot
 Create a Conda environment with only the desired Python version and Poetry and activate it
 
 ```bash
-conda create -n pyflexplot python=3.12
+conda create --name=pyflexplot python=$(cat .python-version)
 conda activate pyflexplot
+conda install poetry
 ```
 
 Configure Poetry to not create a new virtual environment. If it detects an already enabled
@@ -66,6 +67,7 @@ poetry config --local virtualenvs.create false
 Alternative build with mchbuild see further below.
 
 ```bash
+poetry version $(git describe --tags --always | sed 's/-\([0-9]*\)-/.dev\1+g/')
 poetry install
 ```
 
@@ -100,7 +102,7 @@ poetry run mypy
 The primary command for pyflexplot follows this structure:
 
 ```bash
-pyflexplot [OPTIONS] CONFIG_FILE_DIRECTORY
+pyflexplot [OPTIONS] CONFIG_FILE...
 ```
 
 To see the available options, run:
@@ -152,8 +154,8 @@ corresponding preset from the table below and define the `preset` variable accor
 |-----------------------|--------------|------------------------------------|
 | FLEXPART-ICON-CH1-CTRL| deterministic| `preset=opr/icon-ch1-ctrl/all_pdf` |
 | FLEXPART-ICON-CH2-EPS | ensemble     | `preset=opr/icon-ch2-eps/all_pdf`  |
-| FLEXPART-IFS          | global       | `preset=opr/ifs-hres/all_pdf`      |
-| FLEXPART-IFS          | Europe       | `preset=opr/ifs-hres-eu/all_pdf`   |
+| FLEXPART-IFS          | Global det.  | `preset=opr/ifs-hres/all_pdf`      |
+| FLEXPART-IFS          | Europe det.  | `preset=opr/ifs-hres-eu/all_pdf`   |
 
 Legacy presets for former COSMO model:
 
@@ -200,19 +202,28 @@ After selecting a preset, you may run pyflexplot interactively for the default t
 pyflexplot --preset "$preset" --merge-pdfs --dest=$dest
 ```
 
-On the production server at the CSCS, it is however highly recommended to create and run a batch job using the `batchPP` utility:
+To use any FLEXPART output file in NetCDF format as input for pyflexplot,
+it must be specified with the help of the `--setup` option.
+Define the input file
+
+```bash
+infile=/path/to/your/flexpart_output.nc  # replace the r.h.s. this with your own file path
+```
+
+an run pyflexplot as follows:
+
+```bash
+pyflexplot --preset "$preset" --merge-pdfs --dest=$dest --setup infile $infile
+```
+
+On the production server at the CSCS, it is highly recommended to run this command
+as batch job using the `batchPP` utility:
 
 ```bash
 batchPP -t 2 -T 10 -n pfp_$nwp -- \
   $CONDA_PREFIX/bin/pyflexplot --preset "$preset" \
-  --merge-pdfs --dest=$dest --num-procs=\$SLURM_CPUS_PER_TASK
-```
-
-To use your own or an operational FLEXPART output file in NetCDF format as input for pyflexplot,
-modify the settings of the preset with the help of the `--setup` option as follows:
-
-```bash
-pyflexplot --preset "$preset" --merge-pdfs --dest=$dest --setup infile <netcdf-file>
+  --merge-pdfs --dest=$dest  --setup infile $infile \
+  --num-procs=\$SLURM_CPUS_PER_TASK
 ```
 
 To use a FLEXPART ensemble as input, the placeholder `{ens_member:03}` may be used within the path of *\<netcdf-file\>*.

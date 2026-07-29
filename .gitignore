@@ -111,6 +111,7 @@ venv_*/
 
 # Local poetry config
 poetry.toml
+.poetry/
 
 # Conda environment for local CSCS development
 .conda-env

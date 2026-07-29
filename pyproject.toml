@@ -111,7 +111,6 @@ ignore_missing_imports = true
 
 [tool.poetry]
 requires-poetry = ">=2.0,<3.0"
-version = "0.0.0"  # DO NOT SET. The version of the package is always set by the CI/CD pipeline using mchbuild tasks.
 packages = [
   { include = "pyflexplot", from = "src" },
   { include = "srtools", from = "src" },
@@ -125,6 +124,7 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.13",
 ]
+version = "0.0.0"  # DO NOT SET. The version of the package is always set by the CI/CD pipeline using mchbuild tasks.
 
 [[tool.poetry.source]]
 name = "pypi-meteoswiss"
@@ -159,11 +159,6 @@ max-line-length = 120
 # Minimum number of public methods for a class (see R0903).
 min-public-methods = 0
 
-[tool.ruff]
-line-length = 120
-# Exclude the reference files from formatting and checking
-extend-exclude = ["tests/**/ref_*.py"]
-
 [tool.pytest.ini_options]
 addopts = [
   "-s",
@@ -173,3 +168,8 @@ addopts = [
 ]
 pythonpath = "src"
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+# Exclude the reference files from formatting and checking
+extend-exclude = ["tests/**/ref_*.py"]
