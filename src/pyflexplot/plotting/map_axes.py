@@ -199,6 +199,10 @@ class MapAxes:
             self.rect,
             self.domain,
         )
+        # Flatten the field and geography layers (below "cities") into a
+        # single raster image on save, which keeps grid lines, markers and
+        # city labels crisp vector graphics while shrinking PDF file size.
+        self.ax.set_rasterization_zorder(self.zorder["cities"])
 
         self.trans = CoordinateTransformer(
             trans_axes=self.ax.transAxes,
@@ -310,6 +314,7 @@ class MapAxes:
             "frames",
             "marker",
             "grid",
+            "cities",
             "geo_upper",
             "geo_lower",
             "fld",
@@ -350,14 +355,14 @@ class MapAxes:
         """Add geographic elements: coasts, countries, colors, etc."""
         self.ax.coastlines(resolution=self.config.geo_res)
         self.ax.patch.set_facecolor(self._water_color)
-        self._ax_add_countries("lowest", rasterized=True)
-        self._ax_add_lakes("lowest", rasterized=True)
-        self._ax_add_rivers("lowest", rasterized=True)
-        self._ax_add_countries("geo_lower", rasterized=True)
-        self._ax_add_countries("geo_upper", rasterized=True)
-        self._ax_add_cities("geo_upper", rasterized=False)
+        self._ax_add_countries("lowest")
+        self._ax_add_lakes("lowest")
+        self._ax_add_rivers("lowest")
+        self._ax_add_countries("geo_lower")
+        self._ax_add_countries("geo_upper")
+        self._ax_add_cities("cities")
 
-    def _ax_add_countries(self, zorder_key: str, rasterized: bool = False) -> None:
+    def _ax_add_countries(self, zorder_key: str) -> None:
         edgecolor = "white" if zorder_key == "geo_lower" else "black"
         facecolor = "white" if zorder_key == "lowest" else "none"
         linewidth = 1 / 3 if zorder_key == "geo_upper" else 1
@@ -369,13 +374,11 @@ class MapAxes:
                 edgecolor=edgecolor,
                 facecolor=facecolor,
                 linewidth=linewidth * self.config.scale_fact,
-                rasterized=rasterized,
             ),
             zorder=self.zorder[zorder_key],
-            rasterized=rasterized,
         )
 
-    def _ax_add_lakes(self, zorder_key: str, rasterized: bool = False) -> None:
+    def _ax_add_lakes(self, zorder_key: str) -> None:
         self.ax.add_feature(
             cartopy.feature.NaturalEarthFeature(
                 category="physical",
@@ -383,10 +386,8 @@ class MapAxes:
                 scale=self.config.geo_res,
                 edgecolor="none",
                 facecolor=self._water_color,
-                rasterized=rasterized,
             ),
             zorder=self.zorder[zorder_key],
-            rasterized=rasterized,
         )
         if self.config.geo_res == "10m":
             self.ax.add_feature(
@@ -396,13 +397,11 @@ class MapAxes:
                     scale=self.config.geo_res,
                     edgecolor="none",
                     facecolor=self._water_color,
-                    rasterized=rasterized,
                 ),
                 zorder=self.zorder[zorder_key],
-                rasterized=rasterized,
             )
 
-    def _ax_add_rivers(self, zorder_key: str, rasterized: bool = False) -> None:
+    def _ax_add_rivers(self, zorder_key: str) -> None:
         linewidth = {"lowest": 1, "geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
         # Note:
         #  - Bug in Cartopy with recent shapefiles triggers errors (NULL geometry)
@@ -416,7 +415,6 @@ class MapAxes:
             edgecolor=self._water_color,
             facecolor=(0, 0, 0, 0),
             linewidth=linewidth,
-            rasterized=rasterized,
         )
         self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
 
@@ -428,7 +426,6 @@ class MapAxes:
                 edgecolor=self._water_color,
                 facecolor=(0, 0, 0, 0),
                 linewidth=linewidth,
-                rasterized=rasterized,
             )
             self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
 

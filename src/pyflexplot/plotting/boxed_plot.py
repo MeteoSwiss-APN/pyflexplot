@@ -311,7 +311,6 @@ def _draw_colors_contours(
     # Replace infs (apparently ignored by contourf)
     arr = np.where(np.isneginf(arr), np.finfo(np.float32).min, arr)
     arr = np.where(np.isposinf(arr), np.finfo(np.float32).max, arr)
-    before = list(ax.ax.collections)
 
     try:
         ax.ax.contourf(
@@ -330,21 +329,6 @@ def _draw_colors_contours(
             # (Easier to catch error than explicitly detect 'empty' array)
             return
         raise e
-
-    new = ax.ax.collections[len(before) :]
-    for coll in new:
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            coll.set_rasterized(True)
-
-        # if this coll doesn't support being rasterized, ignore
-        if any(
-            issubclass(wi.category, UserWarning)
-            and "Rasterization of" in str(wi.message)
-            and "will be ignored" in str(wi.message)
-            for wi in w
-        ):
-            continue
 
 
 def _add_markers(ax: MapAxes, field: Field, markers_config: MarkersConfig) -> None:
