@@ -688,7 +688,7 @@ def create_map_config(
                 config_dct.update(conf_continental_scale)
             else:
                 config_dct.update(conf_global_scale)
-        else:
+        else:   
             config_dct.update(conf_regional_scale)
     else:
         raise NotImplementedError(f"map axes config for model '{model_name}' and domain '{domain_type}'")

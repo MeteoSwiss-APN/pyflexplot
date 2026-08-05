@@ -199,10 +199,13 @@ class MapAxes:
             self.rect,
             self.domain,
         )
-        # Flatten the field and geography layers (below "cities") into a
-        # single raster image on save, which keeps grid lines, markers and
-        # city labels crisp vector graphics while shrinking PDF file size.
-        self.ax.set_rasterization_zorder(self.zorder["cities"])
+        # Flatten the field and geography layers (up to and including
+        # "geo_upper") into a single raster image on save, which keeps grid
+        # lines, markers and city labels crisp vector graphics while
+        # shrinking PDF file size. matplotlib rasterizes artists with
+        # zorder <= this value (inclusive, despite what its docstring says),
+        # so "geo_upper" itself is the correct cutoff to exclude "cities".
+        self.ax.set_rasterization_zorder(self.zorder["geo_upper"])
 
         self.trans = CoordinateTransformer(
             trans_axes=self.ax.transAxes,
@@ -556,6 +559,7 @@ class MapAxes:
                 name,
                 va="center",
                 size=9 * self.config.scale_fact,
+                zorder=self.zorder[zorder_key],
                 rasterized=rasterized,
             )
             # Note: `clip_on=True` doesn't work in cartopy v0.18

@@ -936,7 +936,7 @@ plot_summary = {
                     "s": "Lyon",
                     "xy": [4.828084616879835, 45.7719544229401],
                     "xycoords": "CompositeGenericTransform instance",
-                    "zorder": 3,
+                    "zorder": 5,
                     "xytext": [5, 1],
                     "textcoords": "offset points",
                     "va": "center",
