@@ -20,6 +20,7 @@ import matplotlib as mpl
 import numpy as np
 from cartopy.io.shapereader import Record
 from cartopy.mpl.geoaxes import GeoAxes
+from matplotlib import patheffects
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.text import Text
@@ -358,27 +359,46 @@ class MapAxes:
         """Add geographic elements: coasts, countries, colors, etc."""
         self.ax.coastlines(resolution=self.config.geo_res)
         self.ax.patch.set_facecolor(self._water_color)
-        self._ax_add_countries("lowest")
+        self._ax_add_countries_fill()
         self._ax_add_lakes("lowest")
         self._ax_add_rivers("lowest")
-        self._ax_add_countries("geo_lower")
-        self._ax_add_countries("geo_upper")
+        self._ax_add_countries_border()
         self._ax_add_cities("cities")
 
-    def _ax_add_countries(self, zorder_key: str) -> None:
-        edgecolor = "white" if zorder_key == "geo_lower" else "black"
-        facecolor = "white" if zorder_key == "lowest" else "none"
-        linewidth = 1 / 3 if zorder_key == "geo_upper" else 1
+    def _ax_add_countries_fill(self) -> None:
+        """Paint national land areas white, underneath everything else."""
         self.ax.add_feature(
             cartopy.feature.NaturalEarthFeature(
                 category="cultural",
                 name="admin_0_countries_lakes",
                 scale=self.config.geo_res,
-                edgecolor=edgecolor,
-                facecolor=facecolor,
-                linewidth=linewidth * self.config.scale_fact,
+                edgecolor="none",
+                facecolor="white",
             ),
-            zorder=self.zorder[zorder_key],
+            zorder=self.zorder["lowest"],
+        )
+
+    def _ax_add_countries_border(self) -> None:
+        """Draw country borders as a black line with a white halo.
+
+        The halo is a path effect rather than a separate wider white line
+        underneath, so the border geometry is only drawn once instead of
+        twice.
+
+        """
+        linewidth = (1 / 3) * self.config.scale_fact
+        halo_width = 1 * self.config.scale_fact
+        self.ax.add_feature(
+            cartopy.feature.NaturalEarthFeature(
+                category="cultural",
+                name="admin_0_countries_lakes",
+                scale=self.config.geo_res,
+                edgecolor="black",
+                facecolor="none",
+                linewidth=linewidth,
+                path_effects=[patheffects.withStroke(linewidth=halo_width, foreground="white")],
+            ),
+            zorder=self.zorder["geo_upper"],
         )
 
     def _ax_add_lakes(self, zorder_key: str) -> None:
