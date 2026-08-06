@@ -2,18 +2,23 @@
 
 ## Author
 
-- Stefan Ruedisuehli <Stefan.Ruedisuehli@env.ethz.ch>
+- Stefan Ruedisuehli
 
 ## Contributors
 
-- Victoria Cherkas <Victoria.Cherkas@meteoswiss.ch>
+In alphabetical order:
+
+- Nina Burgdorfer
+- Victoria Cherkas
+- Marco Cicolini
 - Paulina Grochal
-- Pirmin Kaufmann <Pirmin.Kaufmann@meteoswiss.ch>
+- Pirmin Kaufmann
 - Marco Ketzel
 - Mathis Kretz
-- Néstor Tarin Burriel <Nestor.TarinBurriel@meteoswiss.ch>
+- Peider Könz
+- Néstor Tarin Burriel
 - Tobias Wicky
 
 ## Maintainer
 
-- Pirmin Kaufmann <Pirmin.Kaufmann@meteoswiss.ch>
+- Pirmin Kaufmann, [MeteoSwiss](https://www.meteoswiss.admin.ch)
