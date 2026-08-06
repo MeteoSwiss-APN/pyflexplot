@@ -256,8 +256,8 @@ batchPP -t 1 -T 10 -n pfp-$nwp -- \
     --num-procs=\$SLURM_CPUS_PER_TASK
 ```
 
-The following expamles use FLEXPART output generated with the `test-fp` script
-in the `test_meteoswiss` subdirectory of the [flexpart](https://github.com/MeteoSwiss/flexpart) repository of MeteoSwiss. Define `FP_JOBS`
+The following examples use FLEXPART output generated with the `test-fp` script
+in the [flexpart-test](https://github.com/MeteoSwiss/flexpart-test) repository of MeteoSwiss. Define `FP_JOBS`
 as path to the FLEXPART output files that are to be used as input for pyflexplot, e.g.
 
 ```bash
