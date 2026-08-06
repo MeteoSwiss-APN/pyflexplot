@@ -85,16 +85,22 @@ If no errors occur, the tests save plots in their respective folders in the
 
 #### Run quality assurance tools
 
-Run pylint to check code style of Python files (if any):
+Run `pylint` to check code (suggestions are not being followed, Jenkins uses SonarQube):
 
 ```bash
 poetry run pylint src
 ```
 
-Run mypy to check typing:
+Run `mypy` to check typing:
 
 ```bash
 poetry run mypy
+```
+
+Run `ruff` to check formatting:
+
+```bash
+poetry run ruff format
 ```
 
 ## Run pyflexplot
@@ -186,8 +192,6 @@ preset='opr/ifs-hres-eu/all_*'
 preset='opr/ifs-hres/all_*'
 ```
 
-Note that this does not work for `opr/icon-ch2-eps/all_*`.
-
 Define an output directory and create it, if it does not exist, e.g.
 
 ```bash
@@ -252,8 +256,8 @@ batchPP -t 1 -T 10 -n pfp-$nwp -- \
     --num-procs=\$SLURM_CPUS_PER_TASK
 ```
 
-The following expamles use FLEXPART output generated with the `test-fp` script
-in the `test_meteoswiss` subdirectory of the [flexpart](https://github.com/MeteoSwiss/flexpart) repository of MeteoSwiss. Define `FP_JOBS`
+The following examples use FLEXPART output generated with the `test-fp` script
+in the [flexpart-test](https://github.com/MeteoSwiss/flexpart-test) repository of MeteoSwiss. Define `FP_JOBS`
 as path to the FLEXPART output files that are to be used as input for pyflexplot, e.g.
 
 ```bash
