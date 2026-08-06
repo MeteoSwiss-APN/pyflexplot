@@ -186,8 +186,6 @@ preset='opr/ifs-hres-eu/all_*'
 preset='opr/ifs-hres/all_*'
 ```
 
-Note that this does not work for `opr/icon-ch2-eps/all_*`.
-
 Define an output directory and create it, if it does not exist, e.g.
 
 ```bash
