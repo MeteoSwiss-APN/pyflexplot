@@ -85,16 +85,22 @@ If no errors occur, the tests save plots in their respective folders in the
 
 #### Run quality assurance tools
 
-Run pylint to check code style of Python files (if any):
+Run `pylint` to check code (suggestions are not being followed, Jenkins uses SonarQube):
 
 ```bash
 poetry run pylint src
 ```
 
-Run mypy to check typing:
+Run `mypy` to check typing:
 
 ```bash
 poetry run mypy
+```
+
+Run `ruff` to check formatting:
+
+```bash
+poetry run ruff format
 ```
 
 ## Run pyflexplot
