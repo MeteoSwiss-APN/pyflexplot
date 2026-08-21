@@ -154,9 +154,7 @@ def test_upload_outpaths_to_s3(s3):
         for path in test_files:
             # check the files were uploaded as expected: the key is the prefix plus the file name,
             # nothing derived from the model - the caller owns the layout.
-            s3_object = s3.get_object(
-                Bucket=bucket.name, Key=f"scheduled-flexpart-COSMO-1E-20260506-0000/{path.name}"
-            )
+            s3_object = s3.get_object(Bucket=bucket.name, Key=f"scheduled-flexpart-COSMO-1E-20260506-0000/{path.name}")
             actual = s3_object["Body"].read()
             with open(path, mode="rb") as f:
                 assert actual == f.read()
