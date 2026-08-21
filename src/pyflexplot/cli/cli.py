@@ -69,9 +69,10 @@ click.option = lambda *args, **kwargs: _click_option(*args, **{**kwargs, "show_d
     "--dest",
     "dest_dir",
     help=(
-        "Directory where the plots are saved to. Defaults to the current directory."
-        " Note that this option is incompatible with absolute paths specified in the"
-        " setup parameter 'outfile'."
+        "Where the plots are saved to. Either a local directory (defaults to the current"
+        " directory), or an S3 URI of the form s3://BUCKET/KEY_PREFIX - the key prefix is"
+        " required and every product is written directly beneath it. Note that this option is"
+        " incompatible with absolute paths specified in the setup parameter 'outfile'."
     ),
     metavar="DEST_DIR",
     type=click.Path(exists=False),

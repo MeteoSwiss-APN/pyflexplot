@@ -95,20 +95,28 @@ def download_key_from_bucket(
 def upload_outpaths_to_s3(
     upload_outpaths: list[str],
     model: ModelSetup,
+    key_prefix: str,
     bucket: Bucket = CONFIG.main.aws.s3.output,
 ) -> None:
-    """Upload a list of local file paths to an S3 bucket adding the product_type from ModelSetup to the metadata."""
+    """Upload a list of local file paths to an S3 bucket adding the product_type from ModelSetup to the metadata.
+
+    Args:
+        key_prefix: Prefix every object key is written under, taken verbatim from the key part of the
+            ``--dest`` S3 URI. The caller owns the layout - this function only appends the file name -
+            so an empty prefix would drop every product at the bucket root, which is why it is
+            rejected here rather than defaulted.
+    """
 
     if not model:
-        raise ValueError(
-            "Model object must be provided to upload to S3, \
-                         model name and base time are used in the object key."
-        )
+        raise ValueError("Model object must be provided to upload to S3, the product type is read from it.")
+
+    if not key_prefix:
+        raise ValueError("A key prefix must be provided to upload to S3, it is the object key's parent.")
     try:
         client = _create_s3_client(bucket)
 
         for outpath in upload_outpaths:
-            key = f"{model.name}/{model.base_time}/{Path(outpath).name}"
+            key = f"{key_prefix}/{Path(outpath).name}"
             try:
                 _LOGGER.info(
                     "Uploading file: %s \

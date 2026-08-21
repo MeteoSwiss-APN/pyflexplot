@@ -69,10 +69,19 @@ def main(
     if dest_dir is None:
         dest_dir = "."
     if dest_dir.startswith("s3://"):
-        s3_dest = dest_dir
+        # The key part of the URI is the prefix every product is written under; the plots are
+        # produced locally first and uploaded from there at the end of this function.
+        s3_bucket, s3_key_prefix, _ = split_s3_uri(dest_dir)
+        if not s3_key_prefix:
+            raise click.UsageError(
+                "An S3 destination must include a key prefix, e.g."
+                " --dest=s3://my-bucket/my-prefix. Without one every product would be written to"
+                " the bucket root."
+            )
         dest_dir = CONFIG.main.local.paths.output
     else:
-        s3_dest = None
+        s3_bucket = None
+        s3_key_prefix = ""
     if tmp_dir is None:
         if auto_tmp:
             tmp_dir = f"tmp-pyflexplot-{int(time.time())}"
@@ -154,13 +163,12 @@ def main(
 
     items_in_dest = [str(file) for file in Path(dest_dir).iterdir() if file.is_file()]
 
-    if s3_dest:
-        bucket_name, _, _ = split_s3_uri(s3_dest)
+    if s3_bucket:
         # Take the bucket region and retries from CONFIG
         # but override the name from CLI input --dest.
         bucket = CONFIG.main.aws.s3.output
-        bucket.name = bucket_name
-        upload_outpaths_to_s3(items_in_dest, setup_groups[0]._setups[0].model, bucket=bucket)
+        bucket.name = s3_bucket
+        upload_outpaths_to_s3(items_in_dest, setup_groups[0]._setups[0].model, s3_key_prefix, bucket=bucket)
 
     # Remove temporary directory (if given) unless it already existed before
     remove_tmpdir = tmp_dir and not dry_run and not os.listdir(tmp_dir)

@@ -146,14 +146,17 @@ def test_upload_outpaths_to_s3(s3):
                 f.write(f"Dummy data for test file {i}\n")
 
         # when
-        upload_outpaths_to_s3(test_files, model, bucket=bucket)
+        upload_outpaths_to_s3(test_files, model, "scheduled-flexpart-COSMO-1E-20260506-0000", bucket=bucket)
 
         # then
         assert "Contents" in s3.list_objects(Bucket=bucket.name)
 
         for path in test_files:
-            # check the files were uploaded as expected
-            s3_object = s3.get_object(Bucket=bucket.name, Key=f"{model.name}/{model.base_time}/{path.name}")
+            # check the files were uploaded as expected: the key is the prefix plus the file name,
+            # nothing derived from the model - the caller owns the layout.
+            s3_object = s3.get_object(
+                Bucket=bucket.name, Key=f"scheduled-flexpart-COSMO-1E-20260506-0000/{path.name}"
+            )
             actual = s3_object["Body"].read()
             with open(path, mode="rb") as f:
                 assert actual == f.read()
@@ -168,6 +171,15 @@ def test_upload_outpaths_to_s3(s3):
                 os.remove(file)
             except OSError as e:
                 print(f"Error deleting file {file}: {e}")
+
+
+def test_upload_outpaths_to_s3_without_key_prefix():
+    """An empty prefix would drop every product at the bucket root, so it is rejected."""
+
+    model = ModelSetup(name="COSMO-1E", base_time="1234", product_type="my-product-type")
+
+    with pytest.raises(ValueError, match="key prefix"):
+        upload_outpaths_to_s3([Path("irrelevant.txt")], model, "")
 
 
 def _add_files_to_bucket(bucket: Bucket, files: list[Path], s3) -> None:
