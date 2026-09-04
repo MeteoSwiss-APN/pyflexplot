@@ -37,7 +37,10 @@ FROM base AS runner
 ARG VERSION
 LABEL ch.meteoswiss.project=pyflexplot-${VERSION}
 
-RUN mkdir /src/app-root/data /src/app-root/output
+RUN mkdir /src/app-root/data /src/app-root/output \
+    && chown 1001:0 /src/app-root/data /src/app-root/output
+
+USER 1001
 
 ENTRYPOINT ["pyflexplot"]
 
