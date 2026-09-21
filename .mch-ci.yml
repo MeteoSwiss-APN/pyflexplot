@@ -17,7 +17,7 @@ default:
                 - --build-arg
                 - BUILD_ID=${var.buildId}
           - containerBuildImage:
-              imageName: ${var.containerImageName}-aws
+              imageName: ${var.containerImageName}
               imageTag: ${var.semanticVersion}
               target: runner
               extraArgs: *buildArtifactExtraArgs
@@ -58,7 +58,7 @@ default:
   - publish:
       - artifacts:
           - containerPublishImage:
-              imageName: ${var.containerImageName}-aws
+              imageName: ${var.containerImageName}
               imageTag: ${var.semanticVersion}
               removeLocalImage: false
   - clean:
@@ -66,7 +66,7 @@ default:
           cleanupImages:
               targets:
                   - image://${var.containerImageName}-tester:${var.semanticVersion}
-                  - image://${var.containerImageName}-aws:${var.semanticVersion}
+                  - image://${var.containerImageName}:${var.semanticVersion}
 
 variables:
   solution: dispersionmodelling
