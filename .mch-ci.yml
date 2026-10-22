@@ -67,6 +67,7 @@ default:
               targets:
                   - image://${var.containerImageName}-tester:${var.semanticVersion}
                   - image://${var.containerImageName}:${var.semanticVersion}
+                  - label://ch.meteoswiss.project=${var.project}-${var.semanticVersion}
 
 variables:
   solution: dispersionmodelling
