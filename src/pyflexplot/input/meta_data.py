@@ -446,7 +446,9 @@ class SimulationMetaData(_MetaDataBase):
 
     def get_duration(self, unit=None):
         if unit is None:
-            return self.end - self.start
+            # ``end`` precedes ``start`` in a backward simulation, but the
+            # duration of the simulated period is a length, not a signed offset
+            return abs(self.end - self.start)
         elif unit in ["h", "hours"]:
             return self.get_duration().total_seconds() / 3600
         else:
@@ -463,12 +465,23 @@ class SimulationMetaData(_MetaDataBase):
         integrate: bool,
         add_ts0: bool,
     ) -> "SimulationMetaData":
-        # Start and end timesteps of simulation
-        start = init_datetime(str(getncattr(fi, "ibdate")) + str(getncattr(fi, "ibtime")))
-        end = init_datetime(str(getncattr(fi, "iedate")) + str(getncattr(fi, "ietime")))
-        step = int(getncattr(fi, "loutstep"))
+        # Bounds of the simulated period, in chronological order
+        first = init_datetime(str(getncattr(fi, "ibdate")) + str(getncattr(fi, "ibtime")))
+        last = init_datetime(str(getncattr(fi, "iedate")) + str(getncattr(fi, "ietime")))
+        step_sec = int(getncattr(fi, "loutstep"))
 
-        # Formatted time steps
+        # Start and end of the simulation along its own time line: a backward
+        # simulation starts at the later of the two dates and ends at the
+        # earlier one. Relative offsets stored in the file (such as the release
+        # times RELSTART and RELEND) are counted from ``start``.
+        start, end, step = derive_time_step_range(
+            start=first,
+            end=last,
+            step=step_sec,
+            direction=read_simulation_direction(fi),
+        )
+
+        # Formatted time steps, ordered like the time dimension of the file
         time_steps: List[int] = datetime_range(
             start=start,
             end=end,
@@ -879,6 +892,52 @@ def read_dimensions(file_handle: nc4.Dataset, add_ts0: bool = True) -> Dict[str,
     return dimensions
 
 
+def read_simulation_direction(file_handle: nc4.Dataset) -> int:
+    """Read the direction in which the simulation ran.
+
+    Returns 1 for a forward and -1 for a backward (receptor-oriented)
+    simulation. FLEXPART stores the direction in the global attribute
+    ``ldirect``; should it be missing, fall back to the sign of ``loutstep``,
+    which carries the same information.
+
+    Args:
+        file_handle: Open NetCDF file handle.
+
+    """
+    try:
+        ldirect = int(getncattr(file_handle, "ldirect"))
+    except AttributeError:
+        ldirect = int(getncattr(file_handle, "loutstep"))
+    return -1 if ldirect < 0 else 1
+
+
+def derive_time_step_range(
+    start: Any, end: Any, step: int, direction: int
+) -> Tuple[Any, Any, int]:
+    """Orient a simulation's time axis along its direction of integration.
+
+    In a forward simulation the output steps run from ``ibdate``/``ibtime`` to
+    ``iedate``/``ietime``. In a backward simulation they run the other way,
+    starting at ``iedate``/``ietime`` -- which is where the backward
+    integration begins -- and stepping back towards ``ibdate``/``ibtime``.
+    Either way the resulting range is ordered like the time dimension of the
+    file.
+
+    Args:
+        start: Begin of the simulated period (``ibdate`` + ``ibtime``).
+
+        end: End of the simulated period (``iedate`` + ``ietime``).
+
+        step: Output time step (``loutstep``) in seconds.
+
+        direction: 1 for a forward, -1 for a backward simulation.
+
+    """
+    if direction < 0:
+        return end, start, -abs(step)
+    return start, end, abs(step)
+
+
 def read_time_steps(file_handle: nc4.Dataset) -> List[str]:
     """Derive the formatted time steps from the NetCDF global attributes.
 
@@ -902,10 +961,16 @@ def read_time_steps(file_handle: nc4.Dataset) -> List[str]:
             ncattrs[attr] = file_handle.getncattr(attr)
         except AttributeError:
             continue
-    return datetime_range(
+    start, end, step = derive_time_step_range(
         start=ncattrs["ibdate"] + ncattrs["ibtime"],
         end=ncattrs["iedate"] + ncattrs["ietime"],
-        step=ncattrs["loutstep"],
+        step=int(ncattrs["loutstep"]),
+        direction=read_simulation_direction(file_handle),
+    )
+    return datetime_range(
+        start=start,
+        end=end,
+        step=step,
         convert=str,
         fmt="%Y%m%d%H%M",
     )

@@ -1555,8 +1555,12 @@ def format_integr_period(
         raise NotImplementedError(
             f"operation for {'' if integrate else 'non-'}integrated input variable '{plot_variable}'"
         )
-    hours = int(period.total_seconds() / 3600)
-    minutes = int((period.total_seconds() / 60) % 60)
+    # In a backward simulation the reduction period extends forward in time
+    # from the current step, making the period negative; either way it is its
+    # length that is shown.
+    seconds = abs(period.total_seconds())
+    hours = int(seconds / 3600)
+    minutes = int((seconds / 60) % 60)
     s = f"{operation} {hours:d}:{minutes:02d}$\\,$h"
     if cap:
         s = s[0].upper() + s[1:]
