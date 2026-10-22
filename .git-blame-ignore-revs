@@ -1,0 +1,9 @@
+# Commits ignored by git blame (formatting-only changes).
+# GitHub uses this file automatically; locally run once per clone:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# DT-397: Reformat the code with ruff
+c2f6b899fd1b07949613ce1b39e84316f4839f98
+
+# DT-469 what the ruff (single ruff format fix in test_s3.py)
+0df0564662482f4ace895c46a88394e42c5453c2
