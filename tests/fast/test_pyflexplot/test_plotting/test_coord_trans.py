@@ -101,6 +101,10 @@ def test_global_axes_to_map() -> None:
 
     """
     ax = plt.figure().add_axes((0.0, 0.05, 0.7872, 0.85), projection=PlateCarree())
+    # Unit view limits make axes and data coordinates coincide, so the lon range below reaches the
+    # transform as (-180, 180). cartopy < 0.26 started GeoAxes like this; 0.26 starts at the global extent.
+    ax.set_xlim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.0)
     projs = Projections.create_regular()
     trans = CoordinateTransformer(
         trans_axes=ax.transAxes,
