@@ -911,9 +911,7 @@ def read_simulation_direction(file_handle: nc4.Dataset) -> int:
     return -1 if ldirect < 0 else 1
 
 
-def derive_time_step_range(
-    start: Any, end: Any, step: int, direction: int
-) -> Tuple[Any, Any, int]:
+def derive_time_step_range(start: Any, end: Any, step: int, direction: int) -> Tuple[Any, Any, int]:
     """Orient a simulation's time axis along its direction of integration.
 
     In a forward simulation the output steps run from ``ibdate``/``ibtime`` to
