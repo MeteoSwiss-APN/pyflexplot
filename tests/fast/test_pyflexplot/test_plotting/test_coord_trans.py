@@ -100,11 +100,9 @@ def test_global_axes_to_map() -> None:
     Implemented to reproduce a bug in production.
 
     """
+    # Fresh GeoAxes without an extent, as in ``Domain.get_bbox``, which converts
+    # the zoomed bbox from axes to map coordinates before ``set_extent``.
     ax = plt.figure().add_axes((0.0, 0.05, 0.7872, 0.85), projection=PlateCarree())
-    # Unit view limits make axes and data coordinates coincide, so the lon range below reaches the
-    # transform as (-180, 180). cartopy < 0.26 started GeoAxes like this; 0.26 starts at the global extent.
-    ax.set_xlim(0.0, 1.0)
-    ax.set_ylim(0.0, 1.0)
     projs = Projections.create_regular()
     trans = CoordinateTransformer(
         trans_axes=ax.transAxes,
@@ -114,7 +112,12 @@ def test_global_axes_to_map() -> None:
         proj_data=projs.data,
         invalid_ok=False,
     )
-    lon, lat = (-180.0, 180.0), (-90.0, 90.0)
-    coords = trans.axes_to_map(lon, lat)
-    assert np.allclose(coords[0], lon)
-    assert np.allclose(coords[1], lat)
+    # Axes coordinates of a global range that reaches just past the dateline on
+    # both sides, so the Plot -> Geo step wraps the lon range to (180, -180).
+    # Derived from the current view limits, so the test doesn't depend on the
+    # initial extent of a new GeoAxes (cartopy < 0.26: (0, 1); 0.26: global).
+    xy_plt = np.array([(-180.001, -90.0), (180.001, 90.0)])
+    x_axes, y_axes = ax.transAxes.inverted().transform(ax.transData.transform(xy_plt)).T
+    coords = trans.axes_to_map(x_axes, y_axes)
+    assert np.allclose(coords[0], (-180.0, 180.0))
+    assert np.allclose(coords[1], (-90.0, 90.0))
