@@ -218,10 +218,8 @@ field_summary = {
                 "proj4_params": {
                     "ellps": "WGS84",
                     "a": 6378137.0,
-                    "proj": "eqc",
-                    "lon_0": 0.0,
-                    "to_meter": 111319.49079327357,
-                    "vto_meter": 1,
+                    "proj": "latlong",
+                    "pm": 0.0,
                 },
             },
         }
@@ -810,10 +808,8 @@ plot_summary = {
                     "proj4_params": {
                         "ellps": "WGS84",
                         "a": 6378137.0,
-                        "proj": "eqc",
-                        "lon_0": 0.0,
-                        "to_meter": 111319.49079327357,
-                        "vto_meter": 1,
+                        "proj": "latlong",
+                        "pm": 0.0,
                     },
                 },
             },
@@ -828,10 +824,8 @@ plot_summary = {
                     "proj4_params": {
                         "ellps": "WGS84",
                         "a": 6378137.0,
-                        "proj": "eqc",
-                        "lon_0": np.float64(129.08999633789062),
-                        "to_meter": 111319.49079327357,
-                        "vto_meter": 1,
+                        "proj": "latlong",
+                        "pm": np.float64(129.08999633789062),
                     },
                 },
                 "proj_data": {
@@ -841,10 +835,8 @@ plot_summary = {
                     "proj4_params": {
                         "ellps": "WGS84",
                         "a": 6378137.0,
-                        "proj": "eqc",
-                        "lon_0": 0.0,
-                        "to_meter": 111319.49079327357,
-                        "vto_meter": 1,
+                        "proj": "latlong",
+                        "pm": 0.0,
                     },
                 },
                 "proj_geo": {
@@ -854,10 +846,8 @@ plot_summary = {
                     "proj4_params": {
                         "ellps": "WGS84",
                         "a": 6378137.0,
-                        "proj": "eqc",
-                        "lon_0": 0.0,
-                        "to_meter": 111319.49079327357,
-                        "vto_meter": 1,
+                        "proj": "latlong",
+                        "pm": 0.0,
                     },
                 },
                 "invalid_ok": True,

@@ -133,11 +133,16 @@ class CoordinateTransformer:
 
         if isinstance(self.proj_map, PlateCarree) and not isinstance(x_map, float) and len(x) == 2:
             # Fix edge case where lon range (-180, 180) can invert to (180, -180)
-            # during the transformation
-            if np.isclose(np.abs(x_map[0]), 180, atol=0.5) and np.isclose(x_map[0], -x[0], atol=0.5):
-                x_map[0] = np.sign(x[0]) * 180.0
-            if np.isclose(np.abs(x_map[1]), 180, atol=0.5) and np.isclose(x_map[1], -x[1], atol=0.5):
-                x_map[1] = np.sign(x[1]) * 180.0
+            # when the Plot -> Geo step wraps a longitude just beyond the dateline.
+            # Take the sign from the unwrapped plot longitudes, not from the axes
+            # input: the two only coincide while the view limits are (0, 1), which
+            # a fresh GeoAxes no longer has from cartopy 0.26 on.
+            # pylint: disable=E1101  # no-member (trans_* are mpl transforms)
+            xy_dis = self.trans_axes.transform(np.column_stack([x, y]))
+            x_plt = self.trans_data.inverted().transform(xy_dis)[:, 0]
+            for i in range(2):
+                if np.isclose(np.abs(x_map[i]), 180, atol=0.5) and np.isclose(x_map[i], -x_plt[i], atol=0.5):
+                    x_map[i] = np.sign(x_plt[i]) * 180.0
         return (x_map, y_map)
 
     @overload
