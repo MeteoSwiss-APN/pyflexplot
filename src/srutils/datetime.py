@@ -80,7 +80,10 @@ def datetime_range(start, end, step, *, convert=None, fmt="%Y%m%d%H%M%S"):
 
         end: Last time step.
 
-        step: Time step duration in seconds.
+        step: Time step duration in seconds; may be negative, in which case the
+            range runs backwards in time and ``start`` must not precede ``end``
+            (as in a backward FLEXPART simulation, whose output steps run from
+            the end of the simulated period towards its beginning).
 
         convert (optional): Return objects of this type instead of ``datetime``;
             formatted with ``fmt`` before conversion.
@@ -93,12 +96,18 @@ def datetime_range(start, end, step, *, convert=None, fmt="%Y%m%d%H%M%S"):
         start = init_datetime(str(start))
     if not isinstance(end, dt.datetime):
         end = init_datetime(str(end))
-    if start > end:
-        raise ValueError(f"start after end: {start} > {end}")
     if not isinstance(step, dt.timedelta):
         step = dt.timedelta(seconds=int(step))
+    if not step:
+        raise ValueError(f"step must not be zero: {start} to {end}")
+    backward = step < dt.timedelta(0)
+    if backward:
+        if start < end:
+            raise ValueError(f"start before end with negative step: {start} < {end}")
+    elif start > end:
+        raise ValueError(f"start after end: {start} > {end}")
     times: list[dt.datetime] = [start]
-    while times[-1] + step <= end:
+    while (times[-1] + step >= end) if backward else (times[-1] + step <= end):
         times.append(times[-1] + step)
     if convert:
         strs = [step.strftime(fmt) for step in times]

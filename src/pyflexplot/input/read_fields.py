@@ -764,7 +764,12 @@ class InputFileEnsemble:
 
     @staticmethod
     def get_temp_res_hrs(fi: nc4.Dataset) -> float:
-        """Determine the (constant) temporal resolution in hours."""
+        """Determine the (constant) temporal resolution in hours.
+
+        Always positive: in a backward simulation the time steps decrease, but
+        the length of an output interval is a duration, not a signed offset.
+
+        """
         time = fi.variables["time"][:]
         if len(time) < 2:
             return 1
@@ -772,5 +777,5 @@ class InputFileEnsemble:
         if len(dts) > 1:
             raise Exception(f"Non-uniform time resolution: {sorted(dts)} ({time})")
         dt_min = next(iter(dts))
-        dt_hr = dt_min / 3600.0
+        dt_hr = abs(dt_min / 3600.0)
         return dt_hr

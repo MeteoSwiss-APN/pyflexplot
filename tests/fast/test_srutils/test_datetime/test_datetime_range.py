@@ -108,8 +108,47 @@ UTC = dt.timezone.utc
                 20210104060000,
             ],
         ),
+        Config(  # [config6] backward range (negative step)
+            start=20210104,
+            end=20210103,
+            step=-6 * 3600,
+            sol=[
+                dt.datetime(2021, 1, 4, 0, tzinfo=UTC),
+                dt.datetime(2021, 1, 3, 18, tzinfo=UTC),
+                dt.datetime(2021, 1, 3, 12, tzinfo=UTC),
+                dt.datetime(2021, 1, 3, 6, tzinfo=UTC),
+                dt.datetime(2021, 1, 3, 0, tzinfo=UTC),
+            ],
+        ),
+        Config(  # [config7] backward range not ending on a full step
+            start="2021010400",
+            end="2021010221",
+            step=-6 * 3600,
+            kwargs={"convert": int},
+            sol=[
+                20210104000000,
+                20210103180000,
+                20210103120000,
+                20210103060000,
+                20210103000000,
+            ],
+        ),
     ],
 )
 def test(config):
     res = datetime_range(config.start, config.end, config.step, **config.kwargs)
     assert res == config.sol
+
+
+@pytest.mark.parametrize(
+    "start,end,step",
+    [
+        (20210103, 20210104, -6 * 3600),  # negative step, start before end
+        (20210104, 20210103, 6 * 3600),  # positive step, start after end
+        (20210103, 20210104, 0),  # zero step would never terminate
+    ],
+)
+def test_invalid_step_direction(start, end, step):
+    """Reject combinations that would yield an empty or unbounded range."""
+    with pytest.raises(ValueError):
+        datetime_range(start, end, step)
